@@ -328,6 +328,11 @@ const S = {
 };
 function readURL() {
   const p = new URLSearchParams(location.search);
+  // Kortformer från QR-koden (via hedin.it/r/): d,f,b,c,v,x -> långa namn.
+  for (const [short, long] of [['d','date'],['f','fuel'],['b','basis'],
+                               ['c','color'],['v','view'],['x','ctx']]) {
+    if (p.has(short) && !p.has(long)) p.set(long, p.get(short));
+  }
   // Default: webbläsarens språk (svenska → sv, allt annat → en); URL-param vinner.
   S.lang = (navigator.language || 'sv').toLowerCase().startsWith('sv') ? 'sv' : 'en';
   if (['sv','en'].includes(p.get('lang'))) S.lang = p.get('lang');
