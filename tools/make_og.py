@@ -48,7 +48,7 @@ for cc, sek, p in rows:
         ax.text(x + w / 2, sek + 0.5, cc, ha="center", fontsize=13, color=INK)
     x += w
 ax.axhline(mean, color=ACC, lw=2.2, ls=(0, (6, 4)))
-mean_lbl = f"EU-medel {mean:.2f} kr/l".replace(".", ",")
+mean_lbl = f"Genomsnitt i EU {mean:.2f} kr/l".replace(".", ",")
 ax.text(0.995, mean + 0.6, mean_lbl, ha="right", color=ACC, fontsize=14,
         fontweight="bold", transform=ax.get_yaxis_transform(),
         bbox=dict(facecolor=BG, edgecolor="none", alpha=0.85, pad=2))

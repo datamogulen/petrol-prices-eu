@@ -16,8 +16,10 @@ valuta-API:er.
 
 ```
 site/
-  index.html        Frontend: 4 vyer (kurva, karta, historik, om), sv/en,
-                    STL-export. Geometrikärnan ligger i ett markerat block
+  index.html        Frontend: 7 flikar (kurva, karta, historik, om/metod,
+                    3D-utskrift, designgrammatik med TEI'27-referens,
+                    pedagogik med lärarhandledning), sv/en, STL-export.
+                    Geometrikärnan ligger i ett markerat block
                     (/*STL-CORE-BEGIN*/../*STL-CORE-END*/) som testas i Node.
   config.php        Länder, befolkning (Eurostat 1 jan 2025), PLI (Eurostat
                     2024), bränslen, URL:er, rimlighetsgränser.

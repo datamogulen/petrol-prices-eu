@@ -111,6 +111,9 @@
   <button data-view="map" id="tab_map"></button>
   <button data-view="hist" id="tab_hist"></button>
   <button data-view="about" id="tab_about"></button>
+  <button data-view="print3d" id="tab_print3d"></button>
+  <button data-view="grammar" id="tab_grammar"></button>
+  <button data-view="teach" id="tab_teach"></button>
 </nav>
 
 <div class="controls">
@@ -159,6 +162,8 @@
 </div>
 
 <div id="banner"></div>
+<div id="basisHint" style="display:none;margin:10px 20px 0;padding:7px 14px;border-radius:8px;
+     background:#E9EFF7;border:1px solid #B9CBE2;color:#2F5A8F;font-size:14px"></div>
 
 <main>
   <section class="view" id="view_curve">
@@ -182,6 +187,18 @@
 
   <section class="view" id="view_about">
     <div class="about" id="aboutBody"></div>
+  </section>
+
+  <section class="view" id="view_print3d">
+    <div class="about" id="printBody"></div>
+  </section>
+
+  <section class="view" id="view_grammar">
+    <div class="about" id="grammarBody"></div>
+  </section>
+
+  <section class="view" id="view_teach">
+    <div class="about" id="teachBody"></div>
   </section>
 </main>
 
@@ -266,8 +283,9 @@ const I18N = {
   sv: {
     title: 'Bensinpriser i EU', sub: 'Weekly Oil Bulletin · kr per liter · 3D-utskrivbar',
     tab_curve: 'Priskurva', tab_map: 'Karta', tab_hist: 'Historik', tab_about: 'Om / Metod',
+    tab_print3d: '3D-utskrift', tab_grammar: 'Designgrammatik', tab_teach: 'Pedagogik',
     l_date: 'Vecka', l_fuel: 'Bränsle', l_basis: 'Prisläge', l_color: 'Färgläsning',
-    l_ctx: 'Grannländer', l_ref: 'Referensstapel (EU-medel)', l_split: 'Dela remsan i två delar',
+    l_ctx: 'Grannländer', l_ref: 'Referensstapel (genomsnitt i EU)', l_split: 'Dela remsan i två delar',
     fuel_petrol: 'Bensin 95', fuel_diesel: 'Diesel',
     basis_nom: 'Nominellt (kr/l)', basis_ppp: 'PPP-justerat (kr/l)',
     basis_time: 'Tidpris (min arbete/l)',
@@ -277,7 +295,7 @@ const I18N = {
     export: 'Exportera STL', export_na: 'STL-export finns för Priskurva och Karta',
     seed_banner: 'Visar statisk seed-data ({date}). Backend (api.php) nås inte – historik och andra datum är inte tillgängliga.',
     loading: 'Laddar …', no_data: 'Ingen data för valet.',
-    eu_mean: 'EU-medel (befolkningsviktat)', tax_part: 'Skatt', net_part: 'Nettopris',
+    eu_mean: 'Genomsnitt i EU (befolkningsviktat)', tax_part: 'Skatt', net_part: 'Nettopris',
     quartile_lbl: ['Kvartil 1 (lägst)', 'Kvartil 2', 'Kvartil 3', 'Kvartil 4 (högst)'],
     fixed_lbl: (b, u) => [`< ${b[0]} ${u}`, `${b[0]}–${b[1]} ${u}`, `${b[1]}–${b[2]} ${u}`, `≥ ${b[2]} ${u}`],
     ctx_lbl: 'Utanför EU-27 (kontext)',
@@ -287,7 +305,9 @@ const I18N = {
     hist_needs_api: 'Historiken kräver backend (api.php). Sidan visar just nu statisk seed-data.',
     hist_add: '+ Lägg till land …',
     added_to_hist: '{name} tillagd i historiken',
-    ppp_note: 'PPP-justering: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
+    ppp_note: 'PPP-justerat = vad priset skulle kännas som för en svensk plånbok. Beräkning: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
+    hint_ppp: 'PPP-justerat = vad priset skulle kännas som för en svensk plånbok. Sveriges pris är oförändrat; övriga länders priser räknas om efter deras prisnivå.',
+    hint_time: 'Tidpris = hur många minuter en genomsnittlig löntagare (nettolön) arbetar för en liter.',
     tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
     milj: 'milj.',
     min: 'min', max: 'max', minmax_lbl: 'seriens min/max',
@@ -302,6 +322,7 @@ const I18N = {
   en: {
     title: 'Petrol prices in the EU', sub: 'Weekly Oil Bulletin · SEK per litre · 3D-printable',
     tab_curve: 'Price curve', tab_map: 'Map', tab_hist: 'History', tab_about: 'About / Method',
+    tab_print3d: '3D printing', tab_grammar: 'Design grammar', tab_teach: 'Teaching',
     l_date: 'Week', l_fuel: 'Fuel', l_basis: 'Price basis', l_color: 'Colour reading',
     l_ctx: 'Neighbouring countries', l_ref: 'Reference bar (EU mean)', l_split: 'Split strip in two parts',
     fuel_petrol: 'Petrol 95', fuel_diesel: 'Diesel',
@@ -323,7 +344,9 @@ const I18N = {
     hist_needs_api: 'The history view needs the backend (api.php). This page is currently showing static seed data.',
     hist_add: '+ Add country …',
     added_to_hist: '{name} added to history',
-    ppp_note: 'PPP adjustment: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
+    ppp_note: 'PPP-adjusted = what the price would feel like to a Swedish wallet. Calculation: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
+    hint_ppp: 'PPP-adjusted = what the price would feel like to a Swedish wallet. Sweden’s price is unchanged; other countries’ prices are rescaled by their price level.',
+    hint_time: 'Time price = how many minutes an average earner (net pay) works for one litre.',
     tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
     milj: 'M',
     min: 'min', max: 'max', minmax_lbl: 'series min/max',
@@ -354,7 +377,7 @@ function readURL() {
   // Default: webbläsarens språk (svenska → sv, allt annat → en); URL-param vinner.
   S.lang = (navigator.language || 'sv').toLowerCase().startsWith('sv') ? 'sv' : 'en';
   if (['sv','en'].includes(p.get('lang'))) S.lang = p.get('lang');
-  if (['curve','map','hist','about'].includes(p.get('view'))) S.view = p.get('view');
+  if (['curve','map','hist','about','print3d','grammar','teach'].includes(p.get('view'))) S.view = p.get('view');
   if (/^\d{4}-\d{2}-\d{2}$/.test(p.get('date') || '')) S.date = p.get('date');
   if (['petrol','diesel'].includes(p.get('fuel'))) S.fuel = p.get('fuel');
   if (['nom','ppp','time'].includes(p.get('basis'))) S.basis = p.get('basis');
@@ -1640,7 +1663,6 @@ async function renderHist() {
 function renderAbout() {
   const sv = S.lang === 'sv';
   const b = SCALE.FIXED_BREAKS;
-  const mmKm = (SCALE.MAP_K / KM_PER_DEG_LAT);
   const html = sv ? `
 <h2>Källa och beräkning</h2>
 <p>Priserna kommer från EU-kommissionens <em>Weekly Oil Bulletin</em> (Euro-super 95 respektive
@@ -1652,9 +1674,9 @@ En källa, en kurs, inga externa valuta-API:er. Licens för källdata: CC BY-NC-
 <p>Befolkningsvikter: Eurostat, 1 januari 2025 (deklarerat källår, D5).
 PPP-läget använder Eurostats prisnivåindex (prc_ppp_ind, PLI_EU27_2020, kategori A01
 "faktisk individuell konsumtion", år 2024, EU27=100): justerat pris = nominellt pris ×
-(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>). Sverige är oförändrat ankare — läs det som
-"vad priset skulle kännas som för en svensk plånbok". Nominella kr/l är huvudläsningen
-(svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning.</p>
+(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>). <strong>I praktiken: vad priset skulle kännas
+som för en svensk plånbok.</strong> Sverige är oförändrat ankare. Nominella kr/l är
+huvudläsningen (svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning.</p>
 <h2>Tidpris ("time price")</h2>
 <p>Tredje prisläget är <strong>tidpris</strong>: hur länge en genomsnittlig löntagare behöver
 arbeta för en liter. Begreppet är etablerat (bl.a. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -1674,24 +1696,6 @@ vilseledande "tidprisserie"; en riktig sådan kräver lönehistorik (framtida ut
 (b) Genomsnittslönen är inte medianlönen; i länder med skev lönefördelning underskattar
 genomsnittet den typiska löntagarens tidpris. (c) I tidprisläget är höjdskalan
 <code>1 mm = 1 minut arbete per liter</code> och de fasta klasserna ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
-<h2>Deklarerade skalor (D5, O2)</h2>
-<ul>
-<li>Höjd: <code>1 mm = 1 kr per liter</code> — i alla vyer, alla datum, alla exporter.
-Två utskrifter från olika veckor är därmed direkt fysiskt jämförbara (historikens poäng).
-I PPP-läget avser skalan PPP-justerade kr/l (deklareras på följesedeln).</li>
-<li>Kurvans bredd: <code>1 mm = 2 miljoner invånare</code> (hela EU ≈ 225 mm; kan delas
-i två delar för utskriftsbädden). Remsans djup: 20 mm. Både remsan och kartan står på en
-2 mm basplatta med etikettband: upphöjd titel + QR-kod (egen STL i kontrastfärg) och
-graverad källtext på undersidan.</li>
-<li>Kartan: ekvirektangulär projektion, longitud skalad med cos 52°;
-<code>${SCALE.MAP_K} mm per breddgrad ≈ ${mmKm.toFixed(3)} mm/km</code> (≈ 1:${Math.round(KM_PER_DEG_LAT * 1e6 / SCALE.MAP_K / 1000) * 1000 / 1e6} milj.).
-Basplatta 2 mm som egen STL; nollplanet = plattans ovansida.</li>
-<li>Nollnivå (D2): 0 kr = bordet/plattans ovansida. Priserna spänner ca 14–28 kr (kvot &lt; 2),
-så ingen klippning eller kapning behövs — D3 (kapade skalor) är ej tillämplig, vilket härmed
-dokumenteras.</li>
-<li>Referensobjekt (O1): EU:s befolkningsviktade medelpris som referenslinje i vyerna och
-som exporterbar stapel (15 × 20 mm bas) i samma höjdskala.</li>
-</ul>
 <h2>Färgläsningar (D1, O3)</h2>
 <ul>
 <li><strong>Kvartiler per valt datum</strong> (relativ läsning, standard): gränserna räknas om
@@ -1701,36 +1705,10 @@ jämförbar mellan datum och mellan utskrifter.</li>
 <li><strong>Netto + skatt</strong> (D13, attributionsläsning): samma geometri, två bokföringar —
 skatten som eget segment ovanpå nettopriset visar att dyra länder är dyra främst via skatt.</li>
 </ul>
-<h2>Designgrammatik – kategorisering</h2>
-<p><strong>Former:</strong> F1 (kartan: geospatial extrudering, pris i Z, kvartilfärg) +
-F6 (kurvan: fördelningsuppveckling — en befolkningsviktad kvantilfunktion där stapelbredd
-är människor). F3 (rytmisk foldning) valdes bort: mönstret som söks är rumsligt/fördelnings­mässigt,
-inte rytmiskt; historiken visas som serie, inte foldad (D9).</p>
-<p><strong>Operatorer:</strong> O1 referens (EU-medel som linje + printbar stapel),
-O2 fasta skalor över hela familjen och alla datum, O3 utbytbara moduler (färgläsningar,
-datum, bränsle, prisläge), O4 webbtvilling med strikt WYSIWYG-export — det som exporteras
-är exakt den geometri som visas (samma kod bygger båda). O5 (naturlig enhetsreferens)
-används inte: det finns ingen naturlig fysisk enhet för priser; dokumenterat härmed.</p>
-<p><strong>Beslutsdimensioner:</strong> D1 lagersemantik (kvartil/fasta klasser/netto+skatt);
-D2 nollnivå = bordet, inget klipps; D3 ej tillämplig (nominellt/PPP kvot &lt; 2; tidpris kvot ≈ 3–4
-men fortfarande fullt printbart utan kapning — dokumenterat); D4 normalisering: nominella kr/l är
-huvudläsning, med PPP-justering och tidpris som deklarerade syskonläsningar (inkomstandels-syskonet
-ur korpusrad 24 är därmed realiserat som tidpris); D5 deklarerade skalor överallt inkl.
-befolknings-, PLI- och lönekällår;
-D6 förenklingstolerans deklarerad (geometri förenklad med tolerans 0,04°, koordinater 3 decimaler;
-projicerade öar &lt; 1 mm² utelämnas ur STL); D7 aggregeringsnivå: nation (deklarerad);
-D8 separata färg-STL:er ger få filamentbyten, låga höjder, ihålig-vänlig utskrift;
-D9 veckodata, ej foldad (motiverat under Former); D10 (reviderad på beställarens begäran):
-upphöjd titel + QR-kod till den digitala tvillingen på plattans etikettband (QR:n pekar på
-hedin.it/r/ och kan därmed pekas om utan omtryck) samt graverad källtext på undersidan;
-text/QR ligger i egen STL för kontrastfärg; följesedeln och denna panel bär det fulla
-metodresonemanget;
-D11 areafällan namngiven i kartvyn — kurvan är motviktet; D12 EU-27 är given mängd och alla
-datum är exporterbara (ingen körsbärsplockning); D13 med/utan skatt är systemets
-attributionsläsning.</p>
-<h2>Malta-anmärkningen (D6)</h2>
-<p>I kurvremsan blir Malta ≈ 0,3 mm bred — omöjlig som fristående bit men ok som steg i en
-sammanhängande solid. Detta noteras även på följesedeln.</p>` : `
+<h2>Mer</h2>
+<p>Skalor, filer och tips för 3D-utskrift finns under fliken <strong>3D-utskrift</strong>.
+Systemets designval i grammatikform finns under <strong>Designgrammatik</strong>.
+Undervisningsmaterial med Sverige i fokus finns under <strong>Pedagogik</strong>.</p>` : `
 <h2>Source and calculation</h2>
 <p>Prices come from the European Commission's <em>Weekly Oil Bulletin</em> (Euro-super 95 and
 automotive gas oil/diesel), which publishes consumer prices per Monday for the 27 EU countries,
@@ -1741,9 +1719,9 @@ One source, one rate, no external currency APIs. Source data licence: CC BY-NC-N
 <p>Population weights: Eurostat, 1 January 2025 (declared source year, D5).
 The PPP mode uses Eurostat price level indices (prc_ppp_ind, PLI_EU27_2020, category A01
 "actual individual consumption", 2024, EU27=100): adjusted price = nominal price ×
-(PLI<sub>Sweden</sub>/PLI<sub>country</sub>). Sweden is the unchanged anchor — read it as
-"what the price would feel like to a Swedish wallet". Nominal SEK/l is the primary reading
-(Swedish wallet perspective, D4); PPP is a declared sibling reading.</p>
+(PLI<sub>Sweden</sub>/PLI<sub>country</sub>). <strong>In practice: what the price would feel
+like to a Swedish wallet.</strong> Sweden is the unchanged anchor. Nominal SEK/l is the primary
+reading (Swedish wallet perspective, D4); PPP is a declared sibling reading.</p>
 <h2>Time price</h2>
 <p>The third price basis is the <strong>time price</strong>: how long an average earner must work
 for one litre. The concept is established (e.g. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -1764,24 +1742,6 @@ year would yield a misleading "time price series"; a real one needs wage history
 extension). (b) The mean wage is not the median; in countries with skewed wage distributions the
 mean understates the typical earner's time price. (c) In time-price mode the height scale is
 <code>1 mm = 1 minute of work per litre</code> and the fixed classes are ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
-<h2>Declared scales (D5, O2)</h2>
-<ul>
-<li>Height: <code>1 mm = 1 SEK per litre</code> — in all views, all dates, all exports.
-Two prints from different weeks are therefore directly physically comparable.
-In PPP mode the scale refers to PPP-adjusted SEK/l (declared on the packing slip).</li>
-<li>Curve width: <code>1 mm = 2 million inhabitants</code> (all of the EU ≈ 225 mm; can be
-split in two parts for the print bed). Strip depth: 20 mm. Both the strip and the map sit on
-a 2 mm base plate with a label band: raised title + QR code (own STL in a contrast colour)
-and engraved source text on the underside.</li>
-<li>Map: equirectangular projection, longitude scaled by cos 52°;
-<code>${SCALE.MAP_K} mm per degree of latitude ≈ ${mmKm.toFixed(3)} mm/km</code>.
-Base plate 2 mm as its own STL; the zero plane is the top of the plate.</li>
-<li>Zero level (D2): 0 SEK = the table / top of the plate. Prices span roughly 14–28 SEK
-(ratio &lt; 2), so no clipping or cutting is needed — D3 (broken scales) is not applicable,
-documented here.</li>
-<li>Reference object (O1): the EU population-weighted mean as a reference line in the views
-and as an exportable bar (15 × 20 mm base) at the same height scale.</li>
-</ul>
 <h2>Colour readings (D1, O3)</h2>
 <ul>
 <li><strong>Quartiles per selected date</strong> (relative reading, default): the breaks are
@@ -1792,7 +1752,153 @@ comparable across dates and prints.</li>
 tax as its own segment on top of the net price shows that expensive countries are expensive
 mainly through taxation.</li>
 </ul>
+<h2>More</h2>
+<p>Scales, files and tips for 3D printing live under the <strong>3D printing</strong> tab.
+The system's design choices in grammar form live under <strong>Design grammar</strong>.
+Teaching material with Sweden in focus lives under <strong>Teaching</strong>.</p>`;
+  document.getElementById('aboutBody').innerHTML = html;
+}
+
+function renderPrint3d() {
+  const sv = S.lang === 'sv';
+  const mmKm = (SCALE.MAP_K / KM_PER_DEG_LAT);
+  const html = sv ? `
+<h2>Vad exporten ger</h2>
+<p>Knappen <em>Exportera STL</em> (i vyerna Priskurva och Karta) ger en zip med exakt det som
+visas: valt datum, bränsle, prisläge, färgläge och kontext på/av (strikt WYSIWYG, O4).
+Zipen innehåller <strong>separata binära STL-filer per färggrupp</strong> (4 kvartil-/klassfiler
+eller netto + skatt), basplatta, referensstapel, filen <code>text-qr-kontrastfarg.stl</code>
+samt en följesedel (<code>FOLJESEDEL.txt</code>) med alla deklarationer. Filerna ligger i samma
+koordinatsystem — importera alla i slicern så bildar de ett objekt.</p>
+<h2>Deklarerade skalor (D5, O2)</h2>
+<ul>
+<li>Höjd: <code>1 mm = 1 kr per liter</code> — i alla vyer, alla datum, alla exporter.
+Två utskrifter från olika veckor är därmed direkt fysiskt jämförbara (historikens poäng).
+I PPP-läget avser skalan PPP-justerade kr/l och i tidprisläget
+<code>1 mm = 1 minut arbete per liter</code> (deklareras på följesedeln).</li>
+<li>Kurvans bredd: <code>1 mm = 2 miljoner invånare</code> (hela EU ≈ 225 mm; kan delas
+i två delar för utskriftsbädden). Remsans djup: 20 mm.</li>
+<li>Kartan: ekvirektangulär projektion, longitud skalad med cos 52°;
+<code>${SCALE.MAP_K} mm per breddgrad ≈ ${mmKm.toFixed(3)} mm/km</code>.</li>
+<li>Basplatta ${SCALE.PLATE_MM} mm (karta OCH kurva) med ${SCALE.LABEL_BAND} mm etikettband;
+nollplanet (0 kr) = plattans ovansida (D2). Inget klipps — D3 är ej tillämplig, dokumenterat.</li>
+<li>Referensobjekt (O1): genomsnittet i EU (befolkningsviktat) som exporterbar stapel
+(15 × 20 mm bas) i samma höjdskala.</li>
+<li>Förenklingstolerans (D6): geometri förenklad (0,04°, 3 decimaler); öar under
+${SCALE.MIN_AREA_MM2} mm² projicerad yta utelämnas ur kart-STL.</li>
+</ul>
+<h2>Textning och QR-kod (D10)</h2>
+<p>Etikettbandet har <strong>upphöjd titel + QR-kod</strong> (${SCALE.TEXT_RAISE} mm) i en egen
+STL-fil — skriv ut den i mörk kontrastfärg (filamentbyte eller multimaterial) så blir koden
+skarp och skanningsbar. QR-koden leder till den digitala tvillingen med exakt utskriftens
+tillstånd, via <code>hedin.it/r/</code> så att målet kan pekas om utan omtryck.
+Undersidan har <strong>graverad källtext</strong> (${SCALE.TEXT_ENGRAVE} mm, spegelvänd i
+modellen — läsbar när objektet vänds).</p>
+<h2>Malta-anmärkningen (D6)</h2>
+<p>I kurvremsan blir Malta ≈ 0,3 mm bred — omöjlig som fristående bit men ok som steg i en
+sammanhängande solid. På kartan faller Malta under areagränsen och utelämnas (deklareras på
+följesedeln). Detta är priset för ärliga, fasta skalor.</p>
+<h2>Utskriftstips</h2>
+<ul>
+<li>Höjderna är låga (ca 5–45 mm beroende på prisläge) — snabb utskrift, ihålig/gles fyllnad ok.</li>
+<li>Färggrupperna ger få filamentbyten (D8): varje STL-fil = en färg.</li>
+<li>Kurvremsan är ~225 mm lång: kryssa "Dela remsan i två delar" om bädden är mindre.</li>
+<li>Verifiering: alla solider är vattentäta (testade med <code>test/stl_check.js</code>).</li>
+</ul>` : `
+<h2>What the export gives you</h2>
+<p>The <em>Export STL</em> button (in the Price curve and Map views) produces a zip with exactly
+what is shown: chosen date, fuel, price basis, colour mode and context on/off (strict WYSIWYG, O4).
+The zip contains <strong>separate binary STL files per colour group</strong> (4 quartile/class
+files or net + tax), a base plate, a reference bar, the file
+<code>text-qr-contrast-colour.stl</code> and a packing slip (<code>README.txt</code>) with all
+declarations. The files share one coordinate system — import them all into your slicer and they
+form one object.</p>
+<h2>Declared scales (D5, O2)</h2>
+<ul>
+<li>Height: <code>1 mm = 1 SEK per litre</code> — in all views, all dates, all exports.
+Two prints from different weeks are therefore directly physically comparable.
+In PPP mode the scale refers to PPP-adjusted SEK/l and in time-price mode
+<code>1 mm = 1 minute of work per litre</code> (declared on the packing slip).</li>
+<li>Curve width: <code>1 mm = 2 million inhabitants</code> (all of the EU ≈ 225 mm; can be
+split in two parts for the print bed). Strip depth: 20 mm.</li>
+<li>Map: equirectangular projection, longitude scaled by cos 52°;
+<code>${SCALE.MAP_K} mm per degree of latitude ≈ ${mmKm.toFixed(3)} mm/km</code>.</li>
+<li>Base plate ${SCALE.PLATE_MM} mm (map AND curve) with a ${SCALE.LABEL_BAND} mm label band;
+the zero plane (0 SEK) = top of the plate (D2). Nothing is clipped — D3 not applicable, documented.</li>
+<li>Reference object (O1): the EU population-weighted mean as an exportable bar
+(15 × 20 mm base) at the same height scale.</li>
+<li>Simplification tolerance (D6): geometry simplified (0.04°, 3 decimals); islands below
+${SCALE.MIN_AREA_MM2} mm² projected area are omitted from the map STL.</li>
+</ul>
+<h2>Labelling and QR code (D10)</h2>
+<p>The label band carries a <strong>raised title + QR code</strong> (${SCALE.TEXT_RAISE} mm) in
+its own STL file — print it in a dark contrast colour (filament swap or multi-material) for a
+crisp, scannable code. The QR leads to the digital twin in exactly the print's state, via
+<code>hedin.it/r/</code> so the target can be re-pointed without reprinting. The underside has
+<strong>engraved source text</strong> (${SCALE.TEXT_ENGRAVE} mm, mirrored in the model —
+readable when the object is flipped).</p>
+<h2>The Malta remark (D6)</h2>
+<p>In the curve strip Malta is ≈ 0.3 mm wide — impossible as a free-standing piece but fine as a
+step in a contiguous solid. On the map Malta falls below the area threshold and is omitted
+(declared on the packing slip). This is the price of honest, fixed scales.</p>
+<h2>Printing tips</h2>
+<ul>
+<li>Heights are low (≈ 5–45 mm depending on price basis) — fast prints, sparse infill is fine.</li>
+<li>The colour groups give few filament changes (D8): each STL file = one colour.</li>
+<li>The curve strip is ~225 mm long: tick "Split strip in two parts" if your bed is smaller.</li>
+<li>Verification: all solids are watertight (tested by <code>test/stl_check.js</code>).</li>
+</ul>`;
+  document.getElementById('printBody').innerHTML = html;
+}
+
+function renderGrammar() {
+  const sv = S.lang === 'sv';
+  const html = sv ? `
+<h2>Designgrammatik – kategorisering</h2>
+<p>Systemet är specificerat i termer av en designgrammatik för 3D-printade
+datafysikaliseringar — sex grundformer, fem kompositionsoperatorer och tretton
+beslutsdimensioner — utvecklad i ett treårigt research-through-design-program.
+Kategoriseringen nedan är systemets fullständiga deklaration.</p>
+<p><strong>Former:</strong> F1 (kartan: geospatial extrudering, pris i Z, kvartilfärg) +
+F6 (kurvan: fördelningsuppveckling — en befolkningsviktad kvantilfunktion där stapelbredd
+är människor). F3 (rytmisk foldning) valdes bort: mönstret som söks är rumsligt/fördelnings­mässigt,
+inte rytmiskt; historiken visas som serie, inte foldad (D9).</p>
+<p><strong>Operatorer:</strong> O1 referens (genomsnittet i EU som linje + printbar stapel),
+O2 fasta skalor över hela familjen och alla datum, O3 utbytbara moduler (färgläsningar,
+datum, bränsle, prisläge), O4 webbtvilling med strikt WYSIWYG-export — det som exporteras
+är exakt den geometri som visas (samma kod bygger båda). O5 (naturlig enhetsreferens)
+används inte: det finns ingen naturlig fysisk enhet för priser; dokumenterat härmed.</p>
+<p><strong>Beslutsdimensioner:</strong> D1 lagersemantik (kvartil/fasta klasser/netto+skatt);
+D2 nollnivå = bordet, inget klipps; D3 ej tillämplig (nominellt/PPP kvot &lt; 2; tidpris kvot ≈ 3–4
+men fortfarande fullt printbart utan kapning — dokumenterat); D4 normalisering: nominella kr/l är
+huvudläsning, med PPP-justering och tidpris som deklarerade syskonläsningar (inkomstandels-syskonet
+ur korpusrad 24 är därmed realiserat som tidpris); D5 deklarerade skalor överallt inkl.
+befolknings-, PLI- och lönekällår; D6 förenklingstolerans deklarerad (0,04°, 3 decimaler,
+öar &lt; 1 mm² utelämnas ur STL), småländer i kurvan ok som del av solid;
+D7 aggregeringsnivå nation (deklarerad); D8 separata färg-STL:er ger få filamentbyten,
+låga höjder, ihålig-vänligt; D9 veckodata, ej foldad (motiverat under Former);
+D10 (reviderad på beställarens begäran): upphöjd titel + QR-kod till den digitala tvillingen på
+plattans etikettband (QR:n pekar på hedin.it/r/ och kan därmed pekas om utan omtryck) samt
+graverad källtext på undersidan; text/QR ligger i egen STL för kontrastfärg; följesedeln och
+metodfliken bär det fulla metodresonemanget; D11 areafällan namngiven i kartvyn (stora länder
+dominerar synintrycket vid samma höjd — Sverige ser "större" ut än Nederländerna trots lägre
+pris; kurvan är motviktet där bredd = människor); D12 EU-27 är given mängd och alla datum är
+exporterbara (ingen körsbärsplockning); D13 med/utan skatt är systemets attributionsläsning —
+samma geometri, två bokföringar av priset.</p>
+<h2>Referens</h2>
+<p>Grammatiken presenteras i:</p>
+<p style="padding-left:1.2em">Hedin, B. <em>From Geometry to Judgment: A Design Grammar for
+3D-Printed Physicalizations of Energy and Environmental Data.</em> Inskickad till TEI ’27,
+21st International Conference on Tangible, Embedded, and Embodied Interaction (ACM).
+Under granskning — referensen uppdateras vid acceptans.</p>
+<p>Detta system (petrol-prices-eu) är byggt <em>family-first</em>: skalorna
+(1 mm = 1 kr/l, 1 mm = 2 M invånare) valdes före geometrin så att varje export är
+kommensurabel med alla andra — mellan veckor, bränslen och prislägen.</p>` : `
 <h2>Design grammar – categorisation</h2>
+<p>The system is specified in terms of a design grammar for 3D-printed data
+physicalizations — six basic forms, five composition operators and thirteen decision
+dimensions — developed in a three-year research-through-design programme. The
+categorisation below is the system's full declaration.</p>
 <p><strong>Forms:</strong> F1 (map: geospatial extrusion, price in Z, quartile colour) +
 F6 (curve: distribution unfolding — a population-weighted quantile function where bar width
 is people). F3 (rhythmic folding) was rejected: the sought pattern is spatial/distributional,
@@ -1807,21 +1913,187 @@ D2 zero level = the table, nothing clipped; D3 not applicable (nominal/PPP ratio
 ratio ≈ 3–4 yet still fully printable without cutting — documented); D4 normalisation: nominal
 SEK/l is the primary reading, with PPP adjustment and time price as declared sibling readings
 (the income-share sibling from corpus row 24 is thereby realised as time price); D5 declared
-scales everywhere incl. population, PLI and wage source years; D6 simplification tolerance declared (geometry simplified at 0.04°,
-3-decimal coordinates; projected islands &lt; 1 mm² omitted from STL); D7 aggregation level:
-nation (declared); D8 separate colour STLs give few filament changes, low heights,
+scales everywhere incl. population, PLI and wage source years; D6 simplification tolerance
+declared (0.04°, 3-decimal coordinates; islands &lt; 1 mm² omitted from STL); D7 aggregation
+level: nation (declared); D8 separate colour STLs give few filament changes, low heights,
 hollow-friendly printing; D9 weekly data, not folded (motivated under Forms);
 D10 (revised at the commissioner's request): raised title + QR code to the digital twin on
 the plate's label band (the QR points at hedin.it/r/ and can thus be re-pointed without
 reprinting) plus engraved source text on the underside; text/QR live in their own STL for a
-contrast colour; the packing slip and this panel carry the full method reasoning;
+contrast colour; the packing slip and the method tab carry the full reasoning;
 D11 the area trap named in the map view — the curve is the counterweight;
 D12 EU-27 is a given set and every date is exportable (no cherry-picking);
 D13 with/without tax is the system's attribution reading.</p>
-<h2>The Malta remark (D6)</h2>
-<p>In the curve strip Malta is ≈ 0.3 mm wide — impossible as a free-standing piece but fine
-as a step in a contiguous solid. This is also noted on the packing slip.</p>`;
-  document.getElementById('aboutBody').innerHTML = html;
+<h2>Reference</h2>
+<p>The grammar is presented in:</p>
+<p style="padding-left:1.2em">Hedin, B. <em>From Geometry to Judgment: A Design Grammar for
+3D-Printed Physicalizations of Energy and Environmental Data.</em> Submitted to TEI ’27,
+21st International Conference on Tangible, Embedded, and Embodied Interaction (ACM).
+Under review — the reference will be updated upon acceptance.</p>
+<p>This system (petrol-prices-eu) is built <em>family-first</em>: the scales
+(1 mm = 1 SEK/l, 1 mm = 2 M inhabitants) were chosen before the geometry so that every export
+is commensurable with every other — across weeks, fuels and price bases.</p>`;
+  document.getElementById('grammarBody').innerHTML = html;
+}
+
+function renderTeach() {
+  const sv = S.lang === 'sv';
+  const q = 'lang=' + S.lang;
+  const html = sv ? `
+<h2>Pedagogiskt upplägg: Vad kostar bensinen – egentligen?</h2>
+<p>Sverige är huvudfokus, och det centrala lärandemålet är att <strong>"rättvis prisjämförelse"
+inte är en sak utan ett val av mått</strong>. Samma pumppriser ger tre olika Europakartor
+beroende på hur man räknar. (Siffrorna nedan avser veckan 2026-08-03 — hämta färska i verktyget.)</p>
+<h2>De tre måtten</h2>
+<ul>
+<li><strong>Rakt pris (nominellt, kr/l)</strong> — vad det kostar att tanka på plats, i svenska
+kronor. Sverige: 15,96 kr/l — näst lägst i EU (bara Malta lägre), ca 5,50 kr under genomsnittet
+i EU. <a href="?${q}&view=curve&fuel=petrol&basis=nom&color=quartile">Öppna i priskurvan →</a></li>
+<li><strong>PPP-justerat (kr/l)</strong> — vad priset skulle kännas som för en svensk plånbok:
+priserna räknas om efter ländernas prisnivå. Sverige: fortfarande 15,96 (ankare) — näst lägst
+(bara Luxemburg lägre), nästan 12 kr under genomsnittet i EU.
+<a href="?${q}&view=curve&fuel=petrol&basis=ppp&color=quartile">Öppna →</a></li>
+<li><strong>Tidpris (min arbete/l)</strong> — hur länge en genomsnittlig löntagare (nettolön)
+arbetar för en liter. Sverige: ≈ 5,5 minuter — tredje lägst, efter Luxemburg (mycket höga löner)
+och Irland (höga genomsnittslöner, delvis draget av multinationell sektor; notera att måttet
+bygger på faktiska nettolöner, inte BNP). Genomsnittet i EU ≈ 10,5 min; Rumänien &amp; Bulgarien
+≈ 17–18 min. <a href="?${q}&view=curve&fuel=petrol&basis=time&color=quartile">Öppna →</a></li>
+</ul>
+<h2>Lektionsförslag (45–60 min, gymnasiet/högstadiet)</h2>
+<ol>
+<li><strong>Gissa först (5 min):</strong> Var ligger Sverige i EU:s bensinprisliga? Låt alla
+sätta en siffra 1–27 innan verktyget visas. (De flesta gissar högt.)</li>
+<li><strong>Utforska – börja i kartan (15 min):</strong> Starta i
+<a href="?${q}&view=map&basis=nom">3D-kartan →</a> — det är lättast att relatera till
+länder man känner igen. Snurra, hovra för siffror, klicka på länder för att lägga dem i
+historiken. Växla sedan prisläge direkt i kartan:
+<a href="?${q}&view=map&basis=ppp">PPP →</a> och
+<a href="?${q}&view=map&basis=time">tidpris →</a> — vilka länder reser sig, vilka sjunker?
+Öppna till sist <a href="?${q}&view=curve&basis=time">priskurvan →</a> och jämför:
+varför ser kurvan annorlunda ut än kartan? (D11: stora länder dominerar kartans synintryck —
+kurvans stapelbredd är människor.)</li>
+<li><strong>Skattens roll (10 min):</strong> Växla till färgläget
+<a href="?${q}&view=curve&color=tax">Netto + skatt →</a>. Nettopriserna (världsmarknaden) är
+nästan lika i hela EU — det som skiljer är skatten. Diskutera: vad är skattens syfte
+(vägar, klimat, statskassa)? Jämför <a href="?${q}&view=hist&hist=SE,DE,PL">historiken →</a>:
+vad hände 2022?</li>
+<li><strong>Diskutera (15 min):</strong> Vilket mått är mest "rättvist"? Finns det ett rätt svar?
+Vem gynnas av att debatten använder det ena eller andra måttet?</li>
+</ol>
+<h2>Fördjupning: hur stor del av lönen går till drivmedel?</h2>
+<p>Tidpriset gäller <em>en liter</em> — men hur mycket man tankar per år skiljer sig mellan
+länder. En årskostnadsandel kan uppskattas så här:</p>
+<p><code>andel = körsträcka (km/år) × förbrukning (l/km) × pris (EUR/l) / årsnettolön (EUR)</code></p>
+<p>Räkneexempel Sverige: ca 1 100 mil/år per personbil (Trafikanalys) × ~0,065 l/km ≈ 715 l/år
+× 1,45 €/l ≈ 1 040 €/år ÷ 33 200 € nettoårslön ≈ <strong>3 % av nettolönen</strong>. Samma
+körsträcka med Bulgariens pris och lön ger ≈ 11 %. <strong>Uppgift:</strong> hämta verkliga
+körsträckor och förbrukningar per land (Odyssee-Mure-databasen, Eurostat vägtrafik, ACEA,
+Trafikanalys för Sverige) och räkna andelen för tre länder — blir rangordningen densamma som
+tidprisets? Diskutera felkällor: elbilsandel, dieselandel, tjänstebilar, stad/landsbygd.</p>
+<h2>Skriv ut och ta på</h2>
+<p>Fysiska modeller ändrar samtalet: en utskrift kan skickas runt, pekas på och jämföras.
+<strong>Kartmodellen</strong> är den bästa startpunkten i klassrummet — eleverna känner igen
+länderna och kan peka. Skriv gärna ut kurvan i två prislägen (nominellt och tidpris) och låt
+gruppen hålla en i varje hand — skillnaden i form <em>känns</em>. QR-koden på modellen leder
+tillbaka till exakt den vy som skrevs ut.</p>
+<h2>För läraren: ladda ner, skriv ut och färglägg</h2>
+<ol>
+<li><strong>Välj vad som ska skrivas ut:</strong> gå till Karta (rekommenderas för igenkänning)
+eller Priskurva, välj datum, bränsle, prisläge och färgläsning. Det som syns är det som skrivs ut.</li>
+<li><strong>Ladda ner:</strong> klicka <em>Exportera STL</em> — du får en zip med flera
+STL-filer + följesedel (<code>FOLJESEDEL.txt</code>) som förklarar allt.</li>
+<li><strong>Slicer:</strong> packa upp och importera <em>alla</em> STL-filer på en gång i
+t.ex. PrusaSlicer, Bambu Studio eller Cura. Svara "ja" om slicern frågar om filerna ska
+laddas som ett objekt med flera delar — <strong>flytta inte delarna</strong>, de ligger rätt
+i samma koordinatsystem.</li>
+<li><strong>Färglägg per fil</strong> (en fil = en färg, som på skärmen):
+kvartil/klass 1–4 → grön, gulgrön, orange, röd; <code>netto</code> → blå och
+<code>skatt</code> → röd (i skatteläget); <code>basplatta</code> → ljus/beige;
+<code>kontext</code> → grå; <code>text-qr-kontrastfarg</code> → <strong>svart eller annan
+mörk färg — viktigt, annars går QR-koden inte att skanna</strong>.</li>
+<li><strong>Utan flerfärgsskrivare?</strong> Skriv allt i en ljus färg och färglägg den
+upphöjda texten/QR-koden med svart tuschpenna (fungerar förvånansvärt bra), eller skriv ut
+<code>text-qr</code>-filen separat i svart och limma.</li>
+<li><strong>Inställningar:</strong> 0,2 mm lager, 10–15 % fyllnad, inga stöd behövs.
+Utskriften är låg och snabb. Testa QR-koden med mobilen innan lektionen!</li>
+</ol>` : `
+<h2>Teaching guide: What does petrol really cost?</h2>
+<p>Sweden is the main focus, and the central learning goal is that <strong>"a fair price
+comparison" is not one thing but a choice of measure</strong>. The same pump prices give three
+different maps of Europe depending on how you count. (Figures below refer to the week of
+2026-08-03 — fetch fresh ones in the tool.)</p>
+<h2>The three measures</h2>
+<ul>
+<li><strong>Straight price (nominal, SEK/l)</strong> — what filling up costs on site, in Swedish
+kronor. Sweden: 15.96 SEK/l — second lowest in the EU (only Malta lower), about 5.50 SEK below
+the EU average. <a href="?${q}&view=curve&fuel=petrol&basis=nom&color=quartile">Open in the curve →</a></li>
+<li><strong>PPP-adjusted (SEK/l)</strong> — what the price would feel like to a Swedish wallet:
+prices rescaled by each country's price level. Sweden: still 15.96 (anchor) — second lowest
+(only Luxembourg lower), almost 12 SEK below the EU average.
+<a href="?${q}&view=curve&fuel=petrol&basis=ppp&color=quartile">Open →</a></li>
+<li><strong>Time price (min of work/l)</strong> — how long an average earner (net pay) works for
+one litre. Sweden: ≈ 5.5 minutes — third lowest, after Luxembourg (very high wages) and Ireland
+(high average wages, partly driven by the multinational sector; note the measure uses actual net
+earnings, not GDP). EU average ≈ 10.5 min; Romania &amp; Bulgaria ≈ 17–18 min.
+<a href="?${q}&view=curve&fuel=petrol&basis=time&color=quartile">Open →</a></li>
+</ul>
+<h2>Lesson outline (45–60 min)</h2>
+<ol>
+<li><strong>Guess first (5 min):</strong> Where does Sweden rank among the EU's 27 petrol prices?
+Everyone commits to a number before the tool is shown. (Most guess high.)</li>
+<li><strong>Explore – start in the map (15 min):</strong> Begin in the
+<a href="?${q}&view=map&basis=nom">3D map →</a> — it is easiest to relate to countries you
+recognise. Rotate, hover for figures, click countries to add them to the history. Then switch
+price basis in the map: <a href="?${q}&view=map&basis=ppp">PPP →</a> and
+<a href="?${q}&view=map&basis=time">time price →</a> — which countries rise, which sink?
+Finally open the <a href="?${q}&view=curve&basis=time">price curve →</a> and compare: why does
+it look different from the map? (D11: large countries dominate the map's visual impression —
+the curve's bar width is people.)</li>
+<li><strong>The role of tax (10 min):</strong> Switch to the
+<a href="?${q}&view=curve&color=tax">Net + tax →</a> colour mode. Net prices (the world market)
+are nearly equal across the EU — taxes make the difference. Compare the
+<a href="?${q}&view=hist&hist=SE,DE,PL">history →</a>: what happened in 2022?</li>
+<li><strong>Discuss (15 min):</strong> Which measure is the "fairest"? Is there a right answer?
+Who benefits when the debate uses one measure rather than another?</li>
+</ol>
+<h2>Extension: what share of pay goes to fuel?</h2>
+<p>The time price concerns <em>one litre</em> — but annual fuelling differs between countries.
+An annual cost share can be estimated as:</p>
+<p><code>share = distance (km/yr) × consumption (l/km) × price (EUR/l) / net annual pay (EUR)</code></p>
+<p>Worked example, Sweden: ≈ 11,000 km/year per car (Trafikanalys) × ~0.065 l/km ≈ 715 l/year
+× €1.45/l ≈ €1,040/year ÷ €33,200 net annual pay ≈ <strong>3% of net pay</strong>. The same
+distance at Bulgaria's price and pay gives ≈ 11%. <strong>Task:</strong> fetch real distances
+and consumption per country (the Odyssee-Mure database, Eurostat road transport, ACEA,
+Trafikanalys for Sweden) and compute the share for three countries — does the ranking match the
+time price? Discuss error sources: EV share, diesel share, company cars, urban/rural.</p>
+<h2>Print it and hold it</h2>
+<p>Physical models change the conversation: a print can be passed around, pointed at and
+compared. <strong>The map model</strong> is the best classroom starting point — students
+recognise the countries and can point. Also print the curve in two bases (nominal and time
+price) and let the group hold one in each hand — the difference in shape can be <em>felt</em>.
+The QR code on the model leads back to exactly the view that was printed.</p>
+<h2>For the teacher: download, print and colour</h2>
+<ol>
+<li><strong>Choose what to print:</strong> go to Map (recommended for recognition) or Price
+curve, pick date, fuel, price basis and colour reading. What you see is what prints.</li>
+<li><strong>Download:</strong> click <em>Export STL</em> — you get a zip with several STL
+files + a packing slip (<code>README.txt</code>) explaining everything.</li>
+<li><strong>Slicer:</strong> unzip and import <em>all</em> STL files at once into e.g.
+PrusaSlicer, Bambu Studio or Cura. Answer "yes" if the slicer asks to load them as one object
+with multiple parts — <strong>do not move the parts</strong>; they are pre-positioned in one
+coordinate system.</li>
+<li><strong>Colour per file</strong> (one file = one colour, as on screen):
+quartile/class 1–4 → green, yellow-green, orange, red; <code>net</code> → blue and
+<code>tax</code> → red (in tax mode); <code>baseplate</code> → light/beige;
+<code>context</code> → grey; <code>text-qr-contrast-colour</code> → <strong>black or another
+dark colour — important, or the QR code will not scan</strong>.</li>
+<li><strong>No multi-colour printer?</strong> Print everything in a light colour and colour the
+raised text/QR with a black marker pen (works surprisingly well), or print the
+<code>text-qr</code> file separately in black and glue it on.</li>
+<li><strong>Settings:</strong> 0.2 mm layers, 10–15% infill, no supports needed. The print is
+low and fast. Test the QR code with a phone before the lesson!</li>
+</ol>`;
+  document.getElementById('teachBody').innerHTML = html;
 }
 
 /* =====================================================================
@@ -1830,7 +2102,7 @@ as a step in a contiguous solid. This is also noted on the packing slip.</p>`;
  * ===================================================================== */
 function groupFileName(g, i) {
   const names = {
-    sv: { net: 'netto', tax: 'skatt', ctx: 'kontext', plate: 'basplatta', ref: 'referensstapel-eu-medel', text: 'text-qr-kontrastfarg' },
+    sv: { net: 'netto', tax: 'skatt', ctx: 'kontext', plate: 'basplatta', ref: 'referensstapel-eu-genomsnitt', text: 'text-qr-kontrastfarg' },
     en: { net: 'net', tax: 'tax', ctx: 'context', plate: 'baseplate', ref: 'reference-bar-eu-mean', text: 'text-qr-contrast-colour' },
   }[S.lang];
   if (names[g]) return names[g];
@@ -1890,7 +2162,7 @@ function buildFollowsedel(info) {
   for (const f of info.files) L.push('  ' + f);
   if (info.euMean != null) {
     L.push('');
-    L.push((sv ? 'EU-medel (befolkningsviktat): ' : 'EU mean (population-weighted): ') + fmt(info.euMean) + ' kr/l' +
+    L.push((sv ? 'Genomsnitt i EU (befolkningsviktat): ' : 'EU mean (population-weighted): ') + fmt(info.euMean) + ' kr/l' +
       (info.refIncluded ? (sv ? ' – referensstapel 15×20 mm ingår (O1).' : ' – 15×20 mm reference bar included (O1).') : ''));
   }
   if (info.missing && info.missing.length) {
@@ -2025,6 +2297,8 @@ function applyStaticTexts() {
   set('t_title', 'title'); set('t_sub', 'sub');
   set('tab_curve', 'tab_curve'); set('tab_map', 'tab_map');
   set('tab_hist', 'tab_hist'); set('tab_about', 'tab_about');
+  set('tab_print3d', 'tab_print3d'); set('tab_grammar', 'tab_grammar');
+  set('tab_teach', 'tab_teach');
   set('l_date', 'l_date'); set('l_fuel', 'l_fuel'); set('l_basis', 'l_basis');
   set('l_color', 'l_color'); set('l_ctx', 'l_ctx'); set('l_ref', 'l_ref'); set('l_split', 'l_split');
   set('exportBtn', 'export');
@@ -2064,9 +2338,10 @@ function syncControls() {
   // Kontroller utan betydelse i aktuell vy döljs (i stället för att stå kvar).
   const show = (id, on) => document.getElementById(id).style.display = on ? '' : 'none';
   const geom = ['curve', 'map'].includes(S.view);   // vyer med datum/färg/export
+  const dataView = ['curve', 'map', 'hist'].includes(S.view);
   show('dateGrp', geom);
-  show('fuelGrp', S.view !== 'about');
-  show('basisGrp', S.view !== 'about');
+  show('fuelGrp', dataView);
+  show('basisGrp', dataView);
   show('colorGrp', geom);
   show('ctxGrp', S.view === 'map');
   show('refGrp', geom);
@@ -2079,6 +2354,11 @@ function syncControls() {
   document.getElementById('datePrev').disabled = SEED_MODE || idx <= 0;
   document.getElementById('dateNext').disabled = SEED_MODE || idx >= DATES.length - 1;
   document.getElementById('dateSel').disabled = SEED_MODE;
+  // Synlig förklaring av valt prisläge (PPP = "svensk plånbok", tidpris)
+  const hint = document.getElementById('basisHint');
+  if (dataView && S.basis === 'ppp') { hint.textContent = T('hint_ppp'); hint.style.display = ''; }
+  else if (dataView && S.basis === 'time' && S.view !== 'hist') { hint.textContent = T('hint_time'); hint.style.display = ''; }
+  else hint.style.display = 'none';
 }
 async function rerender() {
   writeURL(); applyStaticTexts(); syncControls();
@@ -2091,6 +2371,9 @@ async function rerender() {
   if (S.view === 'curve') renderCurve(payload);
   else if (S.view === 'map') { renderMap(payload); drawMap(); }
   else if (S.view === 'hist') renderHist();
+  else if (S.view === 'print3d') renderPrint3d();
+  else if (S.view === 'grammar') renderGrammar();
+  else if (S.view === 'teach') renderTeach();
   else renderAbout();
 }
 function fillDates() {
