@@ -1,0 +1,62 @@
+<?php
+/**
+ * Bensinpriser i EU – konfiguration
+ *
+ * Datakälla: EU-kommissionens Weekly Oil Bulletin (Euro-super 95).
+ * Alla prisvärden i källfilen är EUR per 1000 liter, oavsett landets
+ * valutakod. Växelkurskolumnen är EUR per enhet nationell valuta.
+ * (Verifierat 2026-08-07 genom korsvalidering mot två oberoende
+ * konverteringar av samma källa samt svenska pumppriser; se README.)
+ */
+
+// Stabil dokument-UUID för historikfilen (2005–nu, uppdateras veckovis av EC).
+// Samma UUID har använts åtminstone jan 2025–apr 2026.
+define('WOB_HISTORY_URL',
+  'https://energy.ec.europa.eu/document/download/906e60ca-8b6a-44e7-8589-652854d2fd3f_en?filename=Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx');
+
+// Reservväg: sidan som alltid länkar aktuell historikfil (skrapas efter "Prices_History" om UUID:n dör).
+define('WOB_BULLETIN_PAGE', 'https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en');
+
+define('DB_PATH', __DIR__ . '/data/prices.sqlite');
+define('LOG_PATH', __DIR__ . '/data/update.log');
+
+// Produktnamn i källan som avser bensin (matchas skiftlägesokänsligt, delsträng).
+define('PRODUCT_MATCH', 'euro-super');
+
+// EU-27: bulletinens landskoder (GR = Grekland; Eurostat använder EL).
+// Befolkning: Eurostat, 1 januari 2025, avrundat till tusental. Redigerbar.
+// Källår deklareras i gränssnittet (D5: deklarerade skalor gäller även vikter).
+const COUNTRIES = [
+  'AT' => ['name_en'=>'Austria',    'name_sv'=>'Österrike',   'pop'=> 9198000],
+  'BE' => ['name_en'=>'Belgium',    'name_sv'=>'Belgien',     'pop'=>11855000],
+  'BG' => ['name_en'=>'Bulgaria',   'name_sv'=>'Bulgarien',   'pop'=> 6437000],
+  'HR' => ['name_en'=>'Croatia',    'name_sv'=>'Kroatien',    'pop'=> 3850000],
+  'CY' => ['name_en'=>'Cyprus',     'name_sv'=>'Cypern',      'pop'=>  966000],
+  'CZ' => ['name_en'=>'Czechia',    'name_sv'=>'Tjeckien',    'pop'=>10909000],
+  'DK' => ['name_en'=>'Denmark',    'name_sv'=>'Danmark',     'pop'=> 5992000],
+  'EE' => ['name_en'=>'Estonia',    'name_sv'=>'Estland',     'pop'=> 1369000],
+  'FI' => ['name_en'=>'Finland',    'name_sv'=>'Finland',     'pop'=> 5635000],
+  'FR' => ['name_en'=>'France',     'name_sv'=>'Frankrike',   'pop'=>68606000],
+  'DE' => ['name_en'=>'Germany',    'name_sv'=>'Tyskland',    'pop'=>83560000],
+  'GR' => ['name_en'=>'Greece',     'name_sv'=>'Grekland',    'pop'=>10400000],
+  'HU' => ['name_en'=>'Hungary',    'name_sv'=>'Ungern',      'pop'=> 9539000],
+  'IE' => ['name_en'=>'Ireland',    'name_sv'=>'Irland',      'pop'=> 5439000],
+  'IT' => ['name_en'=>'Italy',      'name_sv'=>'Italien',     'pop'=>58934000],
+  'LV' => ['name_en'=>'Latvia',     'name_sv'=>'Lettland',    'pop'=> 1857000],
+  'LT' => ['name_en'=>'Lithuania',  'name_sv'=>'Litauen',     'pop'=> 2890000],
+  'LU' => ['name_en'=>'Luxembourg', 'name_sv'=>'Luxemburg',   'pop'=>  681000],
+  'MT' => ['name_en'=>'Malta',      'name_sv'=>'Malta',       'pop'=>  574000],
+  'NL' => ['name_en'=>'Netherlands','name_sv'=>'Nederländerna','pop'=>18048000],
+  'PL' => ['name_en'=>'Poland',     'name_sv'=>'Polen',       'pop'=>36622000],
+  'PT' => ['name_en'=>'Portugal',   'name_sv'=>'Portugal',    'pop'=>10639000],
+  'RO' => ['name_en'=>'Romania',    'name_sv'=>'Rumänien',    'pop'=>19064000],
+  'SK' => ['name_en'=>'Slovakia',   'name_sv'=>'Slovakien',   'pop'=> 5417000],
+  'SI' => ['name_en'=>'Slovenia',   'name_sv'=>'Slovenien',   'pop'=> 2130000],
+  'ES' => ['name_en'=>'Spain',      'name_sv'=>'Spanien',     'pop'=>49077000],
+  'SE' => ['name_en'=>'Sweden',     'name_sv'=>'Sverige',     'pop'=>10588000],
+];
+
+// Rimlighetsgränser för svenskt pumppris i SEK/liter (importvalidering, D-beslut:
+// hellre stoppa en import än att tyst lagra en enhetsglidning; jfr README §Verifiering).
+define('SANITY_SE_MIN', 6.0);   // historiskt minimum ~8 kr (2005) med marginal
+define('SANITY_SE_MAX', 40.0);

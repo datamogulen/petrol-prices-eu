@@ -1,0 +1,171 @@
+{
+ "date": "2026-07-27",
+ "sek_per_eur": 11.0445,
+ "is_seed": true,
+ "source": "EU-kommissionens Weekly Oil Bulletin nr 2318 (Euro-super 95, med skatt); ECB-referenskurs",
+ "note": "Seed-data avrundad till 2 decimaler. Ersätts med exakta värden + nettopriser vid första körningen av update.php.",
+ "prices": {
+  "DK": {
+   "eur": 2.49,
+   "sek": 27.5,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "NL": {
+   "eur": 2.39,
+   "sek": 26.4,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "DE": {
+   "eur": 2.19,
+   "sek": 24.19,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "FI": {
+   "eur": 2.18,
+   "sek": 24.08,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "FR": {
+   "eur": 2.06,
+   "sek": 22.75,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "GR": {
+   "eur": 2.02,
+   "sek": 22.31,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "PT": {
+   "eur": 1.99,
+   "sek": 21.98,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "IT": {
+   "eur": 1.96,
+   "sek": 21.65,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "BE": {
+   "eur": 1.89,
+   "sek": 20.87,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "LV": {
+   "eur": 1.89,
+   "sek": 20.87,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "AT": {
+   "eur": 1.87,
+   "sek": 20.65,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "EE": {
+   "eur": 1.81,
+   "sek": 19.99,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "LT": {
+   "eur": 1.79,
+   "sek": 19.77,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "RO": {
+   "eur": 1.77,
+   "sek": 19.55,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "IE": {
+   "eur": 1.76,
+   "sek": 19.44,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "LU": {
+   "eur": 1.76,
+   "sek": 19.44,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "SK": {
+   "eur": 1.76,
+   "sek": 19.44,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "CZ": {
+   "eur": 1.75,
+   "sek": 19.33,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "PL": {
+   "eur": 1.72,
+   "sek": 19.0,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "HU": {
+   "eur": 1.66,
+   "sek": 18.33,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "ES": {
+   "eur": 1.64,
+   "sek": 18.11,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "SI": {
+   "eur": 1.63,
+   "sek": 18.0,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "HR": {
+   "eur": 1.62,
+   "sek": 17.89,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "CY": {
+   "eur": 1.52,
+   "sek": 16.79,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "BG": {
+   "eur": 1.51,
+   "sek": 16.68,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "SE": {
+   "eur": 1.45,
+   "sek": 16.01,
+   "eur_net": null,
+   "sek_net": null
+  },
+  "MT": {
+   "eur": 1.34,
+   "sek": 14.8,
+   "eur_net": null,
+   "sek_net": null
+  }
+ }
+}
