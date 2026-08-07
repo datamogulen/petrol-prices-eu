@@ -96,27 +96,28 @@
 </nav>
 
 <div class="controls">
-  <span class="grp">
+  <span class="grp" id="dateGrp">
     <label id="l_date"></label>
     <button id="datePrev" title="&larr;">&#9664;</button>
     <select id="dateSel"></select>
     <button id="dateNext" title="&rarr;">&#9654;</button>
   </span>
-  <span class="grp">
+  <span class="grp" id="fuelGrp">
     <label id="l_fuel"></label>
     <select id="fuelSel">
       <option value="petrol"></option>
       <option value="diesel"></option>
     </select>
   </span>
-  <span class="grp">
+  <span class="grp" id="basisGrp">
     <label id="l_basis"></label>
     <select id="basisSel">
       <option value="nom"></option>
       <option value="ppp"></option>
+      <option value="time"></option>
     </select>
   </span>
-  <span class="grp">
+  <span class="grp" id="colorGrp">
     <label id="l_color"></label>
     <select id="colorSel">
       <option value="quartile"></option>
@@ -157,6 +158,7 @@
   <section class="view" id="view_hist">
     <div class="chips" id="histChips"></div>
     <div class="chartbox"><div id="histChart"></div></div>
+    <div class="legend" id="histLegend"></div>
     <p class="caption" id="histCaption"></p>
   </section>
 
@@ -176,36 +178,38 @@
  *  Landsmetadata (inlinad så att sidan fungerar statiskt via seed.json).
  *  pop: Eurostat 1 jan 2025. pli: Eurostat prc_ppp_ind, PLI_EU27_2020,
  *  A01 "Actual individual consumption", 2024, EU27=100 (hämtat 2026-08-07).
+ *  wage: nettotimlön i EUR = Eurostat earn_nt_net 2024 (ensamstående utan
+ *  barn, 100 % av genomsnittslön, EUR) / 2080 h (hämtat 2026-08-07).
  *  Samma tabeller finns i config.php – ändras den ena, ändra båda.
  * ===================================================================== */
 const META = {
-  AT:{sv:'Österrike',en:'Austria',pop:9198000,pli:119.7},
-  BE:{sv:'Belgien',en:'Belgium',pop:11855000,pli:118.7},
-  BG:{sv:'Bulgarien',en:'Bulgaria',pop:6437000,pli:56.9},
-  HR:{sv:'Kroatien',en:'Croatia',pop:3850000,pli:73.3},
-  CY:{sv:'Cypern',en:'Cyprus',pop:966000,pli:95.1},
-  CZ:{sv:'Tjeckien',en:'Czechia',pop:10909000,pli:80.2},
-  DK:{sv:'Danmark',en:'Denmark',pop:5992000,pli:142.8},
-  EE:{sv:'Estland',en:'Estonia',pop:1369000,pli:96.5},
-  FI:{sv:'Finland',en:'Finland',pop:5635000,pli:127.2},
-  FR:{sv:'Frankrike',en:'France',pop:68606000,pli:107.9},
-  DE:{sv:'Tyskland',en:'Germany',pop:83560000,pli:109.1},
-  GR:{sv:'Grekland',en:'Greece',pop:10400000,pli:83.0},
-  HU:{sv:'Ungern',en:'Hungary',pop:9539000,pli:68.3},
-  IE:{sv:'Irland',en:'Ireland',pop:5439000,pli:141.2},
-  IT:{sv:'Italien',en:'Italy',pop:58934000,pli:98.1},
-  LV:{sv:'Lettland',en:'Latvia',pop:1857000,pli:77.2},
-  LT:{sv:'Litauen',en:'Lithuania',pop:2890000,pli:78.2},
-  LU:{sv:'Luxemburg',en:'Luxembourg',pop:681000,pli:150.7},
-  MT:{sv:'Malta',en:'Malta',pop:574000,pli:93.1},
-  NL:{sv:'Nederländerna',en:'Netherlands',pop:18048000,pli:121.0},
-  PL:{sv:'Polen',en:'Poland',pop:36622000,pli:70.2},
-  PT:{sv:'Portugal',en:'Portugal',pop:10639000,pli:85.0},
-  RO:{sv:'Rumänien',en:'Romania',pop:19064000,pli:57.4},
-  SK:{sv:'Slovakien',en:'Slovakia',pop:5417000,pli:81.1},
-  SI:{sv:'Slovenien',en:'Slovenia',pop:2130000,pli:91.0},
-  ES:{sv:'Spanien',en:'Spain',pop:49077000,pli:90.7},
-  SE:{sv:'Sverige',en:'Sweden',pop:10588000,pli:123.0},
+  AT:{sv:'Österrike',en:'Austria',pop:9198000,pli:119.7,wage:17.22},
+  BE:{sv:'Belgien',en:'Belgium',pop:11855000,pli:118.7,wage:16.10},
+  BG:{sv:'Bulgarien',en:'Bulgaria',pop:6437000,pli:56.9,wage:5.71},
+  HR:{sv:'Kroatien',en:'Croatia',pop:3850000,pli:73.3,wage:7.61},
+  CY:{sv:'Cypern',en:'Cyprus',pop:966000,pli:95.1,wage:10.98},
+  CZ:{sv:'Tjeckien',en:'Czechia',pop:10909000,pli:80.2,wage:8.72},
+  DK:{sv:'Danmark',en:'Denmark',pop:5992000,pli:142.8,wage:19.32},
+  EE:{sv:'Estland',en:'Estonia',pop:1369000,pli:96.5,wage:9.47},
+  FI:{sv:'Finland',en:'Finland',pop:5635000,pli:127.2,wage:15.84},
+  FR:{sv:'Frankrike',en:'France',pop:68606000,pli:107.9,wage:14.48},
+  DE:{sv:'Tyskland',en:'Germany',pop:83560000,pli:109.1,wage:14.49},
+  GR:{sv:'Grekland',en:'Greece',pop:10400000,pli:83.0,wage:6.61},
+  HU:{sv:'Ungern',en:'Hungary',pop:9539000,pli:68.3,wage:5.77},
+  IE:{sv:'Irland',en:'Ireland',pop:5439000,pli:141.2,wage:20.37},
+  IT:{sv:'Italien',en:'Italy',pop:58934000,pli:98.1,wage:11.52},
+  LV:{sv:'Lettland',en:'Latvia',pop:1857000,pli:77.2,wage:7.43},
+  LT:{sv:'Litauen',en:'Lithuania',pop:2890000,pli:78.2,wage:8.38},
+  LU:{sv:'Luxemburg',en:'Luxembourg',pop:681000,pli:150.7,wage:25.01},
+  MT:{sv:'Malta',en:'Malta',pop:574000,pli:93.1,wage:11.52},
+  NL:{sv:'Nederländerna',en:'Netherlands',pop:18048000,pli:121.0,wage:16.45},
+  PL:{sv:'Polen',en:'Poland',pop:36622000,pli:70.2,wage:7.23},
+  PT:{sv:'Portugal',en:'Portugal',pop:10639000,pli:85.0,wage:9.06},
+  RO:{sv:'Rumänien',en:'Romania',pop:19064000,pli:57.4,wage:5.92},
+  SK:{sv:'Slovakien',en:'Slovakia',pop:5417000,pli:81.1,wage:7.20},
+  SI:{sv:'Slovenien',en:'Slovenia',pop:2130000,pli:91.0,wage:10.25},
+  ES:{sv:'Spanien',en:'Spain',pop:49077000,pli:90.7,wage:11.80},
+  SE:{sv:'Sverige',en:'Sweden',pop:10588000,pli:123.0,wage:15.97},
 };
 
 /* Deklarerade skalor (O2/D5): identiska för alla vyer, datum och exporter. */
@@ -216,16 +220,25 @@ const SCALE = {
   CURVE_DEPTH: 20,        // kurvremsans djup i mm
   MAP_K: 5,               // karta: mm per breddgrad
   COS52: Math.cos(52 * Math.PI / 180),
-  PLATE_MM: 2,            // kartans basplatta (egen STL, nollplan = plattans ovansida)
+  PLATE_MM: 2,            // basplatta karta + kurva (nollplan = plattans ovansida)
   CTX_MM: 0.8,            // kontextländernas platta höjd
   MIN_AREA_MM2: 1.0,      // småöar under denna projicerade yta utelämnas (D6)
   FIXED_BREAKS: [10, 15, 20],  // fasta kronklasser (kr/l), absolut läsning
+  TIME_BREAKS: [8, 12, 16],    // fasta klasser i tidprisläget (min arbete/l)
+  WAGE_HOURS: 2080,            // årsnettolön -> timlön: 52 veckor x 40 h (deklarerat)
+  LABEL_BAND: 36,         // etikettbandets djup (titel + QR) på basplattan
+  TEXT_RAISE: 0.6,        // upphöjd text/QR (egen STL i kontrastfärg)
+  TEXT_ENGRAVE: 0.6,      // gravyrdjup i plattans undersida
+  TEXT_PIXEL: 1.4,        // pixelstorlek titeltext (teckenhöjd 9,8 mm)
+  UNDER_PIXEL: 1.2,       // pixelstorlek undersidetext (teckenhöjd 8,4 mm)
+  QR_MODULE: 0.8,         // QR-modulstorlek i mm (v4 = 33 moduler = 26,4 mm)
 };
 const KM_PER_DEG_LAT = 111.13;
 
 const COLORS = {
   q: ['#5E8C5A', '#B9B84B', '#D89040', '#B5443C'],
   net: '#4E7AA8', tax: '#C05B4D', ctx: '#C9C2B4', plate: '#DDD6C6', ref: '#8A8073',
+  text: '#2B2620',
 };
 
 /* =====================================================================
@@ -239,13 +252,16 @@ const I18N = {
     l_ctx: 'Grannländer', l_ref: 'Referensstapel (EU-medel)', l_split: 'Dela remsan i två delar',
     fuel_petrol: 'Bensin 95', fuel_diesel: 'Diesel',
     basis_nom: 'Nominellt (kr/l)', basis_ppp: 'PPP-justerat (kr/l)',
+    basis_time: 'Tidpris (min arbete/l)',
+    time_note: 'Tidpris: pris i EUR × 60 / nettotimlön (Eurostat 2024, ensamstående 100 % av genomsnittslön, årslön/2080 h). Läs: så många minuter arbetar en genomsnittlig löntagare för en liter. Se Om/Metod.',
+    hist_no_time: 'Tidpris visas inte i historiken (lönehistorik saknas – ett fast löneår vore vilseledande över 20 år; se Om/Metod). Visar nominella kr/l.',
     color_quartile: 'Kvartiler (per datum)', color_fixed: 'Fasta kronklasser', color_tax: 'Netto + skatt',
     export: 'Exportera STL', export_na: 'STL-export finns för Priskurva och Karta',
     seed_banner: 'Visar statisk seed-data ({date}). Backend (api.php) nås inte – historik och andra datum är inte tillgängliga.',
     loading: 'Laddar …', no_data: 'Ingen data för valet.',
     eu_mean: 'EU-medel (befolkningsviktat)', tax_part: 'Skatt', net_part: 'Nettopris',
     quartile_lbl: ['Kvartil 1 (lägst)', 'Kvartil 2', 'Kvartil 3', 'Kvartil 4 (högst)'],
-    fixed_lbl: b => [`< ${b[0]} kr/l`, `${b[0]}–${b[1]} kr/l`, `${b[1]}–${b[2]} kr/l`, `≥ ${b[2]} kr/l`],
+    fixed_lbl: (b, u) => [`< ${b[0]} ${u}`, `${b[0]}–${b[1]} ${u}`, `${b[1]}–${b[2]} ${u}`, `≥ ${b[2]} ${u}`],
     ctx_lbl: 'Utanför EU-27 (kontext)',
     curve_caption: 'Form F6, fördelningsuppveckling: länder sorterade från lägst till högst pris; stapelbredd ∝ befolkning (1 mm = 2 milj. inv. i utskrift), höjd = pris (1 mm = 1 kr/l). Kurvan är EU:s befolkningsviktade kvantilfunktion: avläs hur många människor som bor på varje prisnivå. Befolkning: Eurostat 1 jan 2025.',
     map_caption: 'Form F1, geospatial extrudering: höjd = pris (1 mm = 1 kr/l), ekvirektangulär projektion skalad med cos 52°. Dra för att rotera, skrolla för zoom, klicka på ett land för att lägga till det i historiken. OBS areafällan (D11): stora länder dominerar synintrycket vid samma höjd – Sverige ser "större" ut än Nederländerna trots lägre pris. Priskurvan är motviktet: där är bredd = människor.',
@@ -256,8 +272,9 @@ const I18N = {
     ppp_note: 'PPP-justering: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
     tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
     milj: 'milj.',
-    min: 'min', max: 'max',
-    foot: 'Källa: European Commission Weekly Oil Bulletin (CC BY-NC-ND). Befolkning: Eurostat (1 jan 2025). Prisnivåindex: Eurostat prc_ppp_ind (A01, 2024). Sidan lagrar inget lokalt; alla val ligger i URL:en.',
+    min: 'min', max: 'max', minmax_lbl: 'seriens min/max',
+    lang_switch: 'Switch to English',
+    foot: 'Källa: European Commission Weekly Oil Bulletin (CC BY-NC-ND). Befolkning: Eurostat (1 jan 2025). Prisnivåindex: Eurostat prc_ppp_ind (A01, 2024). Nettolöner: Eurostat earn_nt_net (2024). Sidan lagrar inget lokalt; alla val ligger i URL:en.',
     last_update: 'Senast uppdaterad',
     date_of: 'priser per',
     followsedel_name: 'FOLJESEDEL.txt',
@@ -271,13 +288,16 @@ const I18N = {
     l_ctx: 'Neighbouring countries', l_ref: 'Reference bar (EU mean)', l_split: 'Split strip in two parts',
     fuel_petrol: 'Petrol 95', fuel_diesel: 'Diesel',
     basis_nom: 'Nominal (SEK/l)', basis_ppp: 'PPP-adjusted (SEK/l)',
+    basis_time: 'Time price (min of work/l)',
+    time_note: 'Time price: price in EUR × 60 / net hourly earnings (Eurostat 2024, single person at 100% of average wage, annual pay/2080 h). Read: this many minutes an average earner works for one litre. See About/Method.',
+    hist_no_time: 'Time price is not shown in the history view (no wage history – a fixed wage year would mislead across 20 years; see About/Method). Showing nominal SEK/l.',
     color_quartile: 'Quartiles (per date)', color_fixed: 'Fixed SEK classes', color_tax: 'Net + tax',
     export: 'Export STL', export_na: 'STL export is available for Price curve and Map',
     seed_banner: 'Showing static seed data ({date}). Backend (api.php) unreachable – history and other dates are unavailable.',
     loading: 'Loading …', no_data: 'No data for this selection.',
     eu_mean: 'EU mean (population-weighted)', tax_part: 'Tax', net_part: 'Net price',
     quartile_lbl: ['Quartile 1 (lowest)', 'Quartile 2', 'Quartile 3', 'Quartile 4 (highest)'],
-    fixed_lbl: b => [`< ${b[0]} SEK/l`, `${b[0]}–${b[1]} SEK/l`, `${b[1]}–${b[2]} SEK/l`, `≥ ${b[2]} SEK/l`],
+    fixed_lbl: (b, u) => [`< ${b[0]} ${u}`, `${b[0]}–${b[1]} ${u}`, `${b[1]}–${b[2]} ${u}`, `≥ ${b[2]} ${u}`],
     ctx_lbl: 'Outside EU-27 (context)',
     curve_caption: 'Form F6, distribution unfolding: countries sorted from lowest to highest price; bar width ∝ population (1 mm = 2 million people in print), height = price (1 mm = 1 SEK/l). The curve is the EU population-weighted quantile function: read off how many people live at each price level. Population: Eurostat 1 Jan 2025.',
     map_caption: 'Form F1, geospatial extrusion: height = price (1 mm = 1 SEK/l), equirectangular projection scaled by cos 52°. Drag to rotate, scroll to zoom, click a country to add it to the history view. Note the area trap (D11): large countries dominate the visual impression at equal height – Sweden looks "bigger" than the Netherlands despite a lower price. The price curve is the counterweight: there, width = people.',
@@ -288,8 +308,9 @@ const I18N = {
     ppp_note: 'PPP adjustment: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
     tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
     milj: 'M',
-    min: 'min', max: 'max',
-    foot: 'Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND). Population: Eurostat (1 Jan 2025). Price level indices: Eurostat prc_ppp_ind (A01, 2024). Nothing is stored locally; all choices live in the URL.',
+    min: 'min', max: 'max', minmax_lbl: 'series min/max',
+    lang_switch: 'Byt till svenska',
+    foot: 'Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND). Population: Eurostat (1 Jan 2025). Price level indices: Eurostat prc_ppp_ind (A01, 2024). Net earnings: Eurostat earn_nt_net (2024). Nothing is stored locally; all choices live in the URL.',
     last_update: 'Last updated',
     date_of: 'prices as of',
     followsedel_name: 'README.txt',
@@ -307,11 +328,13 @@ const S = {
 };
 function readURL() {
   const p = new URLSearchParams(location.search);
+  // Default: webbläsarens språk (svenska → sv, allt annat → en); URL-param vinner.
+  S.lang = (navigator.language || 'sv').toLowerCase().startsWith('sv') ? 'sv' : 'en';
   if (['sv','en'].includes(p.get('lang'))) S.lang = p.get('lang');
   if (['curve','map','hist','about'].includes(p.get('view'))) S.view = p.get('view');
   if (/^\d{4}-\d{2}-\d{2}$/.test(p.get('date') || '')) S.date = p.get('date');
   if (['petrol','diesel'].includes(p.get('fuel'))) S.fuel = p.get('fuel');
-  if (['nom','ppp'].includes(p.get('basis'))) S.basis = p.get('basis');
+  if (['nom','ppp','time'].includes(p.get('basis'))) S.basis = p.get('basis');
   if (['quartile','fixed','tax'].includes(p.get('color'))) S.color = p.get('color');
   if (p.get('ctx') === '0') S.ctx = false;
   if (p.get('hist')) S.hist = p.get('hist').split(',').filter(c => META[c]).slice(0, 10);
@@ -367,6 +390,14 @@ async function payloadFor(date) {
  *  Prislogik: justering, sortering, klassning
  * ===================================================================== */
 function pliAdj(cc) { return S.basis === 'ppp' ? META.SE.pli / META[cc].pli : 1; }
+/** Enhet för värdeaxeln i valt prisläge. */
+function unit() { return S.basis === 'time' ? 'min/l' : 'kr/l'; }
+/** Justerat värde: nominellt (kr/l), PPP (kr/l) eller tidpris (min arbete/l). */
+function adjVal(cc, eur, sek) {
+  if (S.basis === 'time') return eur == null ? null : eur * 60 / META[cc].wage;
+  if (S.basis === 'ppp')  return sek == null ? null : sek * META.SE.pli / META[cc].pli;
+  return sek;
+}
 
 /** Radlista för valt datum+bränsle+prisläge: [{cc,tot,net,tax,pop}] sorterad stigande. */
 function rowsFor(payload) {
@@ -374,10 +405,9 @@ function rowsFor(payload) {
   const rows = [];
   for (const cc of Object.keys(META)) {
     const e = f[cc];
-    if (!e || e.sek == null) continue;
-    const a = pliAdj(cc);
-    const tot = e.sek * a;
-    const net = e.sek_net != null ? e.sek_net * a : null;
+    if (!e || e.sek == null || e.eur == null) continue;
+    const tot = adjVal(cc, e.eur, e.sek);
+    const net = adjVal(cc, e.eur_net, e.sek_net);
     rows.push({ cc, tot, net, tax: net != null ? tot - net : null, pop: META[cc].pop });
   }
   rows.sort((a, b) => a.tot - b.tot);
@@ -398,7 +428,8 @@ function quartileBreaks(rows) {
   return [q(.25), q(.5), q(.75)];
 }
 function activeBreaks(rows) {
-  return S.color === 'fixed' ? SCALE.FIXED_BREAKS : quartileBreaks(rows);
+  if (S.color !== 'fixed') return quartileBreaks(rows);
+  return S.basis === 'time' ? SCALE.TIME_BREAKS : SCALE.FIXED_BREAKS;
 }
 function classOf(tot, breaks) {
   return tot < breaks[0] ? 0 : tot < breaks[1] ? 1 : tot < breaks[2] ? 2 : 3;
@@ -810,6 +841,267 @@ function buildCurveSolids(items, depth) {
   return out;
 }
 /* =====================================================================
+ *  Text- och QR-geometri (D10, reviderad på beställarens begäran):
+ *  upphöjd titel + QR-kod på etikettband (egen STL i kontrastfärg),
+ *  graverad text på undersidan (byggs konstruktivt, ingen CSG).
+ * ===================================================================== */
+
+/** 5x7-pixelfont, versaler. Rad 0 = överst, 5 bitar per rad (MSB vänster). */
+const FONT57 = {
+  'A':[0x0E,0x11,0x11,0x1F,0x11,0x11,0x11],'B':[0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E],
+  'C':[0x0E,0x11,0x10,0x10,0x10,0x11,0x0E],'D':[0x1E,0x11,0x11,0x11,0x11,0x11,0x1E],
+  'E':[0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F],'F':[0x1F,0x10,0x10,0x1E,0x10,0x10,0x10],
+  'G':[0x0E,0x11,0x10,0x17,0x11,0x11,0x0F],'H':[0x11,0x11,0x11,0x1F,0x11,0x11,0x11],
+  'I':[0x0E,0x04,0x04,0x04,0x04,0x04,0x0E],'J':[0x07,0x02,0x02,0x02,0x02,0x12,0x0C],
+  'K':[0x11,0x12,0x14,0x18,0x14,0x12,0x11],'L':[0x10,0x10,0x10,0x10,0x10,0x10,0x1F],
+  'M':[0x11,0x1B,0x15,0x15,0x11,0x11,0x11],'N':[0x11,0x19,0x15,0x13,0x11,0x11,0x11],
+  'O':[0x0E,0x11,0x11,0x11,0x11,0x11,0x0E],'P':[0x1E,0x11,0x11,0x1E,0x10,0x10,0x10],
+  'Q':[0x0E,0x11,0x11,0x11,0x15,0x12,0x0D],'R':[0x1E,0x11,0x11,0x1E,0x14,0x12,0x11],
+  'S':[0x0F,0x10,0x10,0x0E,0x01,0x01,0x1E],'T':[0x1F,0x04,0x04,0x04,0x04,0x04,0x04],
+  'U':[0x11,0x11,0x11,0x11,0x11,0x11,0x0E],'V':[0x11,0x11,0x11,0x11,0x11,0x0A,0x04],
+  'W':[0x11,0x11,0x11,0x15,0x15,0x15,0x0A],'X':[0x11,0x11,0x0A,0x04,0x0A,0x11,0x11],
+  'Y':[0x11,0x11,0x0A,0x04,0x04,0x04,0x04],'Z':[0x1F,0x01,0x02,0x04,0x08,0x10,0x1F],
+  '0':[0x0E,0x11,0x13,0x15,0x19,0x11,0x0E],'1':[0x04,0x0C,0x04,0x04,0x04,0x04,0x0E],
+  '2':[0x0E,0x11,0x01,0x06,0x08,0x10,0x1F],'3':[0x1F,0x02,0x04,0x02,0x01,0x11,0x0E],
+  '4':[0x02,0x06,0x0A,0x12,0x1F,0x02,0x02],'5':[0x1F,0x10,0x1E,0x01,0x01,0x11,0x0E],
+  '6':[0x06,0x08,0x10,0x1E,0x11,0x11,0x0E],'7':[0x1F,0x01,0x02,0x04,0x08,0x08,0x08],
+  '8':[0x0E,0x11,0x11,0x0E,0x11,0x11,0x0E],'9':[0x0E,0x11,0x11,0x0F,0x01,0x02,0x0C],
+  '-':[0x00,0x00,0x00,0x1F,0x00,0x00,0x00],'.':[0x00,0x00,0x00,0x00,0x00,0x0C,0x0C],
+  ':':[0x00,0x0C,0x0C,0x00,0x0C,0x0C,0x00],'/':[0x01,0x01,0x02,0x04,0x08,0x10,0x10],
+  '=':[0x00,0x00,0x1F,0x00,0x1F,0x00,0x00],'?':[0x0E,0x11,0x01,0x02,0x04,0x00,0x04],
+  '&':[0x0C,0x12,0x14,0x08,0x15,0x12,0x0D],' ':[0,0,0,0,0,0,0],
+};
+
+/** Text -> rektanglar (radvis sammanslagna pixelkörningar), origo nere-vänster. */
+function textRects(text, px) {
+  const rects = []; let cx = 0;
+  const norm = text.toUpperCase()
+    .replace(/[ÅÄ]/g, 'A').replace(/Ö/g, 'O').replace(/É/g, 'E');
+  for (const ch of norm) {
+    const g = FONT57[ch] || FONT57[' '];
+    for (let row = 0; row < 7; row++) {
+      let run = -1;
+      for (let col = 0; col <= 5; col++) {
+        const on = col < 5 && ((g[row] >> (4 - col)) & 1);
+        if (on && run < 0) run = col;
+        if (!on && run >= 0) {
+          rects.push({ x0: cx + run * px, x1: cx + col * px,
+                       y0: (6 - row) * px, y1: (7 - row) * px });
+          run = -1;
+        }
+      }
+    }
+    cx += 6 * px;
+  }
+  return { rects, w: Math.max(0, cx - px), h: 7 * px };
+}
+
+/**
+ * QR-kod (byte-läge, ECC-nivå L, mask 0, version 1–4 = upp till 78 tecken).
+ * Egen implementation utan beroenden; layout enligt ISO/IEC 18004.
+ * Returnerar {size, get(x,y)} där rad 0 = överst.
+ */
+function qrMatrix(text) {
+  const bytes = [];
+  for (const ch of text) {
+    const c = ch.codePointAt(0);
+    if (c > 255) throw new Error('QR: endast Latin-1-tecken');
+    bytes.push(c);
+  }
+  const CAP = { 1: [26, 19], 2: [44, 34], 3: [70, 55], 4: [100, 80] };
+  let ver = 0;
+  for (const v of [1, 2, 3, 4]) if (bytes.length <= CAP[v][1] - 2) { ver = v; break; }
+  if (!ver) throw new Error('QR: texten är för lång (' + bytes.length + ' tecken)');
+  const [total, dataLen] = CAP[ver], eccLen = total - dataLen;
+
+  // Bitström: 0100 | längd (8 bitar) | data | terminator | pad-bytes
+  const bits = [];
+  const push = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+  push(4, 4); push(bytes.length, 8);
+  for (const b of bytes) push(b, 8);
+  push(0, Math.min(4, dataLen * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+    data.push(b);
+  }
+  const PAD = [0xEC, 0x11];
+  for (let i = 0; data.length < dataLen; i ^= 1) data.push(PAD[i]);
+
+  // Reed-Solomon över GF(256), reduktionspolynom 0x11D (en block-grupp v1–4/L)
+  const EXP = new Array(512), LOG = new Array(256);
+  for (let i = 0, x = 1; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+  let gen = [1];
+  for (let i = 0; i < eccLen; i++) {
+    const q = [1, EXP[i]], r = new Array(gen.length + 1).fill(0);
+    for (let a = 0; a < gen.length; a++) for (let b = 0; b < 2; b++) r[a + b] ^= mul(gen[a], q[b]);
+    gen = r;
+  }
+  const rem = data.concat(new Array(eccLen).fill(0));
+  for (let i = 0; i < dataLen; i++) {
+    const f = rem[i];
+    if (f) for (let j = 0; j < gen.length; j++) rem[i + j] ^= mul(gen[j], f);
+  }
+  const cw = data.concat(rem.slice(dataLen));
+
+  // Matris
+  const size = 17 + 4 * ver;
+  const M = Array.from({ length: size }, () => new Array(size).fill(null));
+  const set = (x, y, v) => { M[y][x] = v; };
+  const finder = (fx, fy) => {
+    for (let y = -1; y <= 7; y++) for (let x = -1; x <= 7; x++) {
+      const gx = fx + x, gy = fy + y;
+      if (gx < 0 || gx >= size || gy < 0 || gy >= size) continue;
+      const inC = x >= 0 && x <= 6 && y >= 0 && y <= 6;
+      set(gx, gy, inC && (x === 0 || x === 6 || y === 0 || y === 6 ||
+                          (x >= 2 && x <= 4 && y >= 2 && y <= 4)) ? 1 : 0);
+    }
+  };
+  finder(0, 0); finder(size - 7, 0); finder(0, size - 7);
+  for (let i = 8; i < size - 8; i++) {
+    if (M[6][i] === null) M[6][i] = i % 2 === 0 ? 1 : 0;
+    if (M[i][6] === null) M[i][6] = i % 2 === 0 ? 1 : 0;
+  }
+  if (ver >= 2) {   // ett justeringsmönster, centrum (size-7, size-7)
+    const c = size - 7;
+    for (let y = -2; y <= 2; y++) for (let x = -2; x <= 2; x++)
+      set(c + x, c + y, Math.max(Math.abs(x), Math.abs(y)) !== 1 ? 1 : 0);
+  }
+  // Formatinformation: ECC L (01), mask 0 -> BCH(15,5) + XOR-maskering
+  const fmt = (0b01 << 3) | 0;
+  let bch = fmt;
+  for (let i = 0; i < 10; i++) bch = (bch << 1) ^ ((bch >> 9) * 0x537);
+  const fbits = ((fmt << 10) | bch) ^ 0x5412;
+  const fbit = i => (fbits >> i) & 1;
+  for (let i = 0; i <= 5; i++) set(8, i, fbit(i));
+  set(8, 7, fbit(6)); set(8, 8, fbit(7)); set(7, 8, fbit(8));
+  for (let i = 9; i < 15; i++) set(14 - i, 8, fbit(i));
+  for (let i = 0; i < 8; i++) set(size - 1 - i, 8, fbit(i));
+  for (let i = 8; i < 15; i++) set(8, size - 15 + i, fbit(i));
+  set(8, size - 8, 1);   // mörk modul
+  // Datautplacering (sicksack) + mask 0
+  let bi = 0; const totalBits = cw.length * 8;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let vert = 0; vert < size; vert++) {
+      for (let j = 0; j < 2; j++) {
+        const x = right - j;
+        const upward = ((right + 1) & 2) === 0;
+        const y = upward ? size - 1 - vert : vert;
+        if (M[y][x] !== null) continue;
+        let bit = 0;
+        if (bi < totalBits) { bit = (cw[bi >> 3] >> (7 - (bi & 7))) & 1; bi++; }
+        if ((x + y) % 2 === 0) bit ^= 1;   // mask 0
+        M[y][x] = bit;
+      }
+    }
+  }
+  return { size, version: ver, get: (x, y) => M[y][x] === 1 };
+}
+
+/** QR-matris -> radvis sammanslagna rektanglar; rad 0 hamnar överst (y-max). */
+function matrixRects(q, m) {
+  const rects = [];
+  for (let row = 0; row < q.size; row++) {
+    let run = -1;
+    for (let col = 0; col <= q.size; col++) {
+      const on = col < q.size && q.get(col, row);
+      if (on && run < 0) run = col;
+      if (!on && run >= 0) {
+        rects.push({ x0: run * m, x1: col * m,
+                     y0: (q.size - 1 - row) * m, y1: (q.size - row) * m });
+        run = -1;
+      }
+    }
+  }
+  return rects;
+}
+
+/**
+ * Rektangulär panel [x0,x1]x[y0,y1]x[z0,z1] med rektangulära hål
+ * (används för graverad undersida: hålen är textpixlarna). Bandsvep:
+ * varje delbox är en egen vattentät solid. Hålen får inte överlappa.
+ */
+function panelBoxes(x0, y0, x1, y1, z0, z1, holes) {
+  const eps = 1e-9, out = [];
+  const ys = new Set([y0, y1]);
+  for (const h of holes) if (h.y1 > y0 + eps && h.y0 < y1 - eps) {
+    ys.add(Math.max(y0, h.y0)); ys.add(Math.min(y1, h.y1));
+  }
+  const yl = [...ys].sort((a, b) => a - b);
+  for (let i = 0; i < yl.length - 1; i++) {
+    const ya = yl[i], yb = yl[i + 1];
+    if (yb - ya < eps) continue;
+    const iv = holes
+      .filter(h => h.y0 <= ya + eps && h.y1 >= yb - eps && h.x1 > x0 + eps && h.x0 < x1 - eps)
+      .map(h => [Math.max(x0, h.x0), Math.min(x1, h.x1)])
+      .sort((a, b) => a[0] - b[0]);
+    let cur = x0;
+    for (const [hx0, hx1] of iv) {
+      if (hx0 > cur + eps) out.push(boxSolid(cur, ya, z0, hx0, yb, z1));
+      cur = Math.max(cur, hx1);
+    }
+    if (x1 > cur + eps) out.push(boxSolid(cur, ya, z0, x1, yb, z1));
+  }
+  return out;
+}
+
+/**
+ * Basplatta med etikett: upphöjd titel + QR på ovansidan (grupp 'text',
+ * egen STL i kontrastfärg) och graverad, x-speglad text i undersidan
+ * (läsbar när objektet vänds). Plattan = övre skiva + bottenskikt med hål.
+ * cfg: {px0,py0,px1,py1, plateMm, raiseMm, engraveMm,
+ *       title:{lines,pixel,x,y}|null, qr:{text,module,x,y}|null,
+ *       under:{lines,pixel,x,y}|null}
+ */
+function labelAndPlate(cfg) {
+  const out = []; let qrSize = 0;
+  if (cfg.title) {
+    let ty = cfg.title.y;
+    for (const line of [...cfg.title.lines].reverse()) {
+      for (const r of textRects(line, cfg.title.pixel).rects) {
+        out.push({ group: 'text', cc: null,
+          tris: boxSolid(cfg.title.x + r.x0, ty + r.y0, 0,
+                         cfg.title.x + r.x1, ty + r.y1, cfg.raiseMm) });
+      }
+      ty += cfg.title.pixel * 9;
+    }
+  }
+  if (cfg.qr) {
+    const q = qrMatrix(cfg.qr.text);
+    qrSize = q.size * cfg.qr.module;
+    for (const r of matrixRects(q, cfg.qr.module)) {
+      out.push({ group: 'text', cc: null,
+        tris: boxSolid(cfg.qr.x + r.x0, cfg.qr.y + r.y0, 0,
+                       cfg.qr.x + r.x1, cfg.qr.y + r.y1, cfg.raiseMm) });
+    }
+  }
+  const holes = [];
+  if (cfg.under) {
+    let uy = cfg.under.y;
+    for (const line of [...cfg.under.lines].reverse()) {
+      for (const r of textRects(line, cfg.under.pixel).rects) {
+        holes.push({ x0: cfg.px0 + cfg.px1 - (cfg.under.x + r.x1),
+                     x1: cfg.px0 + cfg.px1 - (cfg.under.x + r.x0),
+                     y0: uy + r.y0, y1: uy + r.y1 });
+      }
+      uy += cfg.under.pixel * 9;
+    }
+  }
+  const zSplit = -cfg.plateMm + cfg.engraveMm;
+  out.push({ group: 'plate', cc: null,
+             tris: boxSolid(cfg.px0, cfg.py0, zSplit, cfg.px1, cfg.py1, 0) });
+  for (const tris of panelBoxes(cfg.px0, cfg.py0, cfg.px1, cfg.py1,
+                                -cfg.plateMm, zSplit, holes)) {
+    out.push({ group: 'plate', cc: null, tris });
+  }
+  return { solids: out, qrSize };
+}
+
+/* =====================================================================
  *  ZIP-skrivare (utan komprimering) – en nedladdning per export.
  *  Ingår i kärnblocket så att test/stl_check.js kan verifiera arkivet
  *  med en riktig unzip.
@@ -877,12 +1169,13 @@ function groupColor(g) {
   if (g === 'ctx') return COLORS.ctx;
   if (g === 'plate') return COLORS.plate;
   if (g === 'ref') return COLORS.ref;
+  if (g === 'text') return COLORS.text;
   return COLORS.q[+g.slice(1)];
 }
 function groupLabels(breaks) {
   if (S.color === 'tax') return { net: T('net_part'), tax: T('tax_part') };
   const lbl = S.color === 'fixed'
-    ? I18N[S.lang].fixed_lbl(SCALE.FIXED_BREAKS)
+    ? I18N[S.lang].fixed_lbl(S.basis === 'time' ? SCALE.TIME_BREAKS : SCALE.FIXED_BREAKS, unit())
     : T('quartile_lbl').map((l, i) => `${l} ${i === 0 ? '< ' + fmt(breaks[0]) : i === 3 ? '≥ ' + fmt(breaks[2]) : fmt(breaks[i - 1]) + '–' + fmt(breaks[i])}`);
   return { q0: lbl[0], q1: lbl[1], q2: lbl[2], q3: lbl[3] };
 }
@@ -917,7 +1210,7 @@ function renderCurve(payload) {
     s += `<line x1="${ML}" y1="${yPix(v)}" x2="${W - MR}" y2="${yPix(v)}" stroke="#E5DCC8" stroke-width="1"/>`;
     s += `<text x="${ML - 8}" y="${yPix(v) + 4}" text-anchor="end" font-size="12" fill="#6E6558">${v}</text>`;
   }
-  s += `<text x="14" y="${MT + 10}" font-size="12" fill="#6E6558" transform="rotate(-90 14 ${MT + 10})" text-anchor="end">kr/l</text>`;
+  s += `<text x="14" y="${MT + 10}" font-size="12" fill="#6E6558" transform="rotate(-90 14 ${MT + 10})" text-anchor="end">${unit()}</text>`;
 
   let x = ML;
   const bars = [];
@@ -931,7 +1224,7 @@ function renderCurve(payload) {
     x += w;
   });
   s += `<line x1="${ML}" y1="${yPix(mean)}" x2="${W - MR}" y2="${yPix(mean)}" stroke="#2F5A8F" stroke-width="2" stroke-dasharray="8 5"/>`;
-  s += `<text x="${W - MR - 4}" y="${yPix(mean) - 6}" text-anchor="end" font-size="12.5" fill="#2F5A8F" font-weight="600">${T('eu_mean')}: ${fmt(mean)} kr/l</text>`;
+  s += `<text x="${W - MR - 4}" y="${yPix(mean) - 6}" text-anchor="end" font-size="12.5" fill="#2F5A8F" font-weight="600">${T('eu_mean')}: ${fmt(mean)} ${unit()}</text>`;
   s += `<line x1="${ML}" y1="${MT + ph}" x2="${W - MR}" y2="${MT + ph}" stroke="#2B2620" stroke-width="1.5"/>`;
   s += `<text x="${ML}" y="${H - 14}" font-size="12" fill="#6E6558">0</text>`;
   s += `<text x="${W - MR}" y="${H - 14}" text-anchor="end" font-size="12" fill="#6E6558">${Math.round(totalPop / 1e6)} ${T('milj')} (${Math.round(totalPop / SCALE.POP_PER_MM)} mm)</text>`;
@@ -947,15 +1240,17 @@ function renderCurve(payload) {
     const eNom = (payload.fuels[S.fuel] || {})[r.cc] || {};
     showTip(
       `<b>${META[r.cc][S.lang]}</b><br>` +
-      `${T('tt_price')}: ${fmt(r.tot)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
-      (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} kr/l` : '') +
+      `${T('tt_price')}: ${fmt(r.tot)} ${unit()} ` +
+      (S.basis === 'time' ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
+      (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} ${unit()}` : '') +
       `<br>${T('tt_pop')}: ${fmt(r.pop / 1e6, 1)} ${T('milj')}`, ev);
   });
   svg.addEventListener('mouseleave', hideTip);
 
   renderLegend('curveLegend', breaks, false);
   document.getElementById('curveCaption').innerHTML =
-    T('curve_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '');
+    T('curve_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note')
+                        : S.basis === 'time' ? '<br>' + T('time_note') : '');
 }
 
 function renderLegend(id, breaks, withCtx) {
@@ -976,16 +1271,52 @@ function renderLegend(id, breaks, withCtx) {
 const MAP = { renderer: null, scene: null, camera: null, meshes: [], az: 0, el: 0.9, R: 380,
               center: [0, 0], dragging: false, moved: 0, lastXY: null, raycaster: null, hoverCC: null };
 
+/** Digital tvilling-URL för QR (via hedin.it:s r/-redirect, ompekbar). */
+const QR_BASE = 'https://hedin.it/r/?p=ppeu';
+function qrStateURL(view) {
+  let u = `${QR_BASE}&d=${S.date}&f=${S.fuel}&b=${S.basis}&c=${S.color}&v=${view}`;
+  if (!S.ctx && view === 'map') u += '&x=0';
+  return u;
+}
+/** Gemensamma textrader för etikettband och undersida (ASCII, versaler). */
+function labelTexts(view) {
+  const basis = S.basis === 'ppp' ? 'PPP'
+              : S.basis === 'time' ? (S.lang === 'sv' ? 'TID' : 'TIME') : 'NOM';
+  const scaleTok = S.basis === 'time' ? '1MM=1MIN' : '1MM=1KR/L';
+  return {
+    title: [`${T('fuel_' + S.fuel)} EU`, `${S.date} ${basis}`],
+    under: ['EC WEEKLY OIL BULLETIN', `CC BY-NC-ND ${scaleTok}`,
+            `${S.date} ${T('fuel_' + S.fuel)} ${basis}`, 'HEDIN.IT/R/?P=PPEU'],
+    qr: qrStateURL(view),
+  };
+}
+
 function mapSolidsForState(payload) {
   const rows = rowsFor(payload);
   const breaks = activeBreaks(rows);
   const byCC = {};
   rows.forEach(r => byCC[r.cc] = r);
-  return buildMapSolids(GEO.features, {
+  const solids = buildMapSolids(GEO.features, {
     k: SCALE.MAP_K, cos52: SCALE.COS52, minArea: SCALE.MIN_AREA_MM2,
-    ctx: S.ctx, ctxHeight: SCALE.CTX_MM, plate: true, plateMm: SCALE.PLATE_MM,
+    ctx: S.ctx, ctxHeight: SCALE.CTX_MM, plate: false, plateMm: SCALE.PLATE_MM,
     segmentsFor: cc => byCC[cc] ? segmentsForRow(byCC[cc], breaks) : null,
   });
+  // Basplatta med etikettband under kartan: upphöjd titel + QR, graverad undersida.
+  const bb = solids.bbox;
+  const m = 3, band = SCALE.LABEL_BAND;
+  const px0 = bb[0] - m, px1 = bb[2] + m, py1 = bb[3] + m, py0 = bb[1] - m - band;
+  const txt = labelTexts('map');
+  const qrSide = 33 * SCALE.QR_MODULE;   // v4 räcker för tvilling-URL:en
+  const lp = labelAndPlate({
+    px0, py0, px1, py1, plateMm: SCALE.PLATE_MM,
+    raiseMm: SCALE.TEXT_RAISE, engraveMm: SCALE.TEXT_ENGRAVE,
+    title: { lines: txt.title, pixel: SCALE.TEXT_PIXEL, x: px0 + 5, y: py0 + 5 },
+    qr: { text: txt.qr, module: SCALE.QR_MODULE, x: px1 - 5 - qrSide, y: py0 + 4 },
+    under: { lines: txt.under, pixel: SCALE.UNDER_PIXEL, x: px0 + 8, y: py0 + 8 },
+  });
+  const all = solids.concat(lp.solids);
+  all.bbox = [px0, py0, px1, py1];
+  return all;
 }
 
 function initMap() {
@@ -1012,7 +1343,17 @@ function initMap() {
     if (MAP.dragging) {
       const dx = ev.clientX - MAP.lastXY[0], dy = ev.clientY - MAP.lastXY[1];
       MAP.moved += Math.abs(dx) + Math.abs(dy);
-      MAP.az += dx * 0.006;
+      // "Skivtallriksrotation": vrid som vinkeländring runt kartcentrums
+      // skärmposition, så att den greppade punkten följer handen – att dra
+      // främre kanten åt höger vrider då åt motsatt håll mot bakre kanten.
+      const [cx, cy] = mapCenterOnScreen();
+      const a0 = Math.atan2(MAP.lastXY[1] - cy, MAP.lastXY[0] - cx);
+      const a1 = Math.atan2(ev.clientY - cy, ev.clientX - cx);
+      let da = a1 - a0;
+      if (da > Math.PI) da -= 2 * Math.PI;
+      if (da < -Math.PI) da += 2 * Math.PI;
+      const rad = Math.hypot(ev.clientX - cx, ev.clientY - cy);
+      if (rad > 40) MAP.az += da;   // nära centrum: bara tilt (vinkeln är instabil där)
       MAP.el = Math.min(1.45, Math.max(0.15, MAP.el + dy * 0.006));
       MAP.lastXY = [ev.clientX, ev.clientY];
       placeCamera(); drawMap();
@@ -1040,6 +1381,11 @@ function sizeMap() {
   MAP.camera.aspect = w / h;
   MAP.camera.updateProjectionMatrix();
   drawMap();
+}
+function mapCenterOnScreen() {
+  const v = new THREE.Vector3(MAP.center[0], MAP.center[1], 0).project(MAP.camera);
+  const r = MAP.renderer.domElement.getBoundingClientRect();
+  return [(v.x + 1) / 2 * r.width + r.left, (1 - v.y) / 2 * r.height + r.top];
 }
 function placeCamera() {
   const [cx, cy] = MAP.center;
@@ -1100,7 +1446,8 @@ function renderMap(payload) {
   placeCamera(); sizeMap();
   renderLegend('mapLegend', activeBreaks(rows), true);
   document.getElementById('mapCaption').innerHTML =
-    T('map_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '');
+    T('map_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note')
+                      : S.basis === 'time' ? '<br>' + T('time_note') : '');
 }
 function drawMap() {
   if (MAP.renderer) MAP.renderer.render(MAP.scene, MAP.camera);
@@ -1132,8 +1479,9 @@ function hoverMap(ev) {
     const r = rows.find(x => x.cc === hit.cc);
     if (r) {
       const eNom = (payload.fuels[S.fuel] || {})[hit.cc] || {};
-      showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_price')}: ${fmt(r.tot)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
-        (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} kr/l` : ''), ev);
+      showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_price')}: ${fmt(r.tot)} ${unit()} ` +
+        (S.basis === 'time' ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
+        (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} ${unit()}` : ''), ev);
     } else {
       showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_no_data')}`, ev);
     }
@@ -1165,8 +1513,11 @@ const HIST_PALETTE = ['#2F5A8F', '#B5443C', '#5E8C5A', '#D89040', '#7A5CA0',
 async function renderHist() {
   const chips = document.getElementById('histChips');
   const el = document.getElementById('histChart');
+  // Tidpris kräver lönehistorik – historiken faller tillbaka på nominella kr/l.
+  const noTime = S.basis === 'time';
   document.getElementById('histCaption').innerHTML =
-    T('hist_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '');
+    T('hist_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '') +
+    (noTime ? '<br><strong>' + T('hist_no_time') + '</strong>' : '');
   if (SEED_MODE) {
     chips.innerHTML = '';
     el.innerHTML = `<p class="err">${T('hist_needs_api')}</p>`;
@@ -1207,11 +1558,11 @@ async function renderHist() {
   const series = [];
   S.hist.forEach((cc, i) => {
     const raw = data.series[cc] || [];
-    const a = pliAdj(cc);
+    const a = noTime ? 1 : pliAdj(cc);
     series.push({ name: META[cc][S.lang], color: HIST_PALETTE[i % 10],
                   pts: raw.map(([d, v]) => [d, v * a]) });
   });
-  const meanRaw = S.basis === 'ppp' ? data.eu_mean_ppp : data.eu_mean;
+  const meanRaw = (S.basis === 'ppp') ? data.eu_mean_ppp : data.eu_mean;
   series.push({ name: T('eu_mean'), color: '#2B2620', dash: '7 5', pts: meanRaw });
 
   const W = 1000, H = 520, ML = 56, MR = 16, MT = 16, MB = 40;
@@ -1251,6 +1602,13 @@ async function renderHist() {
   s += `<text x="14" y="${MT + 10}" font-size="12" fill="#6E6558" transform="rotate(-90 14 ${MT + 10})" text-anchor="end">kr/l</text>`;
   s += '</svg>';
   el.innerHTML = s;
+
+  // Legend: linjeprover för varje serie + min/max-förklaring
+  const line = (color, dash) =>
+    `<svg width="26" height="10" style="vertical-align:-1px"><line x1="1" y1="5" x2="25" y2="5" stroke="${color}" stroke-width="2.2"${dash ? ` stroke-dasharray="${dash}"` : ''}/></svg>`;
+  document.getElementById('histLegend').innerHTML =
+    series.map(ser => `<span>${line(ser.color, ser.dash)} ${ser.name}</span>`).join('') +
+    `<span><svg width="14" height="12" style="vertical-align:-2px"><circle cx="7" cy="6" r="4" fill="none" stroke="#6E6558" stroke-width="1.6"/></svg> ${T('minmax_lbl')}</span>`;
 }
 
 /* =====================================================================
@@ -1274,13 +1632,34 @@ PPP-läget använder Eurostats prisnivåindex (prc_ppp_ind, PLI_EU27_2020, kateg
 (PLI<sub>Sverige</sub>/PLI<sub>landet</sub>). Sverige är oförändrat ankare — läs det som
 "vad priset skulle kännas som för en svensk plånbok". Nominella kr/l är huvudläsningen
 (svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning.</p>
+<h2>Tidpris ("time price")</h2>
+<p>Tredje prisläget är <strong>tidpris</strong>: hur länge en genomsnittlig löntagare behöver
+arbeta för en liter. Begreppet är etablerat (bl.a. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
+tidpris = pengapris / timlön. Själva formeln är väldefinierad, men <em>valet av lönemått</em> är en
+deklarationsfråga — brutto eller netto, medel eller median, per sysselsatt eller per capita.
+Våra val (deklarerade, D5): <strong>nettolön</strong> (det är obeskattad tid som faktiskt byts mot
+bensin), <strong>genomsnittslön för ensamstående utan barn, 100&nbsp;% av genomsnittslönen</strong>
+(Eurostat <code>earn_nt_net</code>, 2024, EUR), omräknad till timlön med
+<strong>2080 h/år</strong> (52 veckor × 40 h — en deklarerad konvention, inte faktisk arbetstid).</p>
+<p>Beräkning: <code>tidpris (min/l) = pris (EUR/l) × 60 / nettotimlön (EUR/h)</code>.
+Priset tas i EUR direkt ur källan, så ingen växelkurs blandas in. Exempel (2026-08-03, bensin):
+Sverige ≈ 1,45 €/l ÷ 15,97 €/h ≈ 5,5 min/l; Bulgarien ≈ 1,74 €/l ÷ 5,71 €/h ≈ 18 min/l —
+tidpriset vänder ofta kartbilden jämfört med nominella priser.</p>
+<p>Begränsningar (deklarerade): (a) lönedatat är ett enda källår (2024) — därför visas tidpris
+<em>inte</em> i historikvyn, eftersom en 20-årig prisserie delad med ett fast löneår skulle ge en
+vilseledande "tidprisserie"; en riktig sådan kräver lönehistorik (framtida utbyggnad).
+(b) Genomsnittslönen är inte medianlönen; i länder med skev lönefördelning underskattar
+genomsnittet den typiska löntagarens tidpris. (c) I tidprisläget är höjdskalan
+<code>1 mm = 1 minut arbete per liter</code> och de fasta klasserna ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
 <h2>Deklarerade skalor (D5, O2)</h2>
 <ul>
 <li>Höjd: <code>1 mm = 1 kr per liter</code> — i alla vyer, alla datum, alla exporter.
 Två utskrifter från olika veckor är därmed direkt fysiskt jämförbara (historikens poäng).
 I PPP-läget avser skalan PPP-justerade kr/l (deklareras på följesedeln).</li>
 <li>Kurvans bredd: <code>1 mm = 2 miljoner invånare</code> (hela EU ≈ 225 mm; kan delas
-i två delar för utskriftsbädden). Remsans djup: 20 mm.</li>
+i två delar för utskriftsbädden). Remsans djup: 20 mm. Både remsan och kartan står på en
+2 mm basplatta med etikettband: upphöjd titel + QR-kod (egen STL i kontrastfärg) och
+graverad källtext på undersidan.</li>
 <li>Kartan: ekvirektangulär projektion, longitud skalad med cos 52°;
 <code>${SCALE.MAP_K} mm per breddgrad ≈ ${mmKm.toFixed(3)} mm/km</code> (≈ 1:${Math.round(KM_PER_DEG_LAT * 1e6 / SCALE.MAP_K / 1000) * 1000 / 1e6} milj.).
 Basplatta 2 mm som egen STL; nollplanet = plattans ovansida.</li>
@@ -1310,14 +1689,19 @@ datum, bränsle, prisläge), O4 webbtvilling med strikt WYSIWYG-export — det s
 är exakt den geometri som visas (samma kod bygger båda). O5 (naturlig enhetsreferens)
 används inte: det finns ingen naturlig fysisk enhet för priser; dokumenterat härmed.</p>
 <p><strong>Beslutsdimensioner:</strong> D1 lagersemantik (kvartil/fasta klasser/netto+skatt);
-D2 nollnivå = bordet, inget klipps; D3 ej tillämplig (kvot &lt; 2, se ovan); D4 normalisering:
-nominella kr/l är huvudläsning, PPP-justering finns som deklarerad syskonläsning, inkomstandel
-nämns som framtida syskon; D5 deklarerade skalor överallt inkl. befolkningskällår och PLI-källår;
+D2 nollnivå = bordet, inget klipps; D3 ej tillämplig (nominellt/PPP kvot &lt; 2; tidpris kvot ≈ 3–4
+men fortfarande fullt printbart utan kapning — dokumenterat); D4 normalisering: nominella kr/l är
+huvudläsning, med PPP-justering och tidpris som deklarerade syskonläsningar (inkomstandels-syskonet
+ur korpusrad 24 är därmed realiserat som tidpris); D5 deklarerade skalor överallt inkl.
+befolknings-, PLI- och lönekällår;
 D6 förenklingstolerans deklarerad (geometri förenklad med tolerans 0,04°, koordinater 3 decimaler;
 projicerade öar &lt; 1 mm² utelämnas ur STL); D7 aggregeringsnivå: nation (deklarerad);
 D8 separata färg-STL:er ger få filamentbyten, låga höjder, ihålig-vänlig utskrift;
-D9 veckodata, ej foldad (motiverat under Former); D10 följesedel + denna panel i stället för
-textgravyr (höjdbudgeten är liten och den digitala tvillingen är nyckeln);
+D9 veckodata, ej foldad (motiverat under Former); D10 (reviderad på beställarens begäran):
+upphöjd titel + QR-kod till den digitala tvillingen på plattans etikettband (QR:n pekar på
+hedin.it/r/ och kan därmed pekas om utan omtryck) samt graverad källtext på undersidan;
+text/QR ligger i egen STL för kontrastfärg; följesedeln och denna panel bär det fulla
+metodresonemanget;
 D11 areafällan namngiven i kartvyn — kurvan är motviktet; D12 EU-27 är given mängd och alla
 datum är exporterbara (ingen körsbärsplockning); D13 med/utan skatt är systemets
 attributionsläsning.</p>
@@ -1337,13 +1721,35 @@ The PPP mode uses Eurostat price level indices (prc_ppp_ind, PLI_EU27_2020, cate
 (PLI<sub>Sweden</sub>/PLI<sub>country</sub>). Sweden is the unchanged anchor — read it as
 "what the price would feel like to a Swedish wallet". Nominal SEK/l is the primary reading
 (Swedish wallet perspective, D4); PPP is a declared sibling reading.</p>
+<h2>Time price</h2>
+<p>The third price basis is the <strong>time price</strong>: how long an average earner must work
+for one litre. The concept is established (e.g. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
+time price = money price / hourly earnings. The formula itself is well-defined, but the
+<em>choice of earnings measure</em> is a declaration matter — gross or net, mean or median, per
+employee or per capita. Our choices (declared, D5): <strong>net earnings</strong> (it is untaxed
+time that is actually exchanged for petrol), <strong>average earnings of a single person without
+children at 100% of the average wage</strong> (Eurostat <code>earn_nt_net</code>, 2024, EUR),
+converted to hourly pay using <strong>2080 h/year</strong> (52 weeks × 40 h — a declared
+convention, not actual hours worked).</p>
+<p>Calculation: <code>time price (min/l) = price (EUR/l) × 60 / net hourly earnings (EUR/h)</code>.
+The price is taken in EUR straight from the source, so no exchange rate is involved. Example
+(2026-08-03, petrol): Sweden ≈ 1.45 €/l ÷ 15.97 €/h ≈ 5.5 min/l; Bulgaria ≈ 1.74 €/l ÷ 5.71 €/h
+≈ 18 min/l — the time price often inverts the map compared with nominal prices.</p>
+<p>Limitations (declared): (a) the wage data is a single source year (2024) — hence time price is
+<em>not</em> shown in the history view, since a 20-year price series divided by one fixed wage
+year would yield a misleading "time price series"; a real one needs wage history (future
+extension). (b) The mean wage is not the median; in countries with skewed wage distributions the
+mean understates the typical earner's time price. (c) In time-price mode the height scale is
+<code>1 mm = 1 minute of work per litre</code> and the fixed classes are ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
 <h2>Declared scales (D5, O2)</h2>
 <ul>
 <li>Height: <code>1 mm = 1 SEK per litre</code> — in all views, all dates, all exports.
 Two prints from different weeks are therefore directly physically comparable.
 In PPP mode the scale refers to PPP-adjusted SEK/l (declared on the packing slip).</li>
 <li>Curve width: <code>1 mm = 2 million inhabitants</code> (all of the EU ≈ 225 mm; can be
-split in two parts for the print bed). Strip depth: 20 mm.</li>
+split in two parts for the print bed). Strip depth: 20 mm. Both the strip and the map sit on
+a 2 mm base plate with a label band: raised title + QR code (own STL in a contrast colour)
+and engraved source text on the underside.</li>
 <li>Map: equirectangular projection, longitude scaled by cos 52°;
 <code>${SCALE.MAP_K} mm per degree of latitude ≈ ${mmKm.toFixed(3)} mm/km</code>.
 Base plate 2 mm as its own STL; the zero plane is the top of the plate.</li>
@@ -1374,15 +1780,19 @@ dates, fuel, price basis), O4 web twin with strict WYSIWYG export — what is ex
 exactly the geometry being shown (the same code builds both). O5 (natural unit reference)
 is not used: there is no natural physical unit for prices; documented here.</p>
 <p><strong>Decision dimensions:</strong> D1 layer semantics (quartile/fixed classes/net+tax);
-D2 zero level = the table, nothing clipped; D3 not applicable (ratio &lt; 2, see above);
-D4 normalisation: nominal SEK/l is the primary reading, PPP adjustment is a declared sibling,
-income share is mentioned as a future sibling; D5 declared scales everywhere incl. population
-and PLI source years; D6 simplification tolerance declared (geometry simplified at 0.04°,
+D2 zero level = the table, nothing clipped; D3 not applicable (nominal/PPP ratio &lt; 2; time price
+ratio ≈ 3–4 yet still fully printable without cutting — documented); D4 normalisation: nominal
+SEK/l is the primary reading, with PPP adjustment and time price as declared sibling readings
+(the income-share sibling from corpus row 24 is thereby realised as time price); D5 declared
+scales everywhere incl. population, PLI and wage source years; D6 simplification tolerance declared (geometry simplified at 0.04°,
 3-decimal coordinates; projected islands &lt; 1 mm² omitted from STL); D7 aggregation level:
 nation (declared); D8 separate colour STLs give few filament changes, low heights,
 hollow-friendly printing; D9 weekly data, not folded (motivated under Forms);
-D10 packing slip + this panel instead of engraving (the height budget is small and the digital
-twin is the key); D11 the area trap named in the map view — the curve is the counterweight;
+D10 (revised at the commissioner's request): raised title + QR code to the digital twin on
+the plate's label band (the QR points at hedin.it/r/ and can thus be re-pointed without
+reprinting) plus engraved source text on the underside; text/QR live in their own STL for a
+contrast colour; the packing slip and this panel carry the full method reasoning;
+D11 the area trap named in the map view — the curve is the counterweight;
 D12 EU-27 is a given set and every date is exportable (no cherry-picking);
 D13 with/without tax is the system's attribution reading.</p>
 <h2>The Malta remark (D6)</h2>
@@ -1397,8 +1807,8 @@ as a step in a contiguous solid. This is also noted on the packing slip.</p>`;
  * ===================================================================== */
 function groupFileName(g, i) {
   const names = {
-    sv: { net: 'netto', tax: 'skatt', ctx: 'kontext', plate: 'basplatta', ref: 'referensstapel-eu-medel' },
-    en: { net: 'net', tax: 'tax', ctx: 'context', plate: 'baseplate', ref: 'reference-bar-eu-mean' },
+    sv: { net: 'netto', tax: 'skatt', ctx: 'kontext', plate: 'basplatta', ref: 'referensstapel-eu-medel', text: 'text-qr-kontrastfarg' },
+    en: { net: 'net', tax: 'tax', ctx: 'context', plate: 'baseplate', ref: 'reference-bar-eu-mean', text: 'text-qr-contrast-colour' },
   }[S.lang];
   if (names[g]) return names[g];
   const n = +g.slice(1) + 1;
@@ -1418,8 +1828,13 @@ function buildFollowsedel(info) {
   L.push('');
   L.push(sv ? '--- Deklarerade skalor (identiska för alla datum/exporter, O2/D5) ---'
             : '--- Declared scales (identical for all dates/exports, O2/D5) ---');
-  L.push(sv ? `Höjd: 1 mm = 1 kr/l${S.basis === 'ppp' ? ' (PPP-justerade kr/l: pris × PLI_SE/PLI_land; Eurostat A01 2024)' : ''}`
-            : `Height: 1 mm = 1 SEK/l${S.basis === 'ppp' ? ' (PPP-adjusted SEK/l: price × PLI_SE/PLI_country; Eurostat A01 2024)' : ''}`);
+  if (S.basis === 'time') {
+    L.push(sv ? 'Höjd: 1 mm = 1 minut arbete per liter (tidpris: EUR-pris × 60 / nettotimlön; Eurostat earn_nt_net 2024, ensamstående 100 % AW, årslön/2080 h)'
+              : 'Height: 1 mm = 1 minute of work per litre (time price: EUR price × 60 / net hourly earnings; Eurostat earn_nt_net 2024, single 100% AW, annual pay/2080 h)');
+  } else {
+    L.push(sv ? `Höjd: 1 mm = 1 kr/l${S.basis === 'ppp' ? ' (PPP-justerade kr/l: pris × PLI_SE/PLI_land; Eurostat A01 2024)' : ''}`
+              : `Height: 1 mm = 1 SEK/l${S.basis === 'ppp' ? ' (PPP-adjusted SEK/l: price × PLI_SE/PLI_country; Eurostat A01 2024)' : ''}`);
+  }
   if (info.view === 'curve') {
     L.push(sv ? 'Bredd: 1 mm = 2 000 000 invånare (Eurostat 1 jan 2025). Remsans djup: 20 mm.'
               : 'Width: 1 mm = 2,000,000 inhabitants (Eurostat 1 Jan 2025). Strip depth: 20 mm.');
@@ -1435,8 +1850,17 @@ function buildFollowsedel(info) {
     L.push(sv ? `Kontextländer: platta ${SCALE.CTX_MM} mm. Öar < ${SCALE.MIN_AREA_MM2} mm² projicerad yta utelämnas (D6).`
               : `Context countries: flat ${SCALE.CTX_MM} mm. Islands < ${SCALE.MIN_AREA_MM2} mm² projected area omitted (D6).`);
   }
-  L.push(sv ? 'Nollnivå: 0 kr = bordet/plattans ovansida; inget klipps (D2; D3 ej tillämplig, prisspannets kvot < 2).'
-            : 'Zero level: 0 SEK = table/plate top; nothing clipped (D2; D3 not applicable, price span ratio < 2).');
+  L.push(sv ? 'Nollnivå: 0 = plattans ovansida; hela spannet skrivs ut i full höjd, inget klipps (D2; D3 ej tillämplig).'
+            : 'Zero level: 0 = top of plate; the full span prints at full height, nothing clipped (D2; D3 not applicable).');
+  L.push('');
+  L.push(sv ? '--- Textning och QR (D10) ---' : '--- Labelling and QR (D10) ---');
+  L.push(sv ? `Basplatta ${SCALE.PLATE_MM} mm med etikettband ${SCALE.LABEL_BAND} mm (gäller både karta och kurva).`
+            : `Base plate ${SCALE.PLATE_MM} mm with a ${SCALE.LABEL_BAND} mm label band (both map and curve).`);
+  L.push(sv ? `Upphöjd titel + QR-kod ${SCALE.TEXT_RAISE} mm ligger i filen "text-qr-…" – skriv ut den i kontrastfärg.`
+            : `Raised title + QR code ${SCALE.TEXT_RAISE} mm live in the "text-qr-…" file – print it in a contrast colour.`);
+  L.push(sv ? `Undersidan är graverad ${SCALE.TEXT_ENGRAVE} mm (spegelvänd i modellen; läsbar när objektet vänds).`
+            : `The underside is engraved ${SCALE.TEXT_ENGRAVE} mm (mirrored in the model; readable when the object is flipped).`);
+  L.push((sv ? 'QR – digital tvilling (ompekbar via hedin.it/r/): ' : 'QR – digital twin (re-pointable via hedin.it/r/): ') + qrStateURL(info.view));
   L.push('');
   L.push(sv ? '--- Filer (positionerade i samma koordinatsystem; skriv ut tillsammans som ett objekt) ---'
             : '--- Files (positioned in one shared coordinate system; print together as one object) ---');
@@ -1477,15 +1901,47 @@ function doExport() {
     }));
     solids = buildCurveSolids(items, SCALE.CURVE_DEPTH);
     totalWidth = solids.totalWidth;
-    if (S.split) {   // dela vid landgräns närmast halva befolkningen
-      let x = 0, cut = 0, half = totalWidth / 2, best = Infinity;
-      const xs = [];
-      for (const it of items) { xs.push(x); x += it.widthMm; }
-      xs.forEach(v => { if (Math.abs(v - half) < best) { best = Math.abs(v - half); cut = v; } });
+    const band = SCALE.LABEL_BAND, txt = labelTexts('curve');
+    const qrSide = 33 * SCALE.QR_MODULE;
+    const common = { plateMm: SCALE.PLATE_MM, raiseMm: SCALE.TEXT_RAISE,
+                     engraveMm: SCALE.TEXT_ENGRAVE };
+    if (!S.split) {
+      const lp = labelAndPlate({ ...common,
+        px0: 0, py0: -band, px1: totalWidth, py1: SCALE.CURVE_DEPTH,
+        title: { lines: txt.title, pixel: SCALE.TEXT_PIXEL, x: 5, y: -band + 5 },
+        qr: { text: txt.qr, module: SCALE.QR_MODULE, x: totalWidth - 5 - qrSide, y: -band + 4 },
+        under: { lines: txt.under, pixel: SCALE.UNDER_PIXEL, x: 8, y: -band + 8 },
+      });
+      solids.push(...lp.solids);
+    } else {
+      // dela vid landgräns närmast halva bredden; varje del får egen platta
+      let x = 0, cut = 0, best = Infinity;
+      for (const it of items) {
+        if (Math.abs(x - totalWidth / 2) < best) { best = Math.abs(x - totalWidth / 2); cut = x; }
+        x += it.widthMm;
+      }
+      const part = S.lang === 'sv' ? 'DEL' : 'PART';
+      const basis = S.basis === 'ppp' ? 'PPP' : 'NOM';
+      const lpA = labelAndPlate({ ...common,
+        px0: 0, py0: -band, px1: cut, py1: SCALE.CURVE_DEPTH,
+        title: { lines: txt.title, pixel: SCALE.TEXT_PIXEL, x: 5, y: -band + 5 },
+        qr: null,
+        under: { lines: [S.date, `${T('fuel_' + S.fuel)} ${basis}`, `${part} A`],
+                 pixel: 1.0, x: 8, y: -band + 8 },
+      });
+      const lpB = labelAndPlate({ ...common,
+        px0: cut, py0: -band, px1: totalWidth, py1: SCALE.CURVE_DEPTH,
+        title: null,
+        qr: { text: txt.qr, module: SCALE.QR_MODULE, x: totalWidth - 5 - qrSide, y: -band + 4 },
+        under: { lines: ['EC OIL BULLETIN', 'CC BY-NC-ND', `${part} B`],
+                 pixel: 1.0, x: cut + 8, y: -band + 8 },
+      });
+      solids.push(...lpA.solids, ...lpB.solids);
       for (const s of solids) {
         const minX = Math.min(...s.tris.flat().map(p => p[0]));
-        s.group = (minX < cut - 1e-9 ? 'A_' : 'B_') + s.group;
-        if (minX >= cut - 1e-9) for (const t of s.tris) for (const p of t) p[0] -= cut;
+        const inB = minX >= cut - 1e-9;
+        s.group = (inB ? 'B_' : 'A_') + s.group;
+        if (inB) for (const t of s.tris) for (const p of t) p[0] -= cut;
       }
     }
   } else {
@@ -1549,13 +2005,19 @@ function applyStaticTexts() {
   set('l_date', 'l_date'); set('l_fuel', 'l_fuel'); set('l_basis', 'l_basis');
   set('l_color', 'l_color'); set('l_ctx', 'l_ctx'); set('l_ref', 'l_ref'); set('l_split', 'l_split');
   set('exportBtn', 'export');
-  document.getElementById('langBtn').textContent = S.lang === 'sv' ? 'EN' : 'SV';
+  // Flagga för språket knappen byter TILL
+  const lb = document.getElementById('langBtn');
+  lb.textContent = S.lang === 'sv' ? '\u{1F1EC}\u{1F1E7}' : '\u{1F1F8}\u{1F1EA}';
+  lb.title = T('lang_switch');
+  lb.setAttribute('aria-label', T('lang_switch'));
+  lb.style.fontSize = '18px';
   const fuelSel = document.getElementById('fuelSel');
   fuelSel.options[0].textContent = T('fuel_petrol');
   fuelSel.options[1].textContent = T('fuel_diesel');
   const basisSel = document.getElementById('basisSel');
   basisSel.options[0].textContent = T('basis_nom');
   basisSel.options[1].textContent = T('basis_ppp');
+  basisSel.options[2].textContent = T('basis_time');
   const colorSel = document.getElementById('colorSel');
   colorSel.options[0].textContent = T('color_quartile');
   colorSel.options[1].textContent = T('color_fixed');
@@ -1567,6 +2029,8 @@ function applyStaticTexts() {
 function syncControls() {
   document.getElementById('fuelSel').value = S.fuel;
   document.getElementById('basisSel').value = S.basis;
+  // Tidpris kräver lönehistorik och visas inte i historiken
+  document.getElementById('basisSel').options[2].disabled = S.view === 'hist';
   document.getElementById('colorSel').value = S.color;
   document.getElementById('ctxChk').checked = S.ctx;
   document.getElementById('dateSel').value = S.date || '';
@@ -1574,11 +2038,19 @@ function syncControls() {
     b.classList.toggle('on', b.dataset.view === S.view));
   document.querySelectorAll('.view').forEach(v =>
     v.classList.toggle('on', v.id === 'view_' + S.view));
-  document.getElementById('ctxGrp').style.display = S.view === 'map' ? '' : 'none';
-  document.getElementById('refGrp').style.display = ['curve', 'map'].includes(S.view) ? '' : 'none';
-  document.getElementById('splitGrp').style.display = S.view === 'curve' ? '' : 'none';
+  // Kontroller utan betydelse i aktuell vy döljs (i stället för att stå kvar).
+  const show = (id, on) => document.getElementById(id).style.display = on ? '' : 'none';
+  const geom = ['curve', 'map'].includes(S.view);   // vyer med datum/färg/export
+  show('dateGrp', geom);
+  show('fuelGrp', S.view !== 'about');
+  show('basisGrp', S.view !== 'about');
+  show('colorGrp', geom);
+  show('ctxGrp', S.view === 'map');
+  show('refGrp', geom);
+  show('splitGrp', S.view === 'curve');
   const exp = document.getElementById('exportBtn');
-  exp.disabled = !['curve', 'map'].includes(S.view) || (S.view === 'map' && !GEO);
+  show('exportBtn', geom);
+  exp.disabled = !geom || (S.view === 'map' && !GEO);
   exp.title = exp.disabled ? T('export_na') : '';
   const idx = DATES.indexOf(S.date);
   document.getElementById('datePrev').disabled = SEED_MODE || idx <= 0;

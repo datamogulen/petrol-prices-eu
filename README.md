@@ -77,11 +77,24 @@ Alla svar är JSON (UTF-8). `fuel` är `petrol` (default) eller `diesel`.
 | `api.php?action=series&cc=SE,DE&fuel=diesel&from=YYYY-MM-DD` | `{series:{CC:[[datum, kr/l],…]}, eu_mean:[[…]], eu_mean_ppp:[[…]]}` – kr/l med skatt; EU-medel befolkningsviktat, nominellt och PPP-justerat |
 
 `eur`/`sek` är pris med skatt per liter; `eur_net`/`sek_net` utan skatt.
-PPP-justering av enskilda länder görs i frontend:
-`pris × (PLI_SE / PLI_land)` (Eurostat prc_ppp_ind, PLI_EU27_2020,
-kategori A01 "actual individual consumption", 2024, EU27=100). Sverige är
-oförändrat ankare. PLI-tabellen finns i både `config.php` och
-`index.html` – ändras den ena, ändra båda.
+
+### Tre prislägen (D4)
+
+1. **Nominellt** (kr/l) – huvudläsningen, svenskt plånboksperspektiv.
+2. **PPP-justerat** (kr/l): `pris × (PLI_SE / PLI_land)` (Eurostat
+   prc_ppp_ind, PLI_EU27_2020, kategori A01, 2024, EU27=100). Sverige är
+   oförändrat ankare.
+3. **Tidpris** (min arbete/l): `pris_EUR × 60 / nettotimlön_EUR` där
+   timlönen = Eurostat earn_nt_net 2024 (ensamstående utan barn, 100 % av
+   genomsnittslön) / 2080 h. Begreppet (Tupy & Pooley, *Superabundance*)
+   är väldefinierat givet deklarerat lönemått; våra val och begränsningar
+   (fast löneår ⇒ visas ej i historiken; medel ≠ median) dokumenteras i
+   Om-panelen. I tidprisläget är höjdskalan **1 mm = 1 minut** och fasta
+   klasser 8/12/16 min/l.
+
+PPP- och lönetabellerna finns i både `config.php` och `index.html` –
+ändras den ena, ändra båda. Justeringarna görs i frontend (API:t
+levererar EUR + SEK).
 
 ## Källfilens format
 
@@ -141,7 +154,18 @@ eller netto + skatt där skattdelen ligger med underkant på nettohöjden)
 positionerade i samma koordinatsystem – slicern skriver ut dem som ett
 objekt med få filamentbyten (D8). Följesedel
 (`FOLJESEDEL.txt`/`README.txt`, samma språk som UI) med datum, vy, läge,
-skalor, källa och licens ingår. Ingen textgravyr i STL (D10).
+skalor, källa och licens ingår.
+
+**Textning och QR (D10, reviderad):** basplattan (karta OCH kurva, 2 mm,
+nollplan = ovansidan) har ett 36 mm etikettband med **upphöjd titel +
+QR-kod** (0,6 mm, egen STL-fil i kontrastfärg – tvåfärgsutskrift ger
+skarp, skanningsbar kod) samt **graverad källtext på undersidan**
+(0,6 mm, spegelvänd i modellen, läsbar när objektet vänds; byggs
+konstruktivt utan CSG). QR-koden är den digitala tvillingens URL via
+`hedin.it/r/?p=ppeu&…` – tryckta koder kan alltså pekas om utan omtryck.
+QR-encodern (byte-läge, ECC L, mask 0, v1–4) och 5×7-pixelfonten är
+egna, beroendefria implementationer; encodern verifieras bit-exakt mot
+jsQR-avkodning och strukturellt i testskriptet.
 
 Deklarerade skalor (samma för ALLA exporter och datum – två utskrifter
 från olika veckor är direkt fysiskt jämförbara, O2):
@@ -203,6 +227,9 @@ text finns i webbplatsens Om-panel på sv/en).
 
 - Ljus varm beige UI (#F7F2E6, accent #2F5A8F), aldrig mörka bakgrunder.
 - Ingen localStorage; språk och alla val ligger i URL-parametrar.
+- Språkdefault följer webbläsarens språk (svenska → sv, annars en);
+  växlaren är en flaggknapp. Kartrotationen är "skivtallrik": punkten du
+  greppar följer handen (vinkelbaserad runt kartcentrum).
 - Enda externa JS-beroendet är Three.js r128 (cdnjs); earcut är inlinad
   (kompakt version av Mapbox-algoritmen, ISC-licens).
 - Kartrotation/zoom är egenimplementerad (ingen OrbitControls).

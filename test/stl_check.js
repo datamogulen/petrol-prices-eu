@@ -106,7 +106,69 @@ for (const mode of ['quartile', 'tax']) {
   for (const s of solids) check(`kurva/${mode}/${s.cc}`, s);
 }
 
-/* ---- 3. Binär STL: rundresa ------------------------------------------- */
+/* ---- 3. QR-kod, pixeltext och etikettplatta ---------------------------- */
+const twinURL = 'https://hedin.it/r/?p=ppeu&d=2026-08-03&f=petrol&b=nom&c=quartile&v=map';
+const qr = core.qrMatrix(twinURL);
+if (qr.version !== 4 || qr.size !== 33) { console.error(`FEL: QR förväntades v4/33, fick v${qr.version}/${qr.size}`); failures++; }
+// Sökmönster i tre hörn + mörk modul
+const fOK = (fx, fy) => qr.get(fx + 3, fy + 3) && qr.get(fx, fy) && !qr.get(fx + 1, fy + 1);
+if (!fOK(0, 0) || !fOK(qr.size - 7, 0) || !fOK(0, qr.size - 7)) { console.error('FEL: QR-sökmönster saknas'); failures++; }
+if (!qr.get(8, qr.size - 8)) { console.error('FEL: QR mörk modul saknas'); failures++; }
+// Formatbitar: läs tillbaka kopia 1 och jämför med känd konstant för L/mask0
+const FEXP = 0b111011111000100;   // ISO/IEC 18004: ECC L, mask 0
+let fGot = 0;
+const fCells = [];
+for (let i = 0; i <= 5; i++) fCells.push([8, i]);
+fCells.push([8, 7], [8, 8], [7, 8]);
+for (let i = 9; i < 15; i++) fCells.push([14 - i, 8]);
+fCells.forEach(([x, y], i) => { if (qr.get(x, y)) fGot |= 1 << i; });
+if (fGot !== FEXP) { console.error(`FEL: QR-formatbitar ${fGot.toString(2)} != ${FEXP.toString(2)}`); failures++; }
+else console.log('QR OK: v4, 33x33, sökmönster + formatbitar (L, mask 0) korrekta.');
+// Bit-exakt jämförelse mot python-qrcode om biblioteket finns
+try {
+  const { execFileSync } = require('child_process');
+  const py = execFileSync('python', ['-c', `
+import sys
+try:
+    import qrcode
+except ImportError:
+    print('SKIP'); sys.exit()
+q = qrcode.QRCode(version=4, error_correction=qrcode.constants.ERROR_CORRECT_L,
+                  mask_pattern=0, border=0)
+q.add_data(${JSON.stringify(twinURL)}, optimize=0)
+q.make(fit=False)
+print('\\n'.join(''.join('1' if c else '0' for c in row) for row in q.modules))
+`], { encoding: 'utf8' }).trim();
+  if (py === 'SKIP') { console.log('  (python-qrcode saknas – hoppar över bit-exakt referensjämförelse)'); }
+  else {
+    const rows = py.split('\n');
+    let diff = 0;
+    for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) {
+      if ((rows[y][x] === '1') !== qr.get(x, y)) diff++;
+    }
+    if (diff) { console.error(`FEL: QR skiljer sig från python-qrcode i ${diff} moduler`); failures++; }
+    else console.log('QR OK: bit-exakt identisk med python-qrcode (v4, L, mask 0).');
+  }
+} catch (e) { console.log('  (python-referens ej körbar – strukturkontrollerna ovan gäller)'); }
+
+// Etikettplatta: titel + QR + graverad undersida; allt vattentätt, plattvolymen stämmer
+const lp = core.labelAndPlate({
+  px0: 0, py0: -36, px1: 225, py1: 20, plateMm: 2, raiseMm: 0.6, engraveMm: 0.6,
+  title: { lines: ['BENSIN 95 EU', '2026-08-03 NOM'], pixel: 1.4, x: 5, y: -31 },
+  qr: { text: twinURL, module: 0.8, x: 225 - 5 - 26.4, y: -32 },
+  under: { lines: ['EC WEEKLY OIL BULLETIN', 'CC BY-NC-ND 1MM=1KR/L'], pixel: 1.2, x: 8, y: -28 },
+});
+for (const s of lp.solids) check(`etikett/${s.group}`, s);
+const plateVol = lp.solids.filter(s => s.group === 'plate')
+  .reduce((sum, s) => sum + core.solidVolume(s.tris), 0);
+const grossPlate = 225 * 56 * 2;
+if (!(plateVol < grossPlate && plateVol > grossPlate * 0.97)) {
+  console.error(`FEL: plattvolym ${plateVol.toFixed(0)} rimmar inte med brutto ${grossPlate} minus gravyr`); failures++;
+} else {
+  console.log(`Etikettplatta OK: ${lp.solids.length} solider; gravyr tar ${(grossPlate - plateVol).toFixed(0)} mm³ av plattan.`);
+}
+
+/* ---- 4. Binär STL: rundresa ------------------------------------------- */
 const sample = core.buildCurveSolids(
   [{ cc: 'SE', widthMm: 5.3, segments: [{ group: 'q0', z0: 0, z1: 16 }] }], 20);
 const buf = core.stlBinary(sample.map(s => s.tris), 'stl_check');

@@ -77,6 +77,21 @@ const PLI = [
   'ES'=>90.7,  'SE'=>123.0,
 ];
 
+// Nettotimlön i EUR för tidprisläget ("time price", min arbete per liter).
+// Källa: Eurostat earn_nt_net, 2024: årsnettolön, ensamstående utan barn,
+// 100 % av genomsnittslön, EUR; delad med 2080 h (52 v x 40 h, deklarerad
+// konvention). Hämtat 2026-08-07. Används av frontend (tabellen är dubblerad
+// i index.html – ändras den ena, ändra båda); ligger här för paritet och
+// ev. framtida serverberäkningar.
+const WAGE_EUR_H = [
+  'AT'=>17.22, 'BE'=>16.10, 'BG'=>5.71,  'HR'=>7.61,  'CY'=>10.98,
+  'CZ'=>8.72,  'DK'=>19.32, 'EE'=>9.47,  'FI'=>15.84, 'FR'=>14.48,
+  'DE'=>14.49, 'GR'=>6.61,  'HU'=>5.77,  'IE'=>20.37, 'IT'=>11.52,
+  'LV'=>7.43,  'LT'=>8.38,  'LU'=>25.01, 'MT'=>11.52, 'NL'=>16.45,
+  'PL'=>7.23,  'PT'=>9.06,  'RO'=>5.92,  'SK'=>7.20,  'SI'=>10.25,
+  'ES'=>11.80, 'SE'=>15.97,
+];
+
 // Rimlighetsgränser för svenskt pumppris i SEK/liter (importvalidering, D-beslut:
 // hellre stoppa en import än att tyst lagra en enhetsglidning; jfr README §Verifiering).
 define('SANITY_SE_MIN', 6.0);   // historiskt minimum ~8 kr (2005) med marginal

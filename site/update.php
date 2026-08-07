@@ -17,7 +17,22 @@
 
 require_once __DIR__ . '/lib.php';
 
-$opts = getopt('', ['dry', 'file:', 'verbose']);
+/* Webbtrigger (för värdar utan shell/cron över SSH): anropas som
+ * update.php?key=XYZ där XYZ är innehållet i data/update_key.txt.
+ * Saknas nyckelfilen är webbvägen helt avstängd. CLI påverkas inte. */
+if (PHP_SAPI !== 'cli') {
+  header('Content-Type: text/plain; charset=utf-8');
+  $keyFile = __DIR__ . '/data/update_key.txt';
+  $given = $_GET['key'] ?? '';
+  if (!is_file($keyFile) || $given === '' ||
+      !hash_equals(trim(file_get_contents($keyFile)), $given)) {
+    http_response_code(403);
+    exit("403: webbtrigger avstängd eller fel nyckel.\n");
+  }
+}
+
+$opts = PHP_SAPI === 'cli' ? getopt('', ['dry', 'file:', 'verbose']) : [];
+if (PHP_SAPI !== 'cli' && isset($_GET['dry'])) $opts['dry'] = false;
 $dry = isset($opts['dry']);
 $verbose = isset($opts['verbose']);
 
