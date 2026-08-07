@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bensin-eu",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["-S", "localhost:8734", "-t", "site"],
+      "port": 8734,
+      "autoPort": false
+    }
+  ]
+}

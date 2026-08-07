@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bensinpriser i EU</title>
+<style>
+  :root {
+    --bg: #F7F2E6; --panel: #FDFAF2; --ink: #2B2620; --muted: #6E6558;
+    --accent: #2F5A8F; --line: #D8CFBC;
+    --q1: #5E8C5A; --q2: #B9B84B; --q3: #D89040; --q4: #B5443C;
+    --net: #4E7AA8; --tax: #C05B4D; --ctx: #C9C2B4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    padding: 14px 20px 10px; border-bottom: 2px solid var(--accent);
+    display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: baseline;
+  }
+  header h1 { font-size: 21px; margin: 0; color: var(--accent); letter-spacing: .3px; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  header .lang { margin-left: auto; }
+  nav.tabs { display: flex; gap: 6px; padding: 10px 20px 0; flex-wrap: wrap; }
+  nav.tabs button {
+    background: var(--panel); border: 1px solid var(--line); border-bottom: none;
+    padding: 7px 16px; cursor: pointer; font: inherit; color: var(--ink);
+    border-radius: 8px 8px 0 0;
+  }
+  nav.tabs button.on { background: var(--accent); color: #FDFAF2; border-color: var(--accent); font-weight: 600; }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+    padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  .controls label { font-size: 13px; color: var(--muted); margin-right: 4px; }
+  .controls select, .controls button, .controls input[type=checkbox] {
+    font: inherit; font-size: 14px; padding: 4px 8px; border: 1px solid var(--line);
+    border-radius: 6px; background: #fff; color: var(--ink); cursor: pointer;
+  }
+  .controls .grp { display: flex; align-items: center; gap: 4px; }
+  .controls button.primary { background: var(--accent); color: #FDFAF2; border-color: var(--accent); font-weight: 600; }
+  .controls button:disabled { opacity: .45; cursor: not-allowed; }
+  #banner {
+    display: none; margin: 10px 20px 0; padding: 8px 14px; border-radius: 8px;
+    background: #F3E4C2; border: 1px solid #D9BE85; font-size: 14px;
+  }
+  main { padding: 14px 20px 30px; max-width: 1180px; margin: 0 auto; }
+  .view { display: none; }
+  .view.on { display: block; }
+  .chartbox { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  .caption { color: var(--muted); font-size: 12.5px; margin: 8px 4px 0; }
+  #tooltip {
+    position: fixed; display: none; pointer-events: none; z-index: 50;
+    background: #FFFDF6; border: 1px solid var(--accent); border-radius: 8px;
+    padding: 7px 11px; font-size: 13px; box-shadow: 0 3px 12px rgba(60,45,20,.18);
+    max-width: 260px;
+  }
+  #tooltip b { color: var(--accent); }
+  #map3d { width: 100%; height: 560px; border-radius: 8px; overflow: hidden; cursor: grab; }
+  #map3d:active { cursor: grabbing; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 8px; font-size: 13px; align-items: center; }
+  .legend .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; border: 1px solid rgba(0,0,0,.15); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
+  .chips .chip {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 3px 10px; font-size: 13px;
+  }
+  .chips .chip b { cursor: pointer; margin-left: 6px; color: var(--tax); }
+  .about { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 26px; max-width: 900px; }
+  .about h2 { color: var(--accent); font-size: 17px; margin: 20px 0 6px; }
+  .about h2:first-child { margin-top: 0; }
+  .about p, .about li { font-size: 14.5px; }
+  .about code { background: #EFE8D6; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  footer { padding: 14px 20px 26px; color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); margin-top: 20px; }
+  svg text { font-family: inherit; }
+  .err { color: var(--q4); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="t_title"></h1>
+  <span class="sub" id="t_sub"></span>
+  <span class="lang">
+    <button id="langBtn" style="font:inherit;border:1px solid var(--line);border-radius:6px;background:#fff;padding:3px 10px;cursor:pointer"></button>
+  </span>
+</header>
+
+<nav class="tabs">
+  <button data-view="curve" id="tab_curve"></button>
+  <button data-view="map" id="tab_map"></button>
+  <button data-view="hist" id="tab_hist"></button>
+  <button data-view="about" id="tab_about"></button>
+</nav>
+
+<div class="controls">
+  <span class="grp">
+    <label id="l_date"></label>
+    <button id="datePrev" title="&larr;">&#9664;</button>
+    <select id="dateSel"></select>
+    <button id="dateNext" title="&rarr;">&#9654;</button>
+  </span>
+  <span class="grp">
+    <label id="l_fuel"></label>
+    <select id="fuelSel">
+      <option value="petrol"></option>
+      <option value="diesel"></option>
+    </select>
+  </span>
+  <span class="grp">
+    <label id="l_basis"></label>
+    <select id="basisSel">
+      <option value="nom"></option>
+      <option value="ppp"></option>
+    </select>
+  </span>
+  <span class="grp">
+    <label id="l_color"></label>
+    <select id="colorSel">
+      <option value="quartile"></option>
+      <option value="fixed"></option>
+      <option value="tax"></option>
+    </select>
+  </span>
+  <span class="grp" id="ctxGrp">
+    <input type="checkbox" id="ctxChk" checked>
+    <label for="ctxChk" id="l_ctx" style="cursor:pointer"></label>
+  </span>
+  <span class="grp" id="refGrp">
+    <input type="checkbox" id="refChk" checked>
+    <label for="refChk" id="l_ref" style="cursor:pointer"></label>
+  </span>
+  <span class="grp" id="splitGrp" style="display:none">
+    <input type="checkbox" id="splitChk">
+    <label for="splitChk" id="l_split" style="cursor:pointer"></label>
+  </span>
+  <button class="primary" id="exportBtn"></button>
+</div>
+
+<div id="banner"></div>
+
+<main>
+  <section class="view" id="view_curve">
+    <div class="chartbox"><div id="curveChart"></div></div>
+    <div class="legend" id="curveLegend"></div>
+    <p class="caption" id="curveCaption"></p>
+  </section>
+
+  <section class="view" id="view_map">
+    <div class="chartbox"><div id="map3d"></div></div>
+    <div class="legend" id="mapLegend"></div>
+    <p class="caption" id="mapCaption"></p>
+  </section>
+
+  <section class="view" id="view_hist">
+    <div class="chips" id="histChips"></div>
+    <div class="chartbox"><div id="histChart"></div></div>
+    <p class="caption" id="histCaption"></p>
+  </section>
+
+  <section class="view" id="view_about">
+    <div class="about" id="aboutBody"></div>
+  </section>
+</main>
+
+<div id="tooltip"></div>
+<footer id="foot"></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+/* =====================================================================
+ *  Landsmetadata (inlinad så att sidan fungerar statiskt via seed.json).
+ *  pop: Eurostat 1 jan 2025. pli: Eurostat prc_ppp_ind, PLI_EU27_2020,
+ *  A01 "Actual individual consumption", 2024, EU27=100 (hämtat 2026-08-07).
+ *  Samma tabeller finns i config.php – ändras den ena, ändra båda.
+ * ===================================================================== */
+const META = {
+  AT:{sv:'Österrike',en:'Austria',pop:9198000,pli:119.7},
+  BE:{sv:'Belgien',en:'Belgium',pop:11855000,pli:118.7},
+  BG:{sv:'Bulgarien',en:'Bulgaria',pop:6437000,pli:56.9},
+  HR:{sv:'Kroatien',en:'Croatia',pop:3850000,pli:73.3},
+  CY:{sv:'Cypern',en:'Cyprus',pop:966000,pli:95.1},
+  CZ:{sv:'Tjeckien',en:'Czechia',pop:10909000,pli:80.2},
+  DK:{sv:'Danmark',en:'Denmark',pop:5992000,pli:142.8},
+  EE:{sv:'Estland',en:'Estonia',pop:1369000,pli:96.5},
+  FI:{sv:'Finland',en:'Finland',pop:5635000,pli:127.2},
+  FR:{sv:'Frankrike',en:'France',pop:68606000,pli:107.9},
+  DE:{sv:'Tyskland',en:'Germany',pop:83560000,pli:109.1},
+  GR:{sv:'Grekland',en:'Greece',pop:10400000,pli:83.0},
+  HU:{sv:'Ungern',en:'Hungary',pop:9539000,pli:68.3},
+  IE:{sv:'Irland',en:'Ireland',pop:5439000,pli:141.2},
+  IT:{sv:'Italien',en:'Italy',pop:58934000,pli:98.1},
+  LV:{sv:'Lettland',en:'Latvia',pop:1857000,pli:77.2},
+  LT:{sv:'Litauen',en:'Lithuania',pop:2890000,pli:78.2},
+  LU:{sv:'Luxemburg',en:'Luxembourg',pop:681000,pli:150.7},
+  MT:{sv:'Malta',en:'Malta',pop:574000,pli:93.1},
+  NL:{sv:'Nederländerna',en:'Netherlands',pop:18048000,pli:121.0},
+  PL:{sv:'Polen',en:'Poland',pop:36622000,pli:70.2},
+  PT:{sv:'Portugal',en:'Portugal',pop:10639000,pli:85.0},
+  RO:{sv:'Rumänien',en:'Romania',pop:19064000,pli:57.4},
+  SK:{sv:'Slovakien',en:'Slovakia',pop:5417000,pli:81.1},
+  SI:{sv:'Slovenien',en:'Slovenia',pop:2130000,pli:91.0},
+  ES:{sv:'Spanien',en:'Spain',pop:49077000,pli:90.7},
+  SE:{sv:'Sverige',en:'Sweden',pop:10588000,pli:123.0},
+};
+
+/* Deklarerade skalor (O2/D5): identiska för alla vyer, datum och exporter. */
+const SCALE = {
+  MM_PER_SEK: 1,          // höjd: 1 mm = 1 kr/l (i valt prisläge)
+  MM_PER_2M: 1,           // kurvbredd: 1 mm = 2 000 000 invånare
+  POP_PER_MM: 2e6,
+  CURVE_DEPTH: 20,        // kurvremsans djup i mm
+  MAP_K: 5,               // karta: mm per breddgrad
+  COS52: Math.cos(52 * Math.PI / 180),
+  PLATE_MM: 2,            // kartans basplatta (egen STL, nollplan = plattans ovansida)
+  CTX_MM: 0.8,            // kontextländernas platta höjd
+  MIN_AREA_MM2: 1.0,      // småöar under denna projicerade yta utelämnas (D6)
+  FIXED_BREAKS: [10, 15, 20],  // fasta kronklasser (kr/l), absolut läsning
+};
+const KM_PER_DEG_LAT = 111.13;
+
+const COLORS = {
+  q: ['#5E8C5A', '#B9B84B', '#D89040', '#B5443C'],
+  net: '#4E7AA8', tax: '#C05B4D', ctx: '#C9C2B4', plate: '#DDD6C6', ref: '#8A8073',
+};
+
+/* =====================================================================
+ *  i18n – alla UI-strängar
+ * ===================================================================== */
+const I18N = {
+  sv: {
+    title: 'Bensinpriser i EU', sub: 'Weekly Oil Bulletin · kr per liter · 3D-utskrivbar',
+    tab_curve: 'Priskurva', tab_map: 'Karta', tab_hist: 'Historik', tab_about: 'Om / Metod',
+    l_date: 'Vecka', l_fuel: 'Bränsle', l_basis: 'Prisläge', l_color: 'Färgläsning',
+    l_ctx: 'Grannländer', l_ref: 'Referensstapel (EU-medel)', l_split: 'Dela remsan i två delar',
+    fuel_petrol: 'Bensin 95', fuel_diesel: 'Diesel',
+    basis_nom: 'Nominellt (kr/l)', basis_ppp: 'PPP-justerat (kr/l)',
+    color_quartile: 'Kvartiler (per datum)', color_fixed: 'Fasta kronklasser', color_tax: 'Netto + skatt',
+    export: 'Exportera STL', export_na: 'STL-export finns för Priskurva och Karta',
+    seed_banner: 'Visar statisk seed-data ({date}). Backend (api.php) nås inte – historik och andra datum är inte tillgängliga.',
+    loading: 'Laddar …', no_data: 'Ingen data för valet.',
+    eu_mean: 'EU-medel (befolkningsviktat)', tax_part: 'Skatt', net_part: 'Nettopris',
+    quartile_lbl: ['Kvartil 1 (lägst)', 'Kvartil 2', 'Kvartil 3', 'Kvartil 4 (högst)'],
+    fixed_lbl: b => [`< ${b[0]} kr/l`, `${b[0]}–${b[1]} kr/l`, `${b[1]}–${b[2]} kr/l`, `≥ ${b[2]} kr/l`],
+    ctx_lbl: 'Utanför EU-27 (kontext)',
+    curve_caption: 'Form F6, fördelningsuppveckling: länder sorterade från lägst till högst pris; stapelbredd ∝ befolkning (1 mm = 2 milj. inv. i utskrift), höjd = pris (1 mm = 1 kr/l). Kurvan är EU:s befolkningsviktade kvantilfunktion: avläs hur många människor som bor på varje prisnivå. Befolkning: Eurostat 1 jan 2025.',
+    map_caption: 'Form F1, geospatial extrudering: höjd = pris (1 mm = 1 kr/l), ekvirektangulär projektion skalad med cos 52°. Dra för att rotera, skrolla för zoom, klicka på ett land för att lägga till det i historiken. OBS areafällan (D11): stora länder dominerar synintrycket vid samma höjd – Sverige ser "större" ut än Nederländerna trots lägre pris. Priskurvan är motviktet: där är bredd = människor.',
+    hist_caption: 'Veckopriser (kr/l, med skatt) sedan 2005. Ringar markerar seriens min och max. Källans priser per måndag; SEK-konvertering med bulletinens egen veckokurs.',
+    hist_needs_api: 'Historiken kräver backend (api.php). Sidan visar just nu statisk seed-data.',
+    hist_add: '+ Lägg till land …',
+    added_to_hist: '{name} tillagd i historiken',
+    ppp_note: 'PPP-justering: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
+    tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
+    milj: 'milj.',
+    min: 'min', max: 'max',
+    foot: 'Källa: European Commission Weekly Oil Bulletin (CC BY-NC-ND). Befolkning: Eurostat (1 jan 2025). Prisnivåindex: Eurostat prc_ppp_ind (A01, 2024). Sidan lagrar inget lokalt; alla val ligger i URL:en.',
+    last_update: 'Senast uppdaterad',
+    date_of: 'priser per',
+    followsedel_name: 'FOLJESEDEL.txt',
+    view_name: { curve: 'Priskurva', map: 'Karta' },
+    exporting: 'Bygger STL …',
+  },
+  en: {
+    title: 'Petrol prices in the EU', sub: 'Weekly Oil Bulletin · SEK per litre · 3D-printable',
+    tab_curve: 'Price curve', tab_map: 'Map', tab_hist: 'History', tab_about: 'About / Method',
+    l_date: 'Week', l_fuel: 'Fuel', l_basis: 'Price basis', l_color: 'Colour reading',
+    l_ctx: 'Neighbouring countries', l_ref: 'Reference bar (EU mean)', l_split: 'Split strip in two parts',
+    fuel_petrol: 'Petrol 95', fuel_diesel: 'Diesel',
+    basis_nom: 'Nominal (SEK/l)', basis_ppp: 'PPP-adjusted (SEK/l)',
+    color_quartile: 'Quartiles (per date)', color_fixed: 'Fixed SEK classes', color_tax: 'Net + tax',
+    export: 'Export STL', export_na: 'STL export is available for Price curve and Map',
+    seed_banner: 'Showing static seed data ({date}). Backend (api.php) unreachable – history and other dates are unavailable.',
+    loading: 'Loading …', no_data: 'No data for this selection.',
+    eu_mean: 'EU mean (population-weighted)', tax_part: 'Tax', net_part: 'Net price',
+    quartile_lbl: ['Quartile 1 (lowest)', 'Quartile 2', 'Quartile 3', 'Quartile 4 (highest)'],
+    fixed_lbl: b => [`< ${b[0]} SEK/l`, `${b[0]}–${b[1]} SEK/l`, `${b[1]}–${b[2]} SEK/l`, `≥ ${b[2]} SEK/l`],
+    ctx_lbl: 'Outside EU-27 (context)',
+    curve_caption: 'Form F6, distribution unfolding: countries sorted from lowest to highest price; bar width ∝ population (1 mm = 2 million people in print), height = price (1 mm = 1 SEK/l). The curve is the EU population-weighted quantile function: read off how many people live at each price level. Population: Eurostat 1 Jan 2025.',
+    map_caption: 'Form F1, geospatial extrusion: height = price (1 mm = 1 SEK/l), equirectangular projection scaled by cos 52°. Drag to rotate, scroll to zoom, click a country to add it to the history view. Note the area trap (D11): large countries dominate the visual impression at equal height – Sweden looks "bigger" than the Netherlands despite a lower price. The price curve is the counterweight: there, width = people.',
+    hist_caption: 'Weekly prices (SEK/l, taxes included) since 2005. Rings mark each series’ min and max. Source prices are per Monday; SEK conversion uses the bulletin’s own weekly rate.',
+    hist_needs_api: 'The history view needs the backend (api.php). This page is currently showing static seed data.',
+    hist_add: '+ Add country …',
+    added_to_hist: '{name} added to history',
+    ppp_note: 'PPP adjustment: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
+    tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
+    milj: 'M',
+    min: 'min', max: 'max',
+    foot: 'Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND). Population: Eurostat (1 Jan 2025). Price level indices: Eurostat prc_ppp_ind (A01, 2024). Nothing is stored locally; all choices live in the URL.',
+    last_update: 'Last updated',
+    date_of: 'prices as of',
+    followsedel_name: 'README.txt',
+    view_name: { curve: 'Price curve', map: 'Map' },
+    exporting: 'Building STL …',
+  }
+};
+
+/* =====================================================================
+ *  Tillstånd – allt i URL-parametrar (ingen localStorage)
+ * ===================================================================== */
+const S = {
+  lang: 'sv', view: 'curve', date: null, fuel: 'petrol', basis: 'nom',
+  color: 'quartile', ctx: true, ref: true, split: false, hist: ['SE'],
+};
+function readURL() {
+  const p = new URLSearchParams(location.search);
+  if (['sv','en'].includes(p.get('lang'))) S.lang = p.get('lang');
+  if (['curve','map','hist','about'].includes(p.get('view'))) S.view = p.get('view');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(p.get('date') || '')) S.date = p.get('date');
+  if (['petrol','diesel'].includes(p.get('fuel'))) S.fuel = p.get('fuel');
+  if (['nom','ppp'].includes(p.get('basis'))) S.basis = p.get('basis');
+  if (['quartile','fixed','tax'].includes(p.get('color'))) S.color = p.get('color');
+  if (p.get('ctx') === '0') S.ctx = false;
+  if (p.get('hist')) S.hist = p.get('hist').split(',').filter(c => META[c]).slice(0, 10);
+  if (!S.hist.length) S.hist = ['SE'];
+}
+function writeURL() {
+  const p = new URLSearchParams();
+  p.set('lang', S.lang); p.set('view', S.view);
+  if (S.date) p.set('date', S.date);
+  p.set('fuel', S.fuel); p.set('basis', S.basis); p.set('color', S.color);
+  if (!S.ctx) p.set('ctx', '0');
+  p.set('hist', S.hist.join(','));
+  history.replaceState(null, '', '?' + p.toString());
+}
+const T = k => I18N[S.lang][k];
+
+/* =====================================================================
+ *  Datainläsning: api.php → fallback data/seed.json
+ * ===================================================================== */
+let SEED_MODE = false, DATES = [], PAYLOADS = {}, LAST_UPDATE = null, GEO = null;
+
+async function fetchJSON(url) {
+  const r = await fetch(url, { cache: 'no-cache' });
+  if (!r.ok) throw new Error(url + ': HTTP ' + r.status);
+  return r.json();   // kastar även om PHP-källkod levereras som text
+}
+async function loadInitial() {
+  try {
+    const latest = await fetchJSON('api.php?action=latest');
+    if (!latest.fuels) throw new Error('oväntat svar');
+    PAYLOADS[latest.date] = latest;
+    LAST_UPDATE = latest.last_update || null;
+    const d = await fetchJSON('api.php?action=dates');
+    DATES = d.dates || [latest.date];
+    if (!S.date || !DATES.includes(S.date)) S.date = latest.date;
+  } catch (e) {
+    const seed = await fetchJSON('data/seed.json');
+    SEED_MODE = true;
+    PAYLOADS[seed.date] = seed;
+    DATES = [seed.date];
+    S.date = seed.date;
+  }
+  try { GEO = await fetchJSON('data/europe.geojson'); } catch (e) { GEO = null; }
+}
+async function payloadFor(date) {
+  if (PAYLOADS[date]) return PAYLOADS[date];
+  const p = await fetchJSON('api.php?action=date&date=' + date);
+  PAYLOADS[date] = p;
+  return p;
+}
+
+/* =====================================================================
+ *  Prislogik: justering, sortering, klassning
+ * ===================================================================== */
+function pliAdj(cc) { return S.basis === 'ppp' ? META.SE.pli / META[cc].pli : 1; }
+
+/** Radlista för valt datum+bränsle+prisläge: [{cc,tot,net,tax,pop}] sorterad stigande. */
+function rowsFor(payload) {
+  const f = (payload.fuels || {})[S.fuel] || {};
+  const rows = [];
+  for (const cc of Object.keys(META)) {
+    const e = f[cc];
+    if (!e || e.sek == null) continue;
+    const a = pliAdj(cc);
+    const tot = e.sek * a;
+    const net = e.sek_net != null ? e.sek_net * a : null;
+    rows.push({ cc, tot, net, tax: net != null ? tot - net : null, pop: META[cc].pop });
+  }
+  rows.sort((a, b) => a.tot - b.tot);
+  return rows;
+}
+function euMeanOf(rows) {
+  let w = 0, s = 0;
+  for (const r of rows) { w += r.pop; s += r.pop * r.tot; }
+  return w ? s / w : null;
+}
+/** Kvartilbrytpunkter (per land, oviktade – deklarerat i Om-panelen). */
+function quartileBreaks(rows) {
+  const v = rows.map(r => r.tot);
+  const q = p => {
+    const i = (v.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
+    return v[lo] + (v[hi] - v[lo]) * (i - lo);
+  };
+  return [q(.25), q(.5), q(.75)];
+}
+function activeBreaks(rows) {
+  return S.color === 'fixed' ? SCALE.FIXED_BREAKS : quartileBreaks(rows);
+}
+function classOf(tot, breaks) {
+  return tot < breaks[0] ? 0 : tot < breaks[1] ? 1 : tot < breaks[2] ? 2 : 3;
+}
+const fmt = (x, d = 2) => x == null ? '–' : x.toLocaleString(S.lang === 'sv' ? 'sv-SE' : 'en-GB',
+  { minimumFractionDigits: d, maximumFractionDigits: d });
+
+/*STL-CORE-BEGIN*/
+/* =====================================================================
+ *  STL-KÄRNA – fristående geometrimodul.
+ *  Körs oförändrad både i webbläsaren och i test/stl_check.js (Node),
+ *  som extraherar detta block ur index.html. Inga DOM-referenser här.
+ *
+ *  Konventioner: mm-koordinater, z uppåt, ytterringar CCW, hål CW,
+ *  varje "solid" är en lista trianglar [[x,y,z],[x,y,z],[x,y,z]].
+ * ===================================================================== */
+
+/** Signerad area av ring [[x,y],...] (positiv = CCW). */
+function ringArea(pts) {
+  let a = 0;
+  for (let i = 0, n = pts.length; i < n; i++) {
+    const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % n];
+    a += x1 * y2 - x2 * y1;
+  }
+  return a / 2;
+}
+/** Kopierar ring, tar bort dubblerad slutpunkt, tvingar orientering. */
+function normRing(pts, clockwise) {
+  let r = pts.slice();
+  const [x0, y0] = r[0], [xn, yn] = r[r.length - 1];
+  if (x0 === xn && y0 === yn) r = r.slice(0, -1);
+  const cw = ringArea(r) < 0;
+  if (cw !== clockwise) r.reverse();
+  return r;
+}
+
+/* ---- earcut: polygontriangulering med hål ---------------------------
+ * Kompakt implementation av Mapbox earcut-algoritmen (ISC-licens,
+ * (c) Mapbox; adapterad/inlinad utan z-ordningsoptimering – våra
+ * polygoner är små). Indata: platt array [x0,y0,x1,y1,...] +
+ * hålstartindex; utdata: triangelindex.                                */
+function earcut(data, holeIndices) {
+  const hasHoles = holeIndices && holeIndices.length;
+  const outerLen = hasHoles ? holeIndices[0] * 2 : data.length;
+  let outerNode = ecLinkedList(data, 0, outerLen, true);
+  const triangles = [];
+  if (!outerNode || outerNode.next === outerNode.prev) return triangles;
+  if (hasHoles) outerNode = ecEliminateHoles(data, holeIndices, outerNode);
+  ecEarcutLinked(outerNode, triangles, 0);
+  return triangles;
+}
+function ecNode(i, x, y) { return { i, x, y, prev: null, next: null, steiner: false }; }
+function ecInsert(i, x, y, last) {
+  const p = ecNode(i, x, y);
+  if (!last) { p.prev = p; p.next = p; }
+  else { p.next = last.next; p.prev = last; last.next.prev = p; last.next = p; }
+  return p;
+}
+function ecRemove(p) { p.next.prev = p.prev; p.prev.next = p.next; }
+function ecLinkedList(data, start, end, ccw) {
+  let last = null, sum = 0;
+  for (let i = start; i < end; i += 2) {
+    const j = (i + 2 < end) ? i + 2 : start;
+    sum += (data[j] - data[i]) * (data[i + 1] + data[j + 1]);
+  }
+  if (ccw === (sum < 0)) {
+    for (let i = start; i < end; i += 2) last = ecInsert(i / 2, data[i], data[i + 1], last);
+  } else {
+    for (let i = end - 2; i >= start; i -= 2) last = ecInsert(i / 2, data[i], data[i + 1], last);
+  }
+  if (last && ecEq(last, last.next)) { ecRemove(last); last = last.next; }
+  return last;
+}
+function ecEq(a, b) { return a.x === b.x && a.y === b.y; }
+function ecArea(p, q, r) { return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y); }
+function ecInTri(ax, ay, bx, by, cx, cy, px, py) {
+  return (cx - px) * (ay - py) >= (ax - px) * (cy - py) &&
+         (ax - px) * (by - py) >= (bx - px) * (ay - py) &&
+         (bx - px) * (cy - py) >= (cx - px) * (by - py);
+}
+function ecFilter(start, end) {
+  if (!start) return start;
+  if (!end) end = start;
+  let p = start, again;
+  do {
+    again = false;
+    if (!p.steiner && (ecEq(p, p.next) || ecArea(p.prev, p, p.next) === 0)) {
+      ecRemove(p);
+      p = end = p.prev;
+      if (p === p.next) break;
+      again = true;
+    } else p = p.next;
+  } while (again || p !== end);
+  return end;
+}
+function ecIsEar(ear) {
+  const a = ear.prev, b = ear, c = ear.next;
+  if (ecArea(a, b, c) >= 0) return false;   // reflex (CW-lista internt)
+  let p = c.next;
+  while (p !== a) {
+    if (ecInTri(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+        ecArea(p.prev, p, p.next) >= 0) return false;
+    p = p.next;
+  }
+  return true;
+}
+function ecEarcutLinked(ear, triangles, pass) {
+  if (!ear) return;
+  let stop = ear, prev, next;
+  while (ear.prev !== ear.next) {
+    prev = ear.prev; next = ear.next;
+    if (ecIsEar(ear)) {
+      triangles.push(prev.i, ear.i, next.i);
+      ecRemove(ear);
+      ear = next.next; stop = next.next;
+      continue;
+    }
+    ear = next;
+    if (ear === stop) {
+      if (pass === 0) {
+        ecEarcutLinked(ecFilter(ear), triangles, 1);
+      } else if (pass === 1) {
+        ear = ecCureLocal(ecFilter(ear), triangles);
+        ecEarcutLinked(ear, triangles, 2);
+      } else if (pass === 2 && ear.prev !== ear.next) {
+        // nödfall: klipp ändå (degenererade rester, påverkar inte vattentäthet)
+        triangles.push(ear.prev.i, ear.i, ear.next.i);
+        ecRemove(ear);
+        ecEarcutLinked(ear.next, triangles, 2);
+      }
+      break;
+    }
+  }
+}
+function ecCureLocal(start, triangles) {
+  let p = start;
+  do {
+    const a = p.prev, b = p.next.next;
+    if (!ecEq(a, b) && ecIntersects(a, p, p.next, b) &&
+        ecLocallyInside(a, b) && ecLocallyInside(b, a)) {
+      triangles.push(a.i, p.i, b.i);
+      ecRemove(p); ecRemove(p.next);
+      p = start = b;
+    }
+    p = p.next;
+  } while (p !== start);
+  return ecFilter(p);
+}
+function ecSign(n) { return n > 0 ? 1 : n < 0 ? -1 : 0; }
+function ecIntersects(p1, q1, p2, q2) {
+  const o1 = ecSign(ecArea(p1, q1, p2)), o2 = ecSign(ecArea(p1, q1, q2));
+  const o3 = ecSign(ecArea(p2, q2, p1)), o4 = ecSign(ecArea(p2, q2, q1));
+  return o1 !== o2 && o3 !== o4;
+}
+function ecLocallyInside(a, b) {
+  return ecArea(a.prev, a, a.next) < 0
+    ? ecArea(a, b, a.next) >= 0 && ecArea(a, a.prev, b) >= 0
+    : ecArea(a, b, a.prev) < 0 || ecArea(a, a.next, b) < 0;
+}
+function ecEliminateHoles(data, holeIndices, outerNode) {
+  const queue = [];
+  for (let i = 0; i < holeIndices.length; i++) {
+    const start = holeIndices[i] * 2;
+    const end = i < holeIndices.length - 1 ? holeIndices[i + 1] * 2 : data.length;
+    const list = ecLinkedList(data, start, end, false);
+    if (!list) continue;
+    if (list === list.next) list.steiner = true;
+    queue.push(ecLeftmost(list));
+  }
+  queue.sort((a, b) => a.x - b.x);
+  for (const hole of queue) outerNode = ecEliminateHole(hole, outerNode);
+  return outerNode;
+}
+function ecLeftmost(start) {
+  let p = start, m = start;
+  do { if (p.x < m.x || (p.x === m.x && p.y < m.y)) m = p; p = p.next; } while (p !== start);
+  return m;
+}
+function ecEliminateHole(hole, outerNode) {
+  const bridge = ecFindHoleBridge(hole, outerNode);
+  if (!bridge) return outerNode;
+  const bridgeReverse = ecSplitPolygon(bridge, hole);
+  ecFilter(bridgeReverse, bridgeReverse.next);
+  return ecFilter(bridge, bridge.next);
+}
+function ecFindHoleBridge(hole, outerNode) {
+  let p = outerNode, qx = -Infinity, m = null;
+  const hx = hole.x, hy = hole.y;
+  do {
+    if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
+      const x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
+      if (x <= hx && x > qx) {
+        qx = x;
+        m = p.x < p.next.x ? p : p.next;
+        if (x === hx) return m;
+      }
+    }
+    p = p.next;
+  } while (p !== outerNode);
+  if (!m) return null;
+  const stop = m, mx = m.x, my = m.y;
+  let tanMin = Infinity;
+  p = m;
+  do {
+    if (hx >= p.x && p.x >= mx && hx !== p.x &&
+        ecInTri(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
+      const tan = Math.abs(hy - p.y) / (hx - p.x);
+      if (ecLocallyInside(p, hole) &&
+          (tan < tanMin || (tan === tanMin && (p.x > m.x ||
+            (p.x === m.x && ecSectorContainsSector(m, p)))))) {
+        m = p; tanMin = tan;
+      }
+    }
+    p = p.next;
+  } while (p !== stop);
+  return m;
+}
+function ecSectorContainsSector(m, p) {
+  return ecArea(m.prev, m, p.prev) < 0 && ecArea(p.next, m, m.next) < 0;
+}
+function ecSplitPolygon(a, b) {
+  const a2 = ecNode(a.i, a.x, a.y), b2 = ecNode(b.i, b.x, b.y);
+  const an = a.next, bp = b.prev;
+  a.next = b; b.prev = a;
+  a2.next = an; an.prev = a2;
+  b2.next = a2; a2.prev = b2;
+  bp.next = b2; b2.prev = bp;
+  return b2;
+}
+
+/* ---- Solider --------------------------------------------------------- */
+
+/** Rätblock [x0,x1]×[y0,y1]×[z0,z1] som 12 trianglar med utåtnormaler. */
+function boxSolid(x0, y0, z0, x1, y1, z1) {
+  const v = [
+    [x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0],
+    [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1],
+  ];
+  const f = [
+    [0, 2, 1], [0, 3, 2],   // botten (normal -z)
+    [4, 5, 6], [4, 6, 7],   // topp (+z)
+    [0, 1, 5], [0, 5, 4],   // y0 (-y)
+    [2, 3, 7], [2, 7, 6],   // y1 (+y)
+    [1, 2, 6], [1, 6, 5],   // x1 (+x)
+    [3, 0, 4], [3, 4, 7],   // x0 (-x)
+  ];
+  return f.map(t => t.map(i => v[i]));
+}
+
+/**
+ * Extruderar en polygon (ytterring CCW + hål CW, i mm) från z0 till z1.
+ * Vattentät solid: earcut-topp, speglad botten, väggar längs alla ringar.
+ */
+function extrudeSolid(outer, holes, z0, z1) {
+  const o = normRing(outer, false);
+  const hs = (holes || []).map(h => normRing(h, true)).filter(h => h.length >= 3);
+  if (o.length < 3 || z1 <= z0) return null;
+
+  const flat = []; const holeIdx = [];
+  for (const [x, y] of o) flat.push(x, y);
+  const pts = o.slice();
+  for (const h of hs) {
+    holeIdx.push(pts.length);
+    for (const [x, y] of h) flat.push(x, y);
+    pts.push(...h);
+  }
+  const idx = earcut(flat, holeIdx);
+  if (!idx.length) return null;
+
+  const tris = [];
+  for (let i = 0; i < idx.length; i += 3) {
+    const a = pts[idx[i]], b = pts[idx[i + 1]], c = pts[idx[i + 2]];
+    tris.push([[a[0], a[1], z1], [b[0], b[1], z1], [c[0], c[1], z1]]);   // topp +z
+    tris.push([[a[0], a[1], z0], [c[0], c[1], z0], [b[0], b[1], z0]]);   // botten -z
+  }
+  const walls = ring => {
+    for (let i = 0, n = ring.length; i < n; i++) {
+      const [ax, ay] = ring[i], [bx, by] = ring[(i + 1) % n];
+      tris.push([[ax, ay, z0], [bx, by, z0], [bx, by, z1]]);
+      tris.push([[ax, ay, z0], [bx, by, z1], [ax, ay, z1]]);
+    }
+  };
+  walls(o); hs.forEach(walls);
+  return tris;
+}
+
+/** Signerad volym (positiv om normalerna pekar utåt). */
+function solidVolume(tris) {
+  let v = 0;
+  for (const [a, b, c] of tris) {
+    v += (a[0] * (b[1] * c[2] - b[2] * c[1])
+        + a[1] * (b[2] * c[0] - b[0] * c[2])
+        + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6;
+  }
+  return v;
+}
+/** Vattentäthet: varje riktad kant ska ha exakt en motriktad partner. */
+function solidWatertight(tris) {
+  const edges = new Map();
+  const key = p => p[0].toFixed(6) + ',' + p[1].toFixed(6) + ',' + p[2].toFixed(6);
+  for (const t of tris) {
+    for (let i = 0; i < 3; i++) {
+      const a = key(t[i]), b = key(t[(i + 1) % 3]);
+      const k = a + '|' + b;
+      edges.set(k, (edges.get(k) || 0) + 1);
+    }
+  }
+  let bad = 0;
+  for (const [k, n] of edges) {
+    const [a, b] = k.split('|');
+    if (n !== 1 || (edges.get(b + '|' + a) || 0) !== 1) bad++;
+  }
+  return { ok: bad === 0, bad, edges: edges.size };
+}
+
+/** Binär STL av en eller flera solider (lista av triangel-listor). */
+function stlBinary(solids, headerText) {
+  const tris = [];
+  for (const s of solids) for (const t of s) tris.push(t);
+  const buf = new ArrayBuffer(84 + tris.length * 50);
+  const dv = new DataView(buf);
+  const hdr = (headerText || 'bensin-eu STL').slice(0, 79);
+  for (let i = 0; i < hdr.length; i++) dv.setUint8(i, hdr.charCodeAt(i) & 0x7F);
+  dv.setUint32(80, tris.length, true);
+  let o = 84;
+  for (const [a, b, c] of tris) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const len = Math.hypot(nx, ny, nz) || 1;
+    nx /= len; ny /= len; nz /= len;
+    dv.setFloat32(o, nx, true); dv.setFloat32(o + 4, ny, true); dv.setFloat32(o + 8, nz, true);
+    o += 12;
+    for (const p of [a, b, c]) {
+      dv.setFloat32(o, p[0], true); dv.setFloat32(o + 4, p[1], true); dv.setFloat32(o + 8, p[2], true);
+      o += 12;
+    }
+    dv.setUint16(o, 0, true); o += 2;
+  }
+  return buf;
+}
+
+/** Ekvirektangulär projektion (D5): x = lon·cos52°·k, y = lat·k [mm]. */
+function projectLonLat(lon, lat, k, cos52) {
+  return [lon * cos52 * k, lat * k];
+}
+
+/**
+ * Kartsolider. features: geojson-features med properties.cc/.role.
+ * opts: { k, cos52, minArea, segmentsFor(cc) -> [{group,z0,z1}] | null,
+ *         ctx: bool, ctxHeight, plate: bool, plateMm }
+ * Returnerar [{group, cc, tris}]. Nollplan: basplattans ovansida (z=0).
+ */
+function buildMapSolids(features, opts) {
+  const out = [];
+  let bbox = [Infinity, Infinity, -Infinity, -Infinity];
+  const projRings = poly => poly.map(ring =>
+    ring.map(([lon, lat]) => projectLonLat(lon, lat, opts.k, opts.cos52)));
+
+  for (const f of features) {
+    const cc = f.properties.cc, role = f.properties.role;
+    const polys = f.geometry.type === 'Polygon'
+      ? [f.geometry.coordinates] : f.geometry.coordinates;
+    let segs = null;
+    if (role === 'eu') { segs = opts.segmentsFor(cc); }
+    else if (role === 'ctx') { if (!opts.ctx) continue; segs = [{ group: 'ctx', z0: 0, z1: opts.ctxHeight }]; }
+    if (!segs || !segs.length) continue;
+
+    for (const poly of polys) {
+      const rings = projRings(poly);
+      const outer = rings[0];
+      if (Math.abs(ringArea(normRing(outer, false))) < opts.minArea) continue;
+      for (const [x, y] of outer) {
+        bbox = [Math.min(bbox[0], x), Math.min(bbox[1], y),
+                Math.max(bbox[2], x), Math.max(bbox[3], y)];
+      }
+      for (const seg of segs) {
+        const tris = extrudeSolid(outer, rings.slice(1), seg.z0, seg.z1);
+        if (tris) out.push({ group: seg.group, cc, tris });
+      }
+    }
+  }
+  if (opts.plate && isFinite(bbox[0])) {
+    const m = 3;   // marginal runt yttersta geometrin
+    out.push({ group: 'plate', cc: null,
+      tris: boxSolid(bbox[0] - m, bbox[1] - m, -opts.plateMm, bbox[2] + m, bbox[3] + m, 0) });
+  }
+  out.bbox = bbox;
+  return out;
+}
+
+/**
+ * Kurvsolider. items: [{cc, widthMm, segments:[{group,z0,z1}]}] i ordning.
+ * depth: remsans djup i mm. Varje landsegment är en egen vattentät låda;
+ * intilliggande lådor delar vägg och skrivs ut som en sammanhängande remsa.
+ */
+function buildCurveSolids(items, depth) {
+  const out = [];
+  let x = 0;
+  for (const it of items) {
+    for (const seg of it.segments) {
+      if (seg.z1 <= seg.z0) continue;
+      out.push({ group: seg.group, cc: it.cc,
+                 tris: boxSolid(x, 0, seg.z0, x + it.widthMm, depth, seg.z1) });
+    }
+    x += it.widthMm;
+  }
+  out.totalWidth = x;
+  return out;
+}
+/* =====================================================================
+ *  ZIP-skrivare (utan komprimering) – en nedladdning per export.
+ *  Ingår i kärnblocket så att test/stl_check.js kan verifiera arkivet
+ *  med en riktig unzip.
+ * ===================================================================== */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function zipStore(files) {   // files: [{name, data:Uint8Array}]
+  const chunks = [], central = [];
+  let offset = 0;
+  const enc = new TextEncoder();
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data), n = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true);
+    lh.setUint16(6, 0x0800, true);     // UTF-8-flagga
+    lh.setUint16(8, 0, true);          // store
+    lh.setUint32(14, crc, true); lh.setUint32(18, n, true); lh.setUint32(22, n, true);
+    lh.setUint16(26, name.length, true);
+    chunks.push(new Uint8Array(lh.buffer), name, f.data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+    ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, n, true); ch.setUint32(24, n, true);
+    ch.setUint16(28, name.length, true);
+    ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + n;
+  }
+  let cdSize = 0;
+  for (const c of central) cdSize += c.length;
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...chunks, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
+}
+/*STL-CORE-END*/
+
+/* =====================================================================
+ *  Gemensam geometribeskrivning för aktuell vy (WYSIWYG-kontraktet):
+ *  exakt samma segment/grupper används av SVG-kurvan, 3D-kartan och STL.
+ * ===================================================================== */
+function segmentsForRow(row, breaks) {
+  if (S.color === 'tax' && row.net != null) {
+    return [{ group: 'net', z0: 0, z1: row.net }, { group: 'tax', z0: row.net, z1: row.tot }];
+  }
+  if (S.color === 'tax') return [{ group: 'net', z0: 0, z1: row.tot }];
+  return [{ group: 'q' + classOf(row.tot, breaks), z0: 0, z1: row.tot }];
+}
+function groupColor(g) {
+  if (g === 'net') return COLORS.net;
+  if (g === 'tax') return COLORS.tax;
+  if (g === 'ctx') return COLORS.ctx;
+  if (g === 'plate') return COLORS.plate;
+  if (g === 'ref') return COLORS.ref;
+  return COLORS.q[+g.slice(1)];
+}
+function groupLabels(breaks) {
+  if (S.color === 'tax') return { net: T('net_part'), tax: T('tax_part') };
+  const lbl = S.color === 'fixed'
+    ? I18N[S.lang].fixed_lbl(SCALE.FIXED_BREAKS)
+    : T('quartile_lbl').map((l, i) => `${l} ${i === 0 ? '< ' + fmt(breaks[0]) : i === 3 ? '≥ ' + fmt(breaks[2]) : fmt(breaks[i - 1]) + '–' + fmt(breaks[i])}`);
+  return { q0: lbl[0], q1: lbl[1], q2: lbl[2], q3: lbl[3] };
+}
+
+/* =====================================================================
+ *  Vy A – Priskurva (SVG)
+ * ===================================================================== */
+const tooltip = document.getElementById('tooltip');
+function showTip(html, ev) {
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  const x = Math.min(ev.clientX + 14, innerWidth - 280), y = Math.min(ev.clientY + 12, innerHeight - 90);
+  tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
+}
+function hideTip() { tooltip.style.display = 'none'; }
+
+function renderCurve(payload) {
+  const el = document.getElementById('curveChart');
+  const rows = rowsFor(payload);
+  if (!rows.length) { el.innerHTML = `<p class="err">${T('no_data')}</p>`; return; }
+  const breaks = activeBreaks(rows);
+  const mean = euMeanOf(rows);
+  const totalPop = rows.reduce((s, r) => s + r.pop, 0);
+
+  const W = 1000, H = 560, ML = 62, MR = 14, MT = 18, MB = 46;
+  const pw = W - ML - MR, ph = H - MT - MB;
+  const maxY = Math.max(10, Math.ceil(Math.max(...rows.map(r => r.tot)) * 1.08));
+  const yPix = v => MT + ph - v / maxY * ph;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">`;
+  for (let v = 0; v <= maxY; v += maxY > 30 ? 5 : 2) {
+    s += `<line x1="${ML}" y1="${yPix(v)}" x2="${W - MR}" y2="${yPix(v)}" stroke="#E5DCC8" stroke-width="1"/>`;
+    s += `<text x="${ML - 8}" y="${yPix(v) + 4}" text-anchor="end" font-size="12" fill="#6E6558">${v}</text>`;
+  }
+  s += `<text x="14" y="${MT + 10}" font-size="12" fill="#6E6558" transform="rotate(-90 14 ${MT + 10})" text-anchor="end">kr/l</text>`;
+
+  let x = ML;
+  const bars = [];
+  rows.forEach((r, i) => {
+    const w = r.pop / totalPop * pw;
+    for (const seg of segmentsForRow(r, breaks)) {
+      s += `<rect data-i="${i}" x="${x.toFixed(2)}" y="${yPix(seg.z1).toFixed(2)}" width="${Math.max(w, 0.6).toFixed(2)}" height="${(yPix(seg.z0) - yPix(seg.z1)).toFixed(2)}" fill="${groupColor(seg.group)}" stroke="#F7F2E6" stroke-width="0.5"/>`;
+    }
+    if (w > 16) s += `<text x="${(x + w / 2).toFixed(1)}" y="${(yPix(r.tot) - 5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#2B2620">${r.cc}</text>`;
+    bars.push({ x0: x, x1: x + w, row: r });
+    x += w;
+  });
+  s += `<line x1="${ML}" y1="${yPix(mean)}" x2="${W - MR}" y2="${yPix(mean)}" stroke="#2F5A8F" stroke-width="2" stroke-dasharray="8 5"/>`;
+  s += `<text x="${W - MR - 4}" y="${yPix(mean) - 6}" text-anchor="end" font-size="12.5" fill="#2F5A8F" font-weight="600">${T('eu_mean')}: ${fmt(mean)} kr/l</text>`;
+  s += `<line x1="${ML}" y1="${MT + ph}" x2="${W - MR}" y2="${MT + ph}" stroke="#2B2620" stroke-width="1.5"/>`;
+  s += `<text x="${ML}" y="${H - 14}" font-size="12" fill="#6E6558">0</text>`;
+  s += `<text x="${W - MR}" y="${H - 14}" text-anchor="end" font-size="12" fill="#6E6558">${Math.round(totalPop / 1e6)} ${T('milj')} (${Math.round(totalPop / SCALE.POP_PER_MM)} mm)</text>`;
+  s += `<text x="${(ML + W - MR) / 2}" y="${H - 14}" text-anchor="middle" font-size="12" fill="#6E6558">${S.lang === 'sv' ? 'kumulativ befolkning' : 'cumulative population'}</text>`;
+  s += '</svg>';
+  el.innerHTML = s;
+
+  const svg = el.firstChild;
+  svg.addEventListener('mousemove', ev => {
+    const t = ev.target;
+    if (t.tagName !== 'rect') { hideTip(); return; }
+    const r = bars[+t.dataset.i].row;
+    const eNom = (payload.fuels[S.fuel] || {})[r.cc] || {};
+    showTip(
+      `<b>${META[r.cc][S.lang]}</b><br>` +
+      `${T('tt_price')}: ${fmt(r.tot)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
+      (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} kr/l` : '') +
+      `<br>${T('tt_pop')}: ${fmt(r.pop / 1e6, 1)} ${T('milj')}`, ev);
+  });
+  svg.addEventListener('mouseleave', hideTip);
+
+  renderLegend('curveLegend', breaks, false);
+  document.getElementById('curveCaption').innerHTML =
+    T('curve_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '');
+}
+
+function renderLegend(id, breaks, withCtx) {
+  const el = document.getElementById(id);
+  const labels = groupLabels(breaks);
+  let h = '';
+  for (const g of Object.keys(labels)) {
+    h += `<span><span class="sw" style="background:${groupColor(g)}"></span>${labels[g]}</span>`;
+  }
+  if (withCtx && S.ctx) h += `<span><span class="sw" style="background:${COLORS.ctx}"></span>${T('ctx_lbl')}</span>`;
+  h += `<span><span class="sw" style="background:none;border:2px dashed #2F5A8F"></span>${T('eu_mean')}</span>`;
+  el.innerHTML = h;
+}
+
+/* =====================================================================
+ *  Vy B – Europakarta (Three.js, egen orbit – ingen OrbitControls)
+ * ===================================================================== */
+const MAP = { renderer: null, scene: null, camera: null, meshes: [], az: 0, el: 0.9, R: 380,
+              center: [0, 0], dragging: false, moved: 0, lastXY: null, raycaster: null, hoverCC: null };
+
+function mapSolidsForState(payload) {
+  const rows = rowsFor(payload);
+  const breaks = activeBreaks(rows);
+  const byCC = {};
+  rows.forEach(r => byCC[r.cc] = r);
+  return buildMapSolids(GEO.features, {
+    k: SCALE.MAP_K, cos52: SCALE.COS52, minArea: SCALE.MIN_AREA_MM2,
+    ctx: S.ctx, ctxHeight: SCALE.CTX_MM, plate: true, plateMm: SCALE.PLATE_MM,
+    segmentsFor: cc => byCC[cc] ? segmentsForRow(byCC[cc], breaks) : null,
+  });
+}
+
+function initMap() {
+  if (MAP.renderer || typeof THREE === 'undefined') return;
+  const box = document.getElementById('map3d');
+  MAP.renderer = new THREE.WebGLRenderer({ antialias: true });
+  MAP.renderer.setPixelRatio(devicePixelRatio);
+  MAP.renderer.setClearColor(0xF7F2E6);
+  box.appendChild(MAP.renderer.domElement);
+  MAP.scene = new THREE.Scene();
+  MAP.camera = new THREE.PerspectiveCamera(40, 1, 1, 5000);
+  MAP.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.65));
+  const sun = new THREE.DirectionalLight(0xFFF4DC, 0.75);
+  sun.position.set(200, -300, 500);
+  MAP.scene.add(sun);
+  MAP.raycaster = new THREE.Raycaster();
+
+  const el = MAP.renderer.domElement;
+  el.addEventListener('pointerdown', ev => {
+    MAP.dragging = true; MAP.moved = 0; MAP.lastXY = [ev.clientX, ev.clientY];
+    el.setPointerCapture(ev.pointerId);
+  });
+  el.addEventListener('pointermove', ev => {
+    if (MAP.dragging) {
+      const dx = ev.clientX - MAP.lastXY[0], dy = ev.clientY - MAP.lastXY[1];
+      MAP.moved += Math.abs(dx) + Math.abs(dy);
+      MAP.az += dx * 0.006;
+      MAP.el = Math.min(1.45, Math.max(0.15, MAP.el + dy * 0.006));
+      MAP.lastXY = [ev.clientX, ev.clientY];
+      placeCamera(); drawMap();
+    } else {
+      hoverMap(ev);
+    }
+  });
+  el.addEventListener('pointerup', ev => {
+    MAP.dragging = false;
+    if (MAP.moved < 6) clickMap(ev);
+  });
+  el.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    MAP.R = Math.min(1500, Math.max(120, MAP.R * (1 + ev.deltaY * 0.0012)));
+    placeCamera(); drawMap();
+  }, { passive: false });
+  el.addEventListener('pointerleave', () => { hideTip(); setHover(null); });
+  addEventListener('resize', sizeMap);
+}
+function sizeMap() {
+  if (!MAP.renderer) return;
+  const box = document.getElementById('map3d');
+  const w = box.clientWidth || 800, h = box.clientHeight || 560;
+  MAP.renderer.setSize(w, h);
+  MAP.camera.aspect = w / h;
+  MAP.camera.updateProjectionMatrix();
+  drawMap();
+}
+function placeCamera() {
+  const [cx, cy] = MAP.center;
+  MAP.camera.position.set(
+    cx + MAP.R * Math.cos(MAP.el) * Math.sin(MAP.az),
+    cy - MAP.R * Math.cos(MAP.el) * Math.cos(MAP.az),
+    MAP.R * Math.sin(MAP.el));
+  MAP.camera.up.set(0, 0, 1);
+  MAP.camera.lookAt(cx, cy, 0);
+}
+function meshFromTris(trisList, color) {
+  let n = 0;
+  for (const t of trisList) n += t.length;
+  const pos = new Float32Array(n * 9);
+  let o = 0;
+  for (const tris of trisList) for (const t of tris) for (const p of t) {
+    pos[o++] = p[0]; pos[o++] = p[1]; pos[o++] = p[2];
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  const m = new THREE.MeshLambertMaterial({ color });
+  return new THREE.Mesh(g, m);
+}
+function renderMap(payload) {
+  const box = document.getElementById('map3d');
+  if (typeof THREE === 'undefined') {
+    box.innerHTML = `<p class="err" style="padding:20px">Three.js (cdnjs) kunde inte laddas – kartvyn kräver nätåtkomst till cdnjs.cloudflare.com.</p>`;
+    return;
+  }
+  if (!GEO) {
+    box.innerHTML = `<p class="err" style="padding:20px">data/europe.geojson kunde inte läsas (kräver att sidan serveras via http).</p>`;
+    return;
+  }
+  initMap();
+  for (const m of MAP.meshes) { MAP.scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
+  MAP.meshes = [];
+
+  const solids = mapSolidsForState(payload);
+  const rows = rowsFor(payload); const byCC = {};
+  rows.forEach(r => byCC[r.cc] = r);
+
+  // Ett mesh per (land, grupp) för hover/klick; platta+kontext egna mesh.
+  const grouped = new Map();
+  for (const s of solids) {
+    const k = (s.cc || '·') + '|' + s.group;
+    if (!grouped.has(k)) grouped.set(k, { cc: s.cc, group: s.group, tris: [] });
+    grouped.get(k).tris.push(s.tris);
+  }
+  const bb = solids.bbox;
+  MAP.center = [(bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2];
+  for (const { cc, group, tris } of grouped.values()) {
+    const mesh = meshFromTris(tris, groupColor(group));
+    mesh.userData = { cc, group };
+    MAP.scene.add(mesh);
+    MAP.meshes.push(mesh);
+  }
+  placeCamera(); sizeMap();
+  renderLegend('mapLegend', activeBreaks(rows), true);
+  document.getElementById('mapCaption').innerHTML =
+    T('map_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '');
+}
+function drawMap() {
+  if (MAP.renderer) MAP.renderer.render(MAP.scene, MAP.camera);
+}
+function pickMap(ev) {
+  const r = MAP.renderer.domElement.getBoundingClientRect();
+  const ndc = new THREE.Vector2(
+    ((ev.clientX - r.left) / r.width) * 2 - 1,
+    -((ev.clientY - r.top) / r.height) * 2 + 1);
+  MAP.raycaster.setFromCamera(ndc, MAP.camera);
+  const hits = MAP.raycaster.intersectObjects(MAP.meshes);
+  return hits.length ? hits[0].object.userData : null;
+}
+function setHover(cc) {
+  if (MAP.hoverCC === cc) return;
+  MAP.hoverCC = cc;
+  for (const m of MAP.meshes) {
+    const on = cc && m.userData.cc === cc;
+    m.material.emissive = new THREE.Color(on ? 0x333311 : 0x000000);
+  }
+  drawMap();
+}
+function hoverMap(ev) {
+  const hit = pickMap(ev);
+  if (hit && hit.cc && META[hit.cc]) {
+    setHover(hit.cc);
+    const payload = PAYLOADS[S.date];
+    const rows = rowsFor(payload);
+    const r = rows.find(x => x.cc === hit.cc);
+    if (r) {
+      const eNom = (payload.fuels[S.fuel] || {})[hit.cc] || {};
+      showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_price')}: ${fmt(r.tot)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
+        (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} kr/l` : ''), ev);
+    } else {
+      showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_no_data')}`, ev);
+    }
+  } else {
+    setHover(null); hideTip();
+  }
+}
+function clickMap(ev) {
+  const hit = pickMap(ev);
+  if (hit && hit.cc && META[hit.cc] && !S.hist.includes(hit.cc)) {
+    S.hist.push(hit.cc);
+    writeURL();
+    SERIES_CACHE = {};   // enklast: ladda om serier vid nästa historikvisning
+    const note = document.createElement('div');
+    note.textContent = T('added_to_hist').replace('{name}', META[hit.cc][S.lang]);
+    note.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2F5A8F;color:#FDFAF2;padding:8px 18px;border-radius:8px;z-index:60';
+    document.body.appendChild(note);
+    setTimeout(() => note.remove(), 1800);
+  }
+}
+
+/* =====================================================================
+ *  Vy C – Historik (SVG-linjediagram)
+ * ===================================================================== */
+let SERIES_CACHE = {};
+const HIST_PALETTE = ['#2F5A8F', '#B5443C', '#5E8C5A', '#D89040', '#7A5CA0',
+                      '#3E8E8B', '#A5563C', '#889046', '#B0699E', '#556677'];
+
+async function renderHist() {
+  const chips = document.getElementById('histChips');
+  const el = document.getElementById('histChart');
+  document.getElementById('histCaption').innerHTML =
+    T('hist_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '');
+  if (SEED_MODE) {
+    chips.innerHTML = '';
+    el.innerHTML = `<p class="err">${T('hist_needs_api')}</p>`;
+    return;
+  }
+  // chips + lägg-till-väljare
+  let h = '';
+  S.hist.forEach((cc, i) => {
+    h += `<span class="chip" style="border-color:${HIST_PALETTE[i % 10]}">` +
+         `<span class="sw" style="background:${HIST_PALETTE[i % 10]}"></span>${META[cc][S.lang]}` +
+         `<b data-cc="${cc}" title="×">×</b></span>`;
+  });
+  h += `<select id="histAdd"><option value="">${T('hist_add')}</option>` +
+    Object.keys(META).filter(c => !S.hist.includes(c))
+      .sort((a, b) => META[a][S.lang].localeCompare(META[b][S.lang]))
+      .map(c => `<option value="${c}">${META[c][S.lang]}</option>`).join('') + '</select>';
+  chips.innerHTML = h;
+  chips.querySelectorAll('.chip b').forEach(b => b.onclick = () => {
+    S.hist = S.hist.filter(c => c !== b.dataset.cc);
+    if (!S.hist.length) S.hist = ['SE'];
+    writeURL(); renderHist();
+  });
+  document.getElementById('histAdd').onchange = ev => {
+    if (ev.target.value) { S.hist.push(ev.target.value); writeURL(); renderHist(); }
+  };
+
+  el.innerHTML = `<p>${T('loading')}</p>`;
+  const key = S.hist.join(',') + '|' + S.fuel;
+  if (!SERIES_CACHE[key]) {
+    try {
+      SERIES_CACHE[key] = await fetchJSON('api.php?action=series&cc=' + S.hist.join(',') + '&fuel=' + S.fuel);
+    } catch (e) {
+      el.innerHTML = `<p class="err">${T('hist_needs_api')}</p>`;
+      return;
+    }
+  }
+  const data = SERIES_CACHE[key];
+  const series = [];
+  S.hist.forEach((cc, i) => {
+    const raw = data.series[cc] || [];
+    const a = pliAdj(cc);
+    series.push({ name: META[cc][S.lang], color: HIST_PALETTE[i % 10],
+                  pts: raw.map(([d, v]) => [d, v * a]) });
+  });
+  const meanRaw = S.basis === 'ppp' ? data.eu_mean_ppp : data.eu_mean;
+  series.push({ name: T('eu_mean'), color: '#2B2620', dash: '7 5', pts: meanRaw });
+
+  const W = 1000, H = 520, ML = 56, MR = 16, MT = 16, MB = 40;
+  const pw = W - ML - MR, ph = H - MT - MB;
+  const all = series.flatMap(s => s.pts);
+  if (!all.length) { el.innerHTML = `<p class="err">${T('no_data')}</p>`; return; }
+  const t0 = Date.parse(all[0][0]);
+  const tMin = Math.min(...all.map(p => Date.parse(p[0])));
+  const tMax = Math.max(...all.map(p => Date.parse(p[0])));
+  const vMax = Math.max(10, Math.ceil(Math.max(...all.map(p => p[1])) * 1.06));
+  const xPix = d => ML + (Date.parse(d) - tMin) / (tMax - tMin) * pw;
+  const yPix = v => MT + ph - v / vMax * ph;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">`;
+  for (let v = 0; v <= vMax; v += vMax > 30 ? 5 : 2) {
+    s += `<line x1="${ML}" y1="${yPix(v)}" x2="${W - MR}" y2="${yPix(v)}" stroke="#E5DCC8"/>`;
+    s += `<text x="${ML - 7}" y="${yPix(v) + 4}" text-anchor="end" font-size="12" fill="#6E6558">${v}</text>`;
+  }
+  const y0 = new Date(tMin).getFullYear(), y1 = new Date(tMax).getFullYear();
+  for (let y = y0 + 1; y <= y1; y += (y1 - y0 > 12 ? 2 : 1)) {
+    const x = xPix(y + '-01-01');
+    s += `<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT + ph}" stroke="#EFE8D6"/>`;
+    s += `<text x="${x}" y="${H - 18}" text-anchor="middle" font-size="12" fill="#6E6558">${y}</text>`;
+  }
+  for (const ser of series) {
+    if (!ser.pts.length) continue;
+    const d = ser.pts.map((p, i) => (i ? 'L' : 'M') + xPix(p[0]).toFixed(1) + ' ' + yPix(p[1]).toFixed(1)).join('');
+    s += `<path d="${d}" fill="none" stroke="${ser.color}" stroke-width="1.8"${ser.dash ? ` stroke-dasharray="${ser.dash}"` : ''}/>`;
+    let mn = ser.pts[0], mx = ser.pts[0];
+    for (const p of ser.pts) { if (p[1] < mn[1]) mn = p; if (p[1] > mx[1]) mx = p; }
+    for (const [p, lbl] of [[mn, T('min')], [mx, T('max')]]) {
+      s += `<circle cx="${xPix(p[0]).toFixed(1)}" cy="${yPix(p[1]).toFixed(1)}" r="4" fill="none" stroke="${ser.color}" stroke-width="1.6"/>`;
+      s += `<text x="${(xPix(p[0]) + 7).toFixed(1)}" y="${(yPix(p[1]) + (lbl === T('min') ? 14 : -7)).toFixed(1)}" font-size="11" fill="${ser.color}">${lbl} ${fmt(p[1])} (${p[0].slice(0, 4)})</text>`;
+    }
+  }
+  s += `<line x1="${ML}" y1="${MT + ph}" x2="${W - MR}" y2="${MT + ph}" stroke="#2B2620" stroke-width="1.5"/>`;
+  s += `<text x="14" y="${MT + 10}" font-size="12" fill="#6E6558" transform="rotate(-90 14 ${MT + 10})" text-anchor="end">kr/l</text>`;
+  s += '</svg>';
+  el.innerHTML = s;
+}
+
+/* =====================================================================
+ *  Vy D – Om / Metod
+ * ===================================================================== */
+function renderAbout() {
+  const sv = S.lang === 'sv';
+  const b = SCALE.FIXED_BREAKS;
+  const mmKm = (SCALE.MAP_K / KM_PER_DEG_LAT);
+  const html = sv ? `
+<h2>Källa och beräkning</h2>
+<p>Priserna kommer från EU-kommissionens <em>Weekly Oil Bulletin</em> (Euro-super 95 respektive
+automotive gas oil/diesel), som publicerar konsumentpriser per måndag för EU:s 27 länder,
+med och utan skatter. Alla priser i källan är EUR per 1000 liter; omräkning till kr/liter
+sker med bulletinens egen veckokurs för SEK (EUR per SEK ur Sverige-kolumnen, samma datum).
+En källa, en kurs, inga externa valuta-API:er. Licens för källdata: CC BY-NC-ND —
+"Source: European Commission Weekly Oil Bulletin".</p>
+<p>Befolkningsvikter: Eurostat, 1 januari 2025 (deklarerat källår, D5).
+PPP-läget använder Eurostats prisnivåindex (prc_ppp_ind, PLI_EU27_2020, kategori A01
+"faktisk individuell konsumtion", år 2024, EU27=100): justerat pris = nominellt pris ×
+(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>). Sverige är oförändrat ankare — läs det som
+"vad priset skulle kännas som för en svensk plånbok". Nominella kr/l är huvudläsningen
+(svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning.</p>
+<h2>Deklarerade skalor (D5, O2)</h2>
+<ul>
+<li>Höjd: <code>1 mm = 1 kr per liter</code> — i alla vyer, alla datum, alla exporter.
+Två utskrifter från olika veckor är därmed direkt fysiskt jämförbara (historikens poäng).
+I PPP-läget avser skalan PPP-justerade kr/l (deklareras på följesedeln).</li>
+<li>Kurvans bredd: <code>1 mm = 2 miljoner invånare</code> (hela EU ≈ 225 mm; kan delas
+i två delar för utskriftsbädden). Remsans djup: 20 mm.</li>
+<li>Kartan: ekvirektangulär projektion, longitud skalad med cos 52°;
+<code>${SCALE.MAP_K} mm per breddgrad ≈ ${mmKm.toFixed(3)} mm/km</code> (≈ 1:${Math.round(KM_PER_DEG_LAT * 1e6 / SCALE.MAP_K / 1000) * 1000 / 1e6} milj.).
+Basplatta 2 mm som egen STL; nollplanet = plattans ovansida.</li>
+<li>Nollnivå (D2): 0 kr = bordet/plattans ovansida. Priserna spänner ca 14–28 kr (kvot &lt; 2),
+så ingen klippning eller kapning behövs — D3 (kapade skalor) är ej tillämplig, vilket härmed
+dokumenteras.</li>
+<li>Referensobjekt (O1): EU:s befolkningsviktade medelpris som referenslinje i vyerna och
+som exporterbar stapel (15 × 20 mm bas) i samma höjdskala.</li>
+</ul>
+<h2>Färgläsningar (D1, O3)</h2>
+<ul>
+<li><strong>Kvartiler per valt datum</strong> (relativ läsning, standard): gränserna räknas om
+för varje datum. Kvartilerna är per land, <em>inte</em> befolkningsviktade (deklarerat).</li>
+<li><strong>Fasta kronklasser</strong> (absolut läsning): &lt;${b[0]}, ${b[0]}–${b[1]}, ${b[1]}–${b[2]}, ≥${b[2]} kr/l —
+jämförbar mellan datum och mellan utskrifter.</li>
+<li><strong>Netto + skatt</strong> (D13, attributionsläsning): samma geometri, två bokföringar —
+skatten som eget segment ovanpå nettopriset visar att dyra länder är dyra främst via skatt.</li>
+</ul>
+<h2>Designgrammatik – kategorisering</h2>
+<p><strong>Former:</strong> F1 (kartan: geospatial extrudering, pris i Z, kvartilfärg) +
+F6 (kurvan: fördelningsuppveckling — en befolkningsviktad kvantilfunktion där stapelbredd
+är människor). F3 (rytmisk foldning) valdes bort: mönstret som söks är rumsligt/fördelnings­mässigt,
+inte rytmiskt; historiken visas som serie, inte foldad (D9).</p>
+<p><strong>Operatorer:</strong> O1 referens (EU-medel som linje + printbar stapel),
+O2 fasta skalor över hela familjen och alla datum, O3 utbytbara moduler (färgläsningar,
+datum, bränsle, prisläge), O4 webbtvilling med strikt WYSIWYG-export — det som exporteras
+är exakt den geometri som visas (samma kod bygger båda). O5 (naturlig enhetsreferens)
+används inte: det finns ingen naturlig fysisk enhet för priser; dokumenterat härmed.</p>
+<p><strong>Beslutsdimensioner:</strong> D1 lagersemantik (kvartil/fasta klasser/netto+skatt);
+D2 nollnivå = bordet, inget klipps; D3 ej tillämplig (kvot &lt; 2, se ovan); D4 normalisering:
+nominella kr/l är huvudläsning, PPP-justering finns som deklarerad syskonläsning, inkomstandel
+nämns som framtida syskon; D5 deklarerade skalor överallt inkl. befolkningskällår och PLI-källår;
+D6 förenklingstolerans deklarerad (geometri förenklad med tolerans 0,04°, koordinater 3 decimaler;
+projicerade öar &lt; 1 mm² utelämnas ur STL); D7 aggregeringsnivå: nation (deklarerad);
+D8 separata färg-STL:er ger få filamentbyten, låga höjder, ihålig-vänlig utskrift;
+D9 veckodata, ej foldad (motiverat under Former); D10 följesedel + denna panel i stället för
+textgravyr (höjdbudgeten är liten och den digitala tvillingen är nyckeln);
+D11 areafällan namngiven i kartvyn — kurvan är motviktet; D12 EU-27 är given mängd och alla
+datum är exporterbara (ingen körsbärsplockning); D13 med/utan skatt är systemets
+attributionsläsning.</p>
+<h2>Malta-anmärkningen (D6)</h2>
+<p>I kurvremsan blir Malta ≈ 0,3 mm bred — omöjlig som fristående bit men ok som steg i en
+sammanhängande solid. Detta noteras även på följesedeln.</p>` : `
+<h2>Source and calculation</h2>
+<p>Prices come from the European Commission's <em>Weekly Oil Bulletin</em> (Euro-super 95 and
+automotive gas oil/diesel), which publishes consumer prices per Monday for the 27 EU countries,
+with and without taxes. All prices in the source are EUR per 1000 litres; conversion to SEK/litre
+uses the bulletin's own weekly SEK rate (EUR per SEK from the Sweden column, same date).
+One source, one rate, no external currency APIs. Source data licence: CC BY-NC-ND —
+"Source: European Commission Weekly Oil Bulletin".</p>
+<p>Population weights: Eurostat, 1 January 2025 (declared source year, D5).
+The PPP mode uses Eurostat price level indices (prc_ppp_ind, PLI_EU27_2020, category A01
+"actual individual consumption", 2024, EU27=100): adjusted price = nominal price ×
+(PLI<sub>Sweden</sub>/PLI<sub>country</sub>). Sweden is the unchanged anchor — read it as
+"what the price would feel like to a Swedish wallet". Nominal SEK/l is the primary reading
+(Swedish wallet perspective, D4); PPP is a declared sibling reading.</p>
+<h2>Declared scales (D5, O2)</h2>
+<ul>
+<li>Height: <code>1 mm = 1 SEK per litre</code> — in all views, all dates, all exports.
+Two prints from different weeks are therefore directly physically comparable.
+In PPP mode the scale refers to PPP-adjusted SEK/l (declared on the packing slip).</li>
+<li>Curve width: <code>1 mm = 2 million inhabitants</code> (all of the EU ≈ 225 mm; can be
+split in two parts for the print bed). Strip depth: 20 mm.</li>
+<li>Map: equirectangular projection, longitude scaled by cos 52°;
+<code>${SCALE.MAP_K} mm per degree of latitude ≈ ${mmKm.toFixed(3)} mm/km</code>.
+Base plate 2 mm as its own STL; the zero plane is the top of the plate.</li>
+<li>Zero level (D2): 0 SEK = the table / top of the plate. Prices span roughly 14–28 SEK
+(ratio &lt; 2), so no clipping or cutting is needed — D3 (broken scales) is not applicable,
+documented here.</li>
+<li>Reference object (O1): the EU population-weighted mean as a reference line in the views
+and as an exportable bar (15 × 20 mm base) at the same height scale.</li>
+</ul>
+<h2>Colour readings (D1, O3)</h2>
+<ul>
+<li><strong>Quartiles per selected date</strong> (relative reading, default): the breaks are
+recomputed per date. Quartiles are per country, <em>not</em> population-weighted (declared).</li>
+<li><strong>Fixed SEK classes</strong> (absolute reading): &lt;${b[0]}, ${b[0]}–${b[1]}, ${b[1]}–${b[2]}, ≥${b[2]} SEK/l —
+comparable across dates and prints.</li>
+<li><strong>Net + tax</strong> (D13, attribution reading): the same geometry, two bookkeepings —
+tax as its own segment on top of the net price shows that expensive countries are expensive
+mainly through taxation.</li>
+</ul>
+<h2>Design grammar – categorisation</h2>
+<p><strong>Forms:</strong> F1 (map: geospatial extrusion, price in Z, quartile colour) +
+F6 (curve: distribution unfolding — a population-weighted quantile function where bar width
+is people). F3 (rhythmic folding) was rejected: the sought pattern is spatial/distributional,
+not rhythmic; history is shown as a series, not folded (D9).</p>
+<p><strong>Operators:</strong> O1 reference (EU mean as line + printable bar),
+O2 fixed scales across the whole family and all dates, O3 swappable modules (colour readings,
+dates, fuel, price basis), O4 web twin with strict WYSIWYG export — what is exported is
+exactly the geometry being shown (the same code builds both). O5 (natural unit reference)
+is not used: there is no natural physical unit for prices; documented here.</p>
+<p><strong>Decision dimensions:</strong> D1 layer semantics (quartile/fixed classes/net+tax);
+D2 zero level = the table, nothing clipped; D3 not applicable (ratio &lt; 2, see above);
+D4 normalisation: nominal SEK/l is the primary reading, PPP adjustment is a declared sibling,
+income share is mentioned as a future sibling; D5 declared scales everywhere incl. population
+and PLI source years; D6 simplification tolerance declared (geometry simplified at 0.04°,
+3-decimal coordinates; projected islands &lt; 1 mm² omitted from STL); D7 aggregation level:
+nation (declared); D8 separate colour STLs give few filament changes, low heights,
+hollow-friendly printing; D9 weekly data, not folded (motivated under Forms);
+D10 packing slip + this panel instead of engraving (the height budget is small and the digital
+twin is the key); D11 the area trap named in the map view — the curve is the counterweight;
+D12 EU-27 is a given set and every date is exportable (no cherry-picking);
+D13 with/without tax is the system's attribution reading.</p>
+<h2>The Malta remark (D6)</h2>
+<p>In the curve strip Malta is ≈ 0.3 mm wide — impossible as a free-standing piece but fine
+as a step in a contiguous solid. This is also noted on the packing slip.</p>`;
+  document.getElementById('aboutBody').innerHTML = html;
+}
+
+/* =====================================================================
+ *  STL-export (O4): exakt det som visas, separata filer per färggrupp,
+ *  följesedel, allt i en zip => en enda nedladdning.
+ * ===================================================================== */
+function groupFileName(g, i) {
+  const names = {
+    sv: { net: 'netto', tax: 'skatt', ctx: 'kontext', plate: 'basplatta', ref: 'referensstapel-eu-medel' },
+    en: { net: 'net', tax: 'tax', ctx: 'context', plate: 'baseplate', ref: 'reference-bar-eu-mean' },
+  }[S.lang];
+  if (names[g]) return names[g];
+  const n = +g.slice(1) + 1;
+  return (S.color === 'fixed' ? (S.lang === 'sv' ? 'klass' : 'class') : (S.lang === 'sv' ? 'kvartil' : 'quartile')) + '-' + n;
+}
+function buildFollowsedel(info) {
+  const sv = S.lang === 'sv';
+  const L = [];
+  L.push(sv ? '=== FÖLJESEDEL – 3D-export: Bensinpriser i EU ===' : '=== PACKING SLIP – 3D export: Petrol prices in the EU ===');
+  L.push('');
+  L.push((sv ? 'Vy: ' : 'View: ') + T('view_name')[info.view]);
+  L.push((sv ? 'Datum (priser per måndag): ' : 'Date (prices per Monday): ') + S.date);
+  L.push((sv ? 'Bränsle: ' : 'Fuel: ') + T('fuel_' + S.fuel));
+  L.push((sv ? 'Prisläge: ' : 'Price basis: ') + T('basis_' + S.basis));
+  L.push((sv ? 'Färgläsning: ' : 'Colour reading: ') + T('color_' + S.color));
+  if (info.view === 'map') L.push((sv ? 'Grannländer (kontext): ' : 'Neighbouring countries (context): ') + (S.ctx ? (sv ? 'på' : 'on') : (sv ? 'av' : 'off')));
+  L.push('');
+  L.push(sv ? '--- Deklarerade skalor (identiska för alla datum/exporter, O2/D5) ---'
+            : '--- Declared scales (identical for all dates/exports, O2/D5) ---');
+  L.push(sv ? `Höjd: 1 mm = 1 kr/l${S.basis === 'ppp' ? ' (PPP-justerade kr/l: pris × PLI_SE/PLI_land; Eurostat A01 2024)' : ''}`
+            : `Height: 1 mm = 1 SEK/l${S.basis === 'ppp' ? ' (PPP-adjusted SEK/l: price × PLI_SE/PLI_country; Eurostat A01 2024)' : ''}`);
+  if (info.view === 'curve') {
+    L.push(sv ? 'Bredd: 1 mm = 2 000 000 invånare (Eurostat 1 jan 2025). Remsans djup: 20 mm.'
+              : 'Width: 1 mm = 2,000,000 inhabitants (Eurostat 1 Jan 2025). Strip depth: 20 mm.');
+    L.push(sv ? `Total längd: ${info.totalWidth.toFixed(1)} mm.` : `Total length: ${info.totalWidth.toFixed(1)} mm.`);
+    L.push(sv ? 'Malta är ≈ 0,3 mm bred – ok som steg i sammanhängande solid, omöjlig fristående (D6).'
+              : 'Malta is ≈ 0.3 mm wide – fine as a step in a contiguous solid, impossible free-standing (D6).');
+  } else {
+    const mmKm = SCALE.MAP_K / KM_PER_DEG_LAT;
+    L.push(sv ? `Karta: ekvirektangulär projektion, longitud × cos 52°; ${SCALE.MAP_K} mm/breddgrad ≈ ${mmKm.toFixed(4)} mm/km (≈ 1:${(KM_PER_DEG_LAT * 1e6 / SCALE.MAP_K / 1e6).toFixed(1)} milj.)`
+              : `Map: equirectangular projection, longitude × cos 52°; ${SCALE.MAP_K} mm/degree latitude ≈ ${mmKm.toFixed(4)} mm/km`);
+    L.push(sv ? `Basplatta ${SCALE.PLATE_MM} mm som egen STL (z = -${SCALE.PLATE_MM}..0). Nollplan (0 kr) = plattans ovansida (z = 0).`
+              : `Base plate ${SCALE.PLATE_MM} mm as its own STL (z = -${SCALE.PLATE_MM}..0). Zero plane (0 SEK) = top of plate (z = 0).`);
+    L.push(sv ? `Kontextländer: platta ${SCALE.CTX_MM} mm. Öar < ${SCALE.MIN_AREA_MM2} mm² projicerad yta utelämnas (D6).`
+              : `Context countries: flat ${SCALE.CTX_MM} mm. Islands < ${SCALE.MIN_AREA_MM2} mm² projected area omitted (D6).`);
+  }
+  L.push(sv ? 'Nollnivå: 0 kr = bordet/plattans ovansida; inget klipps (D2; D3 ej tillämplig, prisspannets kvot < 2).'
+            : 'Zero level: 0 SEK = table/plate top; nothing clipped (D2; D3 not applicable, price span ratio < 2).');
+  L.push('');
+  L.push(sv ? '--- Filer (positionerade i samma koordinatsystem; skriv ut tillsammans som ett objekt) ---'
+            : '--- Files (positioned in one shared coordinate system; print together as one object) ---');
+  for (const f of info.files) L.push('  ' + f);
+  if (info.euMean != null) {
+    L.push('');
+    L.push((sv ? 'EU-medel (befolkningsviktat): ' : 'EU mean (population-weighted): ') + fmt(info.euMean) + ' kr/l' +
+      (info.refIncluded ? (sv ? ' – referensstapel 15×20 mm ingår (O1).' : ' – 15×20 mm reference bar included (O1).') : ''));
+  }
+  if (info.missing && info.missing.length) {
+    L.push(sv ? `Länder utan pris detta datum (utelämnade): ${info.missing.join(', ')}` :
+                `Countries without a price on this date (omitted): ${info.missing.join(', ')}`);
+  }
+  L.push('');
+  L.push(sv ? '--- Källa ---' : '--- Source ---');
+  L.push('Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND).');
+  L.push(sv ? 'Befolkning: Eurostat (1 jan 2025). Prisnivåindex: Eurostat prc_ppp_ind, A01, 2024.'
+            : 'Population: Eurostat (1 Jan 2025). Price level indices: Eurostat prc_ppp_ind, A01, 2024.');
+  L.push((sv ? 'Genererad: ' : 'Generated: ') + new Date().toISOString());
+  return L.join('\n') + '\n';
+}
+
+function doExport() {
+  if (!['curve', 'map'].includes(S.view)) return;
+  const payload = PAYLOADS[S.date];
+  if (!payload) return;
+  const rows = rowsFor(payload);
+  if (!rows.length) return;
+  const breaks = activeBreaks(rows);
+  const euMean = euMeanOf(rows);
+  const missing = Object.keys(META).filter(cc => !rows.find(r => r.cc === cc));
+  let solids = [], totalWidth = null;
+
+  if (S.view === 'curve') {
+    const items = rows.map(r => ({
+      cc: r.cc, widthMm: r.pop / SCALE.POP_PER_MM,
+      segments: segmentsForRow(r, breaks),
+    }));
+    solids = buildCurveSolids(items, SCALE.CURVE_DEPTH);
+    totalWidth = solids.totalWidth;
+    if (S.split) {   // dela vid landgräns närmast halva befolkningen
+      let x = 0, cut = 0, half = totalWidth / 2, best = Infinity;
+      const xs = [];
+      for (const it of items) { xs.push(x); x += it.widthMm; }
+      xs.forEach(v => { if (Math.abs(v - half) < best) { best = Math.abs(v - half); cut = v; } });
+      for (const s of solids) {
+        const minX = Math.min(...s.tris.flat().map(p => p[0]));
+        s.group = (minX < cut - 1e-9 ? 'A_' : 'B_') + s.group;
+        if (minX >= cut - 1e-9) for (const t of s.tris) for (const p of t) p[0] -= cut;
+      }
+    }
+  } else {
+    if (!GEO) return;
+    solids = mapSolidsForState(payload);
+    // Länder med pris men utan geometri (under areagränsen, t.ex. Malta) ska
+    // deklareras på följesedeln – D6, inget tyst bortfall.
+    const withGeom = new Set(solids.filter(s => s.cc).map(s => s.cc));
+    for (const r of rows) if (!withGeom.has(r.cc)) missing.push(r.cc + (S.lang === 'sv' ? ' (under areagräns på kartan, D6)' : ' (below map area threshold, D6)'));
+  }
+
+  if (S.ref || S.view === 'curve') {   // referensstapel om ikryssad
+    if (document.getElementById('refChk').checked) {
+      solids.push({ group: 'ref', cc: null,
+        tris: boxSolid(-45, 0, 0, -30, 20, euMean) });
+    }
+  }
+
+  // Gruppera till filer
+  const byGroup = new Map();
+  for (const s of solids) {
+    if (!byGroup.has(s.group)) byGroup.set(s.group, []);
+    byGroup.get(s.group).push(s.tris);
+  }
+  const stamp = `bensin-eu_${S.fuel}_${S.date}_${S.view}_${S.basis}_${S.color}`;
+  const files = [], fileNotes = [];
+  let idx = 1;
+  for (const [g, tris] of byGroup) {
+    const base = g.replace(/^([AB])_(.*)$/, (m, half, rest) => groupFileName(rest) + '_' + (S.lang === 'sv' ? 'del' : 'part') + '-' + half);
+    const name = String(idx).padStart(2, '0') + '_' + (byGroup.has(g) && !/^[AB]_/.test(g) ? groupFileName(g) : base) + '.stl';
+    const buf = stlBinary(tris, stamp + ' ' + g);
+    files.push({ name, data: new Uint8Array(buf) });
+    let n = 0; for (const t of tris) n += t.length;
+    fileNotes.push(`${name}  (${n} ${S.lang === 'sv' ? 'trianglar' : 'triangles'})`);
+    idx++;
+  }
+  const slip = buildFollowsedel({
+    view: S.view, files: fileNotes, euMean, missing, totalWidth,
+    refIncluded: document.getElementById('refChk').checked,
+  });
+  files.unshift({ name: T('followsedel_name'), data: new TextEncoder().encode(slip) });
+
+  const blob = zipStore(files);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = stamp + '.zip';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* =====================================================================
+ *  UI-koppling och start
+ * ===================================================================== */
+function applyStaticTexts() {
+  document.documentElement.lang = S.lang;
+  document.title = T('title');
+  const set = (id, k) => document.getElementById(id).textContent = T(k);
+  set('t_title', 'title'); set('t_sub', 'sub');
+  set('tab_curve', 'tab_curve'); set('tab_map', 'tab_map');
+  set('tab_hist', 'tab_hist'); set('tab_about', 'tab_about');
+  set('l_date', 'l_date'); set('l_fuel', 'l_fuel'); set('l_basis', 'l_basis');
+  set('l_color', 'l_color'); set('l_ctx', 'l_ctx'); set('l_ref', 'l_ref'); set('l_split', 'l_split');
+  set('exportBtn', 'export');
+  document.getElementById('langBtn').textContent = S.lang === 'sv' ? 'EN' : 'SV';
+  const fuelSel = document.getElementById('fuelSel');
+  fuelSel.options[0].textContent = T('fuel_petrol');
+  fuelSel.options[1].textContent = T('fuel_diesel');
+  const basisSel = document.getElementById('basisSel');
+  basisSel.options[0].textContent = T('basis_nom');
+  basisSel.options[1].textContent = T('basis_ppp');
+  const colorSel = document.getElementById('colorSel');
+  colorSel.options[0].textContent = T('color_quartile');
+  colorSel.options[1].textContent = T('color_fixed');
+  colorSel.options[2].textContent = T('color_tax');
+  let foot = T('foot');
+  if (LAST_UPDATE) foot += ` ${T('last_update')}: ${LAST_UPDATE.slice(0, 16).replace('T', ' ')} UTC.`;
+  document.getElementById('foot').textContent = foot;
+}
+function syncControls() {
+  document.getElementById('fuelSel').value = S.fuel;
+  document.getElementById('basisSel').value = S.basis;
+  document.getElementById('colorSel').value = S.color;
+  document.getElementById('ctxChk').checked = S.ctx;
+  document.getElementById('dateSel').value = S.date || '';
+  document.querySelectorAll('nav.tabs button').forEach(b =>
+    b.classList.toggle('on', b.dataset.view === S.view));
+  document.querySelectorAll('.view').forEach(v =>
+    v.classList.toggle('on', v.id === 'view_' + S.view));
+  document.getElementById('ctxGrp').style.display = S.view === 'map' ? '' : 'none';
+  document.getElementById('refGrp').style.display = ['curve', 'map'].includes(S.view) ? '' : 'none';
+  document.getElementById('splitGrp').style.display = S.view === 'curve' ? '' : 'none';
+  const exp = document.getElementById('exportBtn');
+  exp.disabled = !['curve', 'map'].includes(S.view) || (S.view === 'map' && !GEO);
+  exp.title = exp.disabled ? T('export_na') : '';
+  const idx = DATES.indexOf(S.date);
+  document.getElementById('datePrev').disabled = SEED_MODE || idx <= 0;
+  document.getElementById('dateNext').disabled = SEED_MODE || idx >= DATES.length - 1;
+  document.getElementById('dateSel').disabled = SEED_MODE;
+}
+async function rerender() {
+  writeURL(); applyStaticTexts(); syncControls();
+  const banner = document.getElementById('banner');
+  banner.style.display = SEED_MODE ? 'block' : 'none';
+  if (SEED_MODE) banner.textContent = T('seed_banner').replace('{date}', S.date);
+  let payload = null;
+  try { payload = await payloadFor(S.date); }
+  catch (e) { payload = PAYLOADS[DATES[DATES.length - 1]]; S.date = payload.date; syncControls(); }
+  if (S.view === 'curve') renderCurve(payload);
+  else if (S.view === 'map') { renderMap(payload); drawMap(); }
+  else if (S.view === 'hist') renderHist();
+  else renderAbout();
+}
+function fillDates() {
+  const sel = document.getElementById('dateSel');
+  sel.innerHTML = DATES.slice().reverse().map(d => `<option value="${d}">${d}</option>`).join('');
+}
+function wire() {
+  document.querySelectorAll('nav.tabs button').forEach(b =>
+    b.onclick = () => { S.view = b.dataset.view; rerender(); });
+  document.getElementById('langBtn').onclick = () => { S.lang = S.lang === 'sv' ? 'en' : 'sv'; rerender(); };
+  document.getElementById('dateSel').onchange = ev => { S.date = ev.target.value; rerender(); };
+  document.getElementById('datePrev').onclick = () => {
+    const i = DATES.indexOf(S.date); if (i > 0) { S.date = DATES[i - 1]; rerender(); } };
+  document.getElementById('dateNext').onclick = () => {
+    const i = DATES.indexOf(S.date); if (i < DATES.length - 1) { S.date = DATES[i + 1]; rerender(); } };
+  document.getElementById('fuelSel').onchange = ev => { S.fuel = ev.target.value; SERIES_CACHE = {}; rerender(); };
+  document.getElementById('basisSel').onchange = ev => { S.basis = ev.target.value; rerender(); };
+  document.getElementById('colorSel').onchange = ev => { S.color = ev.target.value; rerender(); };
+  document.getElementById('ctxChk').onchange = ev => { S.ctx = ev.target.checked; rerender(); };
+  document.getElementById('exportBtn').onclick = doExport;
+}
+(async function main() {
+  readURL();
+  applyStaticTexts();
+  document.getElementById('curveChart').innerHTML = `<p>${T('loading')}</p>`;
+  try {
+    await loadInitial();
+  } catch (e) {
+    document.getElementById('curveChart').innerHTML =
+      `<p class="err">Kunde inte läsa vare sig api.php eller data/seed.json: ${e.message}</p>`;
+    return;
+  }
+  fillDates();
+  wire();
+  rerender();
+})();
+</script>
+</body>
+</html>
