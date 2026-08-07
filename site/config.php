@@ -20,8 +20,13 @@ define('WOB_BULLETIN_PAGE', 'https://energy.ec.europa.eu/data-and-analysis/weekl
 define('DB_PATH', __DIR__ . '/data/prices.sqlite');
 define('LOG_PATH', __DIR__ . '/data/update.log');
 
-// Produktnamn i källan som avser bensin (matchas skiftlägesokänsligt, delsträng).
-define('PRODUCT_MATCH', 'euro-super');
+// Bränslen: intern nyckel => delsträngar (gemener) som identifierar produkten
+// i källan, både i maskinnamn ("euro95", "diesel") och i mänskliga rubriker
+// ("Euro-super 95 (I)", "Gas oil automobile Automotive gas oil").
+const FUELS = [
+  'petrol' => ['euro95', 'euro-super'],
+  'diesel' => ['diesel', 'gas oil automobile', 'automotive gas oil'],
+];
 
 // EU-27: bulletinens landskoder (GR = Grekland; Eurostat använder EL).
 // Befolkning: Eurostat, 1 januari 2025, avrundat till tusental. Redigerbar.
@@ -54,6 +59,22 @@ const COUNTRIES = [
   'SI' => ['name_en'=>'Slovenia',   'name_sv'=>'Slovenien',   'pop'=> 2130000],
   'ES' => ['name_en'=>'Spain',      'name_sv'=>'Spanien',     'pop'=>49077000],
   'SE' => ['name_en'=>'Sweden',     'name_sv'=>'Sverige',     'pop'=>10588000],
+];
+
+// Prisnivåindex (PLI) för PPP-justering. Källa: Eurostat prc_ppp_ind,
+// PLI_EU27_2020, kategori A01 "Actual individual consumption", år 2024,
+// EU27=100. Hämtat 2026-08-07 via Eurostats API. Justeringen i frontend:
+// PPP-pris = nominellt pris x (PLI_SE / PLI_land) — dvs. "vad priset skulle
+// kännas som för en svensk plånbok". Sverige är alltså oförändrat ankare.
+// OBS: samma tabell finns inlinad i index.html (för statiskt seed-läge);
+// ändras den ena ska den andra också ändras.
+const PLI = [
+  'AT'=>119.7, 'BE'=>118.7, 'BG'=>56.9,  'HR'=>73.3,  'CY'=>95.1,
+  'CZ'=>80.2,  'DK'=>142.8, 'EE'=>96.5,  'FI'=>127.2, 'FR'=>107.9,
+  'DE'=>109.1, 'GR'=>83.0,  'HU'=>68.3,  'IE'=>141.2, 'IT'=>98.1,
+  'LV'=>77.2,  'LT'=>78.2,  'LU'=>150.7, 'MT'=>93.1,  'NL'=>121.0,
+  'PL'=>70.2,  'PT'=>85.0,  'RO'=>57.4,  'SK'=>81.1,  'SI'=>91.0,
+  'ES'=>90.7,  'SE'=>123.0,
 ];
 
 // Rimlighetsgränser för svenskt pumppris i SEK/liter (importvalidering, D-beslut:

@@ -57,8 +57,9 @@ say('Blad: ' . implode(', ', array_map(
 
 $res = wob_parse($book);
 $prices = $res['prices']; $rates = $res['rates']; $st = $res['stats'];
-say(sprintf('Parsade %d prisrader, %d länder, %d datum med SE-växelkurs',
-  $st['rows'], count($st['countries']), count($rates)));
+say(sprintf('Layout: %s. Parsade %d prisvärden, %d länder, bränslen: %s, %d datum med SE-växelkurs',
+  $st['layout'] ?? '?', $st['rows'], count($st['countries']),
+  implode('+', array_keys($st['fuels'] ?? [])) ?: 'inga', count($rates)));
 if ($verbose && $st['unknown_kind'] > 0) {
   say("Obs: {$st['unknown_kind']} rader i sektioner utan identifierad " .
       'med/utan-skatt-rubrik (löstes via större=med skatt).');
@@ -73,23 +74,32 @@ krsort($dates);
 $latest = array_key_first($dates);
 if ($latest === null) { say('FEL: inga prisrader alls.'); exit(1); }
 
-$nLatest = 0;
+// Bensin är kärnprodukten: hårda fel. Diesel valideras mjukare (varningar)
+// så att en indragen dieselserie hos EC inte stoppar bensinuppdateringen.
+$nLatest = ['petrol'=>0, 'diesel'=>0];
 foreach ($prices as $key => $rec) {
-  if (str_starts_with($key, "$latest|") && $rec['with'] !== null) $nLatest++;
+  [$d, , $fuel] = explode('|', $key);
+  if ($d === $latest && $rec['with'] !== null && isset($nLatest[$fuel])) $nLatest[$fuel]++;
 }
-if ($nLatest < 20) $errors[] =
-  "Bara $nLatest länder har pris för senaste datum ($latest); förväntar ~27.";
+if ($nLatest['petrol'] < 20) $errors[] =
+  "Bara {$nLatest['petrol']} länder har bensinpris för senaste datum ($latest); förväntar ~27.";
+if ($nLatest['diesel'] < 20) $warnings[] =
+  "Bara {$nLatest['diesel']} länder har dieselpris för senaste datum ($latest).";
 
 // Enhetsglidningskontroll: svenskt pumppris i SEK/liter inom rimliga gränser.
-$seKey = "$latest|SE";
-if (isset($prices[$seKey], $rates[$latest]) && $prices[$seKey]['with'] !== null) {
-  $sekL = $prices[$seKey]['with'] / 1000 / $rates[$latest];
-  if ($sekL < SANITY_SE_MIN || $sekL > SANITY_SE_MAX) $errors[] = sprintf(
-    'Sverige %s: %.2f SEK/l ligger utanför [%.0f, %.0f] – möjlig enhetsglidning.',
-    $latest, $sekL, SANITY_SE_MIN, SANITY_SE_MAX);
-  else say(sprintf('Rimlighetskontroll OK: Sverige %s = %.2f SEK/l', $latest, $sekL));
-} else {
-  $errors[] = "Saknar svenskt pris eller växelkurs för $latest.";
+foreach (['petrol' => 'error', 'diesel' => 'warning'] as $fuel => $sev) {
+  $seKey = "$latest|SE|$fuel";
+  if (isset($prices[$seKey], $rates[$latest]) && $prices[$seKey]['with'] !== null) {
+    $sekL = $prices[$seKey]['with'] / 1000 / $rates[$latest];
+    if ($sekL < SANITY_SE_MIN || $sekL > SANITY_SE_MAX) $errors[] = sprintf(
+      'Sverige %s (%s): %.2f SEK/l utanför [%.0f, %.0f] – möjlig enhetsglidning.',
+      $latest, $fuel, $sekL, SANITY_SE_MIN, SANITY_SE_MAX);
+    else say(sprintf('Rimlighetskontroll OK: Sverige %s %s = %.2f SEK/l', $latest, $fuel, $sekL));
+  } elseif ($sev === 'error') {
+    $errors[] = "Saknar svenskt bensinpris eller växelkurs för $latest.";
+  } else {
+    $warnings[] = "Saknar svenskt dieselpris för $latest.";
+  }
 }
 
 // Med skatt måste vara strikt större än utan skatt.
@@ -111,14 +121,14 @@ if ($dry) {
 
 $db = db();
 $db->exec('BEGIN');
-$pp = $db->prepare('INSERT INTO prices(date,cc,eur1000_with,eur1000_net)
-  VALUES(:d,:c,:w,:n)
-  ON CONFLICT(date,cc) DO UPDATE SET
+$pp = $db->prepare('INSERT INTO prices(date,cc,fuel,eur1000_with,eur1000_net)
+  VALUES(:d,:c,:f,:w,:n)
+  ON CONFLICT(date,cc,fuel) DO UPDATE SET
     eur1000_with=COALESCE(:w, eur1000_with),
     eur1000_net =COALESCE(:n, eur1000_net)');
 foreach ($prices as $key => $rec) {
-  [$d, $c] = explode('|', $key);
-  $pp->bindValue(':d', $d); $pp->bindValue(':c', $c);
+  [$d, $c, $f] = explode('|', $key);
+  $pp->bindValue(':d', $d); $pp->bindValue(':c', $c); $pp->bindValue(':f', $f);
   $pp->bindValue(':w', $rec['with'], $rec['with'] === null ? SQLITE3_NULL : SQLITE3_FLOAT);
   $pp->bindValue(':n', $rec['net'],  $rec['net']  === null ? SQLITE3_NULL : SQLITE3_FLOAT);
   $pp->execute(); $pp->reset();

@@ -3,8 +3,20 @@
  * lib.php – xlsx-läsning, parsning av Oil Bulletin-historikfilen, databas.
  *
  * Parsern är avsiktligt defensiv: historikfilens exakta layout är inte
- * dokumenterad av EC, så strukturen detekteras (landsblock, rubrikrader,
- * sektionstyp med/utan skatt) i stället för att antas via fasta positioner.
+ * dokumenterad av EC, så strukturen detekteras i stället för att antas.
+ * Två kända layouter stöds:
+ *
+ *  A) "Bred" layout (den verkliga filen, verifierad 2026-08-07):
+ *     ett blad per skattetyp ("Prices with taxes" / "Prices wo taxes"),
+ *     rad 0 innehåller maskinläsbara kolumnnamn av typen
+ *     SE_price_with_tax_euro95, SE_price_wo_tax_diesel, SE_exchange_rate;
+ *     datarader har datum (Excel-serietal eller dd/mm/yy) i kolumn 0.
+ *
+ *  B) "Block"-layout (reserv): länder staplade vertikalt, rad med ensam
+ *     landkod, rubrikrad "Date | Exchange Rate To € | Euro-super 95 | ...",
+ *     sektionsrubriker med/utan skatt.
+ *
+ * Prisnycklar är "YYYY-MM-DD|CC|fuel" där fuel ∈ FUELS (petrol, diesel).
  */
 
 require_once __DIR__ . '/config.php';
@@ -19,9 +31,9 @@ function db(): SQLite3 {
     $db->busyTimeout(5000);
     $db->exec('PRAGMA journal_mode=WAL');
     $db->exec('CREATE TABLE IF NOT EXISTS prices(
-        date TEXT NOT NULL, cc TEXT NOT NULL,
+        date TEXT NOT NULL, cc TEXT NOT NULL, fuel TEXT NOT NULL,
         eur1000_with REAL, eur1000_net REAL,
-        PRIMARY KEY(date, cc))');
+        PRIMARY KEY(date, cc, fuel))');
     $db->exec('CREATE TABLE IF NOT EXISTS rates(
         date TEXT PRIMARY KEY, eur_per_sek REAL NOT NULL)');
     $db->exec('CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT)');
@@ -155,26 +167,112 @@ function wob_num($v): ?float {
 
 /**
  * Parsar alla blad. Returnerar:
- *  ['prices' => [ "$date|$cc" => ['with'=>eur1000|null,'net'=>eur1000|null] ],
+ *  ['prices' => [ "$date|$cc|$fuel" => ['with'=>eur1000|null,'net'=>eur1000|null] ],
  *   'rates'  => [ date => eur_per_sek ],
  *   'stats'  => diagnostik ]
  *
- * Layout per blad (detekteras, antas ej):
- *   ... "Consumer prices ... net of duties and taxes" / "... with taxes" (sektionsrubrik)
- *   AT                                  (landkod ensam i kolumn A)
- *   , Date, Exchange Rate To €, Euro-super 95, ...
- *   , , , 1000L, ...
- *   , 13/11/23, 0.08613, 810.37, ...
+ * Detekterar layout: bred (maskinnamn i rad 0) föredras, annars block.
+ * Alla priser i källan är EUR per 1000 liter oavsett landets valuta.
  */
 function wob_parse(array $book): array {
+  foreach ($book as $rows) {
+    foreach (array_slice($rows, 0, 3) as $cells) {
+      foreach ($cells as $v) {
+        if (preg_match('/_price_(?:with|wo)_tax_/', (string)$v)) {
+          return wob_parse_wide($book);
+        }
+      }
+    }
+  }
+  return wob_parse_blocks($book);
+}
+
+/**
+ * Layout A ("bred", den verkliga filen): rad 0 i prisbladen innehåller
+ * kolumnnamn som "SE_price_with_tax_euro95" och "SE_exchange_rate".
+ * Kolumnkartan byggs helt från dessa namn; inga positioner antas.
+ */
+function wob_parse_wide(array $book): array {
   $acc = []; $rates = [];
-  $stats = ['sheets'=>0,'rows'=>0,'unknown_kind'=>0,'countries'=>[]];
+  $stats = ['sheets'=>0,'rows'=>0,'unknown_kind'=>0,'countries'=>[],
+            'fuels'=>[],'layout'=>'wide'];
+
+  foreach ($book as $sheetName => $rows) {
+    // Hitta rubrikraden med maskinnamn (normalt rad 0).
+    $map = [];        // kolumnindex => ['cc','kind','fuel']
+    $xrCols = [];     // kolumnindex => cc (växelkurskolumner)
+    $headerAt = null;
+    foreach (array_slice($rows, 0, 5, true) as $ri => $cells) {
+      foreach ($cells as $col => $v) {
+        $v = trim((string)$v);
+        if (preg_match('/^([A-Z]{2})_price_(with|wo)_tax_([A-Za-z0-9_]+)$/', $v, $m)) {
+          $fuel = wob_fuel($m[3]);
+          if ($fuel !== null && isset(COUNTRIES[$m[1]])) {
+            $map[$col] = ['cc'=>$m[1], 'kind'=>$m[2] === 'with' ? 'with' : 'net',
+                          'fuel'=>$fuel];
+          }
+          $headerAt = $ri;
+        } elseif (preg_match('/^([A-Z]{2})_exchange_rate$/', $v, $m)) {
+          $xrCols[$col] = $m[1];
+          $headerAt = $ri;
+        }
+      }
+      if ($map) break;
+    }
+    if (!$map) continue;     // blad utan priskolumner (VAT, Consumption, …)
+    $stats['sheets']++;
+
+    foreach ($rows as $ri => $cells) {
+      if ($headerAt !== null && $ri <= $headerAt) continue;
+      $date = wob_date($cells[0] ?? null);
+      if ($date === null) continue;   // rubrik-/enhetsrader saknar datum
+
+      foreach ($map as $col => $m) {
+        $price = wob_num($cells[$col] ?? null);
+        if ($price === null || $price <= 0) continue;
+        $key = "$date|{$m['cc']}|{$m['fuel']}";
+        if (!isset($acc[$key])) $acc[$key] = ['with'=>null,'net'=>null];
+        if ($acc[$key][$m['kind']] === null) $acc[$key][$m['kind']] = $price;
+        $stats['rows']++;
+        $stats['countries'][$m['cc']] = true;
+        $stats['fuels'][$m['fuel']] = true;
+      }
+      foreach ($xrCols as $col => $cc) {
+        if ($cc !== 'SE') continue;   // vi behöver bara EUR-per-SEK
+        $xr = wob_num($cells[$col] ?? null);
+        if ($xr !== null && $xr > 0.03 && $xr < 0.30) $rates[$date] = $xr;
+      }
+    }
+  }
+  return ['prices'=>$acc, 'rates'=>$rates, 'stats'=>$stats];
+}
+
+/** Mappar en kolumnrubrik/ett maskinnamn till intern bränslenyckel. */
+function wob_fuel(string $s): ?string {
+  $s = strtolower(trim($s));
+  if ($s === '') return null;
+  foreach (FUELS as $fuel => $needles) {
+    foreach ($needles as $n) {
+      if (strpos($s, $n) !== false) return $fuel;
+    }
+  }
+  return null;
+}
+
+/**
+ * Layout B ("block", reserv): länder staplade vertikalt per blad med
+ * sektionsrubriker (med/utan skatt), landkodsrad, rubrikrad och datarader.
+ */
+function wob_parse_blocks(array $book): array {
+  $acc = []; $rates = [];
+  $stats = ['sheets'=>0,'rows'=>0,'unknown_kind'=>0,'countries'=>[],
+            'fuels'=>[],'layout'=>'blocks'];
 
   foreach ($book as $sheetName => $rows) {
     $stats['sheets']++;
     // Sektionstyp kan även ligga i bladnamnet
     $kind = wob_kind($sheetName) ?? null;
-    $cc = null; $dateCol = null; $priceCol = null; $xrCol = null;
+    $cc = null; $dateCol = null; $fuelCols = []; $xrCol = null;
 
     foreach ($rows as $cells) {
       $joined = strtolower(implode(' | ', $cells));
@@ -187,44 +285,56 @@ function wob_parse(array $book): array {
       foreach ($cells as $v) {
         $t = trim((string)$v);
         if (preg_match('/^[A-Z]{2}$/', $t) && isset(COUNTRIES[$t])) {
-          $cc = $t; $dateCol = $priceCol = $xrCol = null;
+          $cc = $t; $dateCol = $xrCol = null; $fuelCols = [];
           $stats['countries'][$t] = true;
           break;
         }
       }
 
-      // 3) Rubrikrad? (innehåller produktnamnet)
-      if (strpos($joined, PRODUCT_MATCH) !== false) {
+      // 3) Rubrikrad? (innehåller minst ett känt produktnamn)
+      $headerFuels = [];
+      foreach ($cells as $col => $v) {
+        $fuel = wob_fuel((string)$v);
+        if ($fuel !== null) $headerFuels[$col] = $fuel;
+      }
+      if ($headerFuels) {
+        $fuelCols = []; $dateCol = null; $xrCol = null;
+        foreach ($headerFuels as $col => $fuel) {
+          if (!in_array($fuel, $fuelCols, true)) {
+            $fuelCols[$col] = $fuel;
+            $stats['fuels'][$fuel] = true;
+          }
+        }
         foreach ($cells as $col => $v) {
-          $lv = strtolower((string)$v);
-          if (strpos($lv, PRODUCT_MATCH) !== false && $priceCol === null) $priceCol = $col;
-          if (preg_match('/^date$/i', trim((string)$v)))                  $dateCol  = $col;
-          if (strpos($lv, 'exchange') !== false)                          $xrCol    = $col;
+          if (preg_match('/^date$/i', trim((string)$v)))   $dateCol = $col;
+          if (stripos((string)$v, 'exchange') !== false)   $xrCol   = $col;
         }
         continue;
       }
 
       // 4) Datarad?
-      if ($cc === null || $priceCol === null) continue;
+      if ($cc === null || !$fuelCols) continue;
       $dv = $dateCol !== null ? ($cells[$dateCol] ?? null) : null;
       if ($dv === null) { // datum kan ligga i första icke-tomma kolumnen
         foreach ($cells as $v) { if (wob_date($v)) { $dv = $v; break; } }
       }
       $date = $dv !== null ? wob_date($dv) : null;
       if ($date === null) continue;
-      $price = wob_num($cells[$priceCol] ?? null);
-      if ($price === null || $price <= 0) continue;
 
-      $key = "$date|$cc";
-      if (!isset($acc[$key])) $acc[$key] = ['with'=>null,'net'=>null,'raw'=>[]];
-      if ($kind === 'with' || $kind === 'net') {
-        // Samma (datum,land,typ) kan dyka upp i flera blad; behåll första.
-        if ($acc[$key][$kind] === null) $acc[$key][$kind] = $price;
-      } else {
-        $acc[$key]['raw'][] = $price;
-        $stats['unknown_kind']++;
+      foreach ($fuelCols as $col => $fuel) {
+        $price = wob_num($cells[$col] ?? null);
+        if ($price === null || $price <= 0) continue;
+        $key = "$date|$cc|$fuel";
+        if (!isset($acc[$key])) $acc[$key] = ['with'=>null,'net'=>null,'raw'=>[]];
+        if ($kind === 'with' || $kind === 'net') {
+          // Samma (datum,land,typ) kan dyka upp i flera blad; behåll första.
+          if ($acc[$key][$kind] === null) $acc[$key][$kind] = $price;
+        } else {
+          $acc[$key]['raw'][] = $price;
+          $stats['unknown_kind']++;
+        }
+        $stats['rows']++;
       }
-      $stats['rows']++;
 
       // Växelkurs från Sveriges block: EUR per SEK
       if ($cc === 'SE' && $xrCol !== null) {
@@ -269,7 +379,7 @@ function http_get(string $url, string $dest): bool {
   ]);
   $ok = curl_exec($ch);
   $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-  curl_close($ch); fclose($fp);
+  fclose($fp); // curl_close borttagen: deprecierad i PHP 8.5, verkningslös sedan 8.0
   return $ok && $code >= 200 && $code < 300 && filesize($dest) > 1000;
 }
 

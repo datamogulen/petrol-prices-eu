@@ -2,10 +2,13 @@
 /**
  * api.php – JSON-API för frontend.
  *
- *   ?action=latest            senaste datumets priser (SEK/l och EUR/l, med/utan skatt)
- *   ?action=date&date=YYYY-MM-DD   priser för ett givet datum
+ *   ?action=latest            senaste datumets priser, båda bränslena
+ *   ?action=date&date=YYYY-MM-DD   priser för ett givet datum, båda bränslena
  *   ?action=dates             alla tillgängliga datum (stigande)
- *   ?action=series&cc=SE,DE   tidsserier (SEK/l med skatt) för valda länder + EU-viktat medel
+ *   ?action=series&cc=SE,DE&fuel=petrol|diesel
+ *                             tidsserier (SEK/l med skatt) för valda länder
+ *                             + befolkningsviktat EU-medel, nominellt och
+ *                             PPP-justerat (PLI-tabellen i config.php)
  *
  * SEK/liter = (EUR per 1000 l) / 1000 / (EUR per SEK, bulletinens egen kurs
  * ur Sverige-bladet för samma datum). En källa, en kurs, inga externa API:er.
@@ -25,29 +28,29 @@ if (!file_exists(DB_PATH)) fail('Databasen finns inte ännu. Kör: php update.ph
 
 $action = $_GET['action'] ?? 'latest';
 
-/** Bygger prisstrukturen för ett datum. */
+/** Bygger prisstrukturen för ett datum (alla bränslen). */
 function payload_for_date(string $date): ?array {
   $rate = rate_for($date);
   if ($rate === null) return null;
-  $st = db()->prepare('SELECT cc, eur1000_with, eur1000_net FROM prices WHERE date=:d');
+  $st = db()->prepare('SELECT cc, fuel, eur1000_with, eur1000_net FROM prices WHERE date=:d');
   $st->bindValue(':d', $date);
   $rs = $st->execute();
-  $rows = [];
+  $fuels = [];
   while ($r = $rs->fetchArray(SQLITE3_ASSOC)) {
     $cc = $r['cc'];
-    if (!isset(COUNTRIES[$cc])) continue;
+    if (!isset(COUNTRIES[$cc]) || !isset(FUELS[$r['fuel']])) continue;
     $w = $r['eur1000_with']; $n = $r['eur1000_net'];
-    $rows[$cc] = [
+    $fuels[$r['fuel']][$cc] = [
       'eur'     => $w !== null ? round($w / 1000, 4) : null,
       'sek'     => $w !== null ? round($w / 1000 / $rate, 3) : null,
       'eur_net' => $n !== null ? round($n / 1000, 4) : null,
       'sek_net' => $n !== null ? round($n / 1000 / $rate, 3) : null,
     ];
   }
-  if (!$rows) return null;
+  if (!$fuels) return null;
   return ['date' => $date, 'sek_per_eur' => round(1 / $rate, 4),
-          'is_seed' => false, 'prices' => $rows,
-          'source' => 'EU-kommissionens Weekly Oil Bulletin (Euro-super 95)'];
+          'is_seed' => false, 'fuels' => $fuels,
+          'source' => 'EU-kommissionens Weekly Oil Bulletin (Euro-super 95, automotive gas oil)'];
 }
 
 switch ($action) {
@@ -85,6 +88,8 @@ switch ($action) {
       explode(',', strtoupper($_GET['cc'] ?? 'SE'))),
       fn($c) => isset(COUNTRIES[$c]));
     if (!$ccs) fail('Inga giltiga landskoder.');
+    $fuel = $_GET['fuel'] ?? 'petrol';
+    if (!isset(FUELS[$fuel])) fail('Okänt bränsle.');
     $from = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from'] ?? '')
           ? $_GET['from'] : '2005-01-01';
 
@@ -102,10 +107,11 @@ switch ($action) {
 
     $out = [];
     $st = db()->prepare('SELECT date, eur1000_with FROM prices
-                         WHERE cc=:c AND date>=:f AND eur1000_with IS NOT NULL
+                         WHERE cc=:c AND fuel=:fu AND date>=:f
+                           AND eur1000_with IS NOT NULL
                          ORDER BY date');
     foreach ($ccs as $cc) {
-      $st->bindValue(':c', $cc); $st->bindValue(':f', $from);
+      $st->bindValue(':c', $cc); $st->bindValue(':fu', $fuel); $st->bindValue(':f', $from);
       $rs = $st->execute();
       $ser = [];
       while ($r = $rs->fetchArray(SQLITE3_NUM)) {
@@ -116,25 +122,34 @@ switch ($action) {
       $st->reset();
     }
 
-    // Befolkningsviktat EU-medel (endast datum där >= 20 länder rapporterar).
-    $rs = db()->query('SELECT date, cc, eur1000_with FROM prices
-                       WHERE eur1000_with IS NOT NULL AND date>="' .
-                       SQLite3::escapeString($from) . '" ORDER BY date');
+    // Befolkningsviktat EU-medel (endast datum där >= 20 länder rapporterar),
+    // både nominellt och PPP-justerat (pris x PLI_SE/PLI_land per land; ett
+    // viktat medel av justerade priser, inte en justering av medlet).
+    $st = db()->prepare('SELECT date, cc, eur1000_with FROM prices
+                         WHERE fuel=:fu AND eur1000_with IS NOT NULL AND date>=:f
+                         ORDER BY date');
+    $st->bindValue(':fu', $fuel); $st->bindValue(':f', $from);
+    $rs = $st->execute();
     $byDate = [];
     while ($r = $rs->fetchArray(SQLITE3_ASSOC)) {
       if (isset(COUNTRIES[$r['cc']])) $byDate[$r['date']][$r['cc']] = (float)$r['eur1000_with'];
     }
-    $mean = [];
+    $mean = []; $meanPpp = [];
+    $pliSE = PLI['SE'];
     foreach ($byDate as $d => $cs) {
       if (count($cs) < 20) continue;
       $rate = $rateAt($d); if (!$rate) continue;
-      $wsum = 0; $psum = 0;
+      $wsum = 0; $psum = 0; $pppsum = 0;
       foreach ($cs as $cc => $e) {
         $pop = COUNTRIES[$cc]['pop']; $wsum += $pop; $psum += $pop * $e;
+        $pppsum += $pop * $e * $pliSE / PLI[$cc];
       }
-      $mean[] = [$d, round($psum / $wsum / 1000 / $rate, 3)];
+      $mean[]    = [$d, round($psum   / $wsum / 1000 / $rate, 3)];
+      $meanPpp[] = [$d, round($pppsum / $wsum / 1000 / $rate, 3)];
     }
-    echo json_encode(['series' => $out, 'eu_mean' => $mean], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['fuel' => $fuel, 'series' => $out,
+                      'eu_mean' => $mean, 'eu_mean_ppp' => $meanPpp],
+                     JSON_UNESCAPED_UNICODE);
     break;
   }
 
