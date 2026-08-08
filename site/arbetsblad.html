@@ -236,7 +236,7 @@ function studentSV() {
   const med = ST.variant === 'med3d';
   const fast = ST.datum === 'fast';
   const datumTxt = fast ? `priser för veckan ${FIX}` : 'dagens senaste priser (bilden kan skilja sig från faktarutorna!)';
-  const foot = n => `<div class="foot">Bensinpriser i EU · ${SITE} · Källa: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Löner &amp; prisnivåer: Eurostat · <strong>Blad ${n} av 4 – delas ut ett i taget</strong></div>`;
+  const foot = n => `<div class="foot">Bensinpriser i EU · ${SITE} · Källa: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Löner &amp; prisnivåer: Eurostat · Körsträckor: Odyssee-Mure/Eurostat · <strong>${n === 6 ? 'Fördjupningsblad (frivilligt)' : 'Blad ' + n + ' av 5 – delas ut ett i taget'}</strong></div>`;
   const nästa = n => `<p style="margin-top:4mm"><strong>✅ Klara? Visa era svar för läraren och be om Blad ${n}.</strong></p>`;
   return `
 <div class="sheet">
@@ -264,8 +264,8 @@ function studentSV() {
   <h2>Uppgift 1 · Gissa (utan att kolla någonstans)</h2>
   <ol>
     <li>Var ligger Sverige bland EU:s 27 länder i bensinpris vid pumpen?
-        (1 = billigast, 27 = dyrast). Var och en skriver sin egen siffra här eller på ett
-        kladdpapper – visa inte varandra förrän alla är klara:<br>
+        (1 = billigast, 27 = dyrast). Var och en skriver sin egen siffra – visa inte
+        varandra förrän alla är klara:<br>
         <span class="writein"></span> <span class="writein"></span>
         <span class="writein"></span> <span class="writein"></span> <span class="writein"></span></li>
     <li>Gissa literpriset i Sverige: <span class="writein"></span> kr,
@@ -284,7 +284,7 @@ function studentSV() {
 </div>
 
 <div class="sheet">
-  <h1>Blad 2 · Kolla verkligheten</h1>
+  <h1>Blad 2 · Kolla verkligheten – och hitta ett problem</h1>
   <div class="badges"><span class="badge">${med ? 'Ta fram kartmodellen' : 'Nu får mobilen komma fram'}</span></div>
   <h2>Uppgift 2 · Kartan</h2>
   <div class="qrrow">
@@ -302,54 +302,91 @@ function studentSV() {
     ${qrblock(link('&v=map&b=nom'), 'Kartan – pris vid pumpen')}
   </div>
   <div class="talk">De flesta grupper gissar att Sverige ligger <em>högt</em>. Om ni också
-  gjorde det: varifrån kommer den bilden, tror ni? Diskutera 2 minuter innan ni går vidare.</div>
+  gjorde det: varifrån kommer den bilden, tror ni? Diskutera 2 minuter.</div>
 
-  <div class="fact">
-    <h3>Faktaruta · Tre sätt att mäta "dyrt"</h3>
-    <table class="mini">
-      <tr><th>Mått</th><th>Betyder</th><th>Sverige ${fast ? FIX : '(' + FIX + ')'}</th></tr>
-      <tr><td><strong>Rakt pris</strong></td><td>kr/liter vid pumpen, i svenska kronor</td>
-          <td>${N.seNom} kr – näst lägst i EU (bara Malta lägre); snittet ${N.euNom} kr</td></tr>
-      <tr><td><strong>PPP-justerat</strong></td><td>priset i förhållande till landets allmänna
-          prisnivå, uttryckt i svensk prisnivå</td>
-          <td>${N.sePpp} kr – näst lägst (bara Luxemburg lägre); snittet ${N.euPpp} kr</td></tr>
-      <tr><td><strong>Tidpris</strong></td><td>minuter en genomsnittlig löntagare (nettolön)
-          arbetar för en liter</td>
-          <td>${N.seTid} min – tredje lägst; snittet ${N.euTid} min</td></tr>
-    </table>
-    <p>Tidpris = pris i euro × 60 ÷ nettotimlön i euro. Nettolön = lön efter skatt –
-    det är de pengarna man faktiskt kan tanka för.</p>
-  </div>
-
-  <h2>Uppgift 3 · Byt mått – byt karta</h2>
-  <div class="qrrow">
-    <div class="qrtask">
-      ${med
-        ? `<p>Ta fram de två <strong>kurvremsorna</strong> (rakt pris och tidpris). Håll en i
-           varje hand. Varje land är ett trappsteg; bredden är landets befolkning
-           (1&nbsp;mm = 2 miljoner människor). Känn skillnaden i form! Skanna undersidornas
-           QR-koder för exakta siffror.</p>`
-        : `<p>Öppna priskurvan i de två lägena (koderna här intill). Länderna är sorterade
-           billigast → dyrast; bredden är landets befolkning.</p>`}
-      <p>Var och en väljer tyst ut <em>ett land som byter plats mest</em> mellan måtten.
-      Jämför sedan era val.</p>
-    </div>
-    ${qrblock(link('&v=curve&b=ppp'), 'Kurvan – PPP-justerat')}
-    ${qrblock(link('&v=curve&b=time'), 'Kurvan – tidpris')}
-  </div>
-  <div class="talk">I PPP-läget kostar Rumäniens bensin ${fast ? N.roPpp : 'över 40'} "svenska
-  prisnivå-kronor". Det betyder INTE att en svensk turist betalar så vid rumänsk pump. Vad
-  betyder det då – för en rumän? (Ledtråd: jämför med vad allt annat kostar där, och titta på
-  tidpriset: ${fast ? N.roTid : '~18'} minuters arbete per liter mot våra ${fast ? N.seTid : '~5,5'}.)
-  Enas om en förklaring med egna ord – Sekreteraren skriver ner den.</div>
+  <h2>Uppgift 3 · Är 17 kronor = 17 kronor?</h2>
+  <p>Titta på Bulgarien och Sverige på kartan. ${fast
+    ? `Literpriset är nästan detsamma: <strong>16,84 kr i Bulgarien, 15,96 kr i Sverige</strong>.`
+    : `Literpriserna är ofta nästan desamma (kring ${FIX}: 16,84 kr i Bulgarien, 15,96 i Sverige).`}
+  Men en genomsnittlig bulgarisk lön är ungefär <strong>en tredjedel</strong> av en svensk,
+  och det mesta annat – hyra, mat, frisör – är mycket billigare där.</p>
+  <ol>
+    <li>Är det "lika dyrt" att tanka i Bulgarien som i Sverige? Var och en tar ställning
+    tyst: JA / NEJ / BEROR PÅ – och en mening varför.</li>
+    <li>Diskutera: vad mer än pumppriset skulle ni behöva veta för att jämföra
+    <em>rättvist</em>? Lista minst två saker:<br>
+    <span class="writein" style="min-width:70%"></span><br>
+    <span class="writein" style="min-width:70%"></span></li>
+    <li><strong>Uppfinn ett eget mått:</strong> hur skulle NI räkna för att jämförelsen ska
+    kännas rättvis? Beskriv med ord eller formel (det finns inget facit – än):<br>
+    <span class="writein" style="min-width:100%"></span><br>
+    <span class="writein" style="min-width:100%"></span></li>
+  </ol>
+  <div class="talk">Sekreteraren skriver gruppens mått så tydligt att en annan grupp skulle
+  kunna räkna med det. Spara det – ni ska jämföra med ekonomernas standardmått på nästa blad.</div>
   ${nästa(3)}
   ${foot(2)}
 </div>
 
 <div class="sheet">
-  <h1>Blad 3 · Skatten</h1>
+  <h1>Blad 3 · Ert mått möter ekonomernas</h1>
+  <div class="badges"><span class="badge">Nu får ni facit på uppgift 3</span></div>
+  <p>De flesta grupper föreslår att man ska räkna in <em>lönerna</em> eller <em>vad annat
+  kostar i landet</em>. Grattis i så fall – ni har just uppfunnit kärnan i ekonomernas två
+  standardmått. Så här ser de ut på riktigt:</p>
+
+  <div class="fact">
+    <h3>Mått 2 · Köpkraftsjusterat pris (PPP)</h3>
+    <p>Eurostat mäter varje lands <strong>allmänna prisnivå</strong> – vad en hel varukorg
+    (mat, hyra, tjänster …) kostar – och sätter EU-snittet till 100. Bulgarien ligger på
+    <strong>57</strong>, Sverige på <strong>123</strong>: det mesta i Bulgarien kostar alltså
+    ungefär hälften av vad det gör här. PPP-justering betyder att man räknar om bensinpriset
+    i förhållande till landets prisnivå, uttryckt i svensk prisnivå:</p>
+    <p style="text-align:center"><code>PPP-pris = pris × (prisnivå Sverige ÷ prisnivå landet)</code></p>
+    <p>Bulgarien: 16,84 kr × (123 ÷ 57) ≈ <strong>36 kr</strong>. Så dyr skulle bensinen vara
+    i Sverige om den var lika dyr <em>i förhållande till allt annat</em> som den är i
+    Bulgarien. Det är INTE vad en svensk turist betalar där – det är hur dyr bensinen är för
+    den som lever med landets priser.</p>
+  </div>
+  <div class="fact">
+    <h3>Mått 3 · Tidpris</h3>
+    <p>Ännu enklare: strunta i kronor – räkna <strong>arbetstid</strong>. Hur länge jobbar en
+    genomsnittlig löntagare (nettolön, alltså efter skatt) för EN liter?</p>
+    <p style="text-align:center"><code>tidpris = pris i euro × 60 ÷ nettotimlön i euro</code></p>
+    <p>Sverige: 1,45 € ÷ 15,97 €/h ≈ <strong>5,5 minuter</strong> per liter.
+    Rumänien: 1,80 € ÷ 5,92 €/h ≈ <strong>18 minuter</strong>. Samma liter – tre gånger så
+    mycket arbete.</p>
+  </div>
+
+  <h2>Uppgift 4 · Utforska de nya måtten</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      ${med
+        ? `<p>Ta fram de två <strong>kurvremsorna</strong> (rakt pris och tidpris). Håll en i
+           varje hand – känn skillnaden i form! Öppna sedan PPP-kurvan digitalt (koden).</p>`
+        : `<p>Öppna kurvorna (koderna här intill). Länderna är sorterade billigast → dyrast;
+           stapelbredden är landets befolkning.</p>`}
+      <ol>
+        <li>Var och en väljer tyst ut <em>ett land som byter plats mest</em> när måttet byts.
+        Jämför era val – varför flyttar just de länderna?</li>
+        <li>Jämför med ERT mått från Blad 2: fångar ekonomernas mått samma sak som ert?
+        Är ert bättre på något?</li>
+      </ol>
+    </div>
+    ${qrblock(link('&v=curve&b=ppp'), 'Kurvan – PPP-justerat')}
+    ${qrblock(link('&v=curve&b=time'), 'Kurvan – tidpris')}
+  </div>
+  <div class="talk">Titta på Rumänien i tidprisläget: 18 minuters arbete per liter, mot våra
+  5,5. Formulera med egna ord vad det betyder i vardagen för en rumänsk familj som behöver
+  bilen – Sekreteraren skriver ner gruppens formulering.</div>
+  ${nästa(4)}
+  ${foot(3)}
+</div>
+
+<div class="sheet">
+  <h1>Blad 4 · Skatten</h1>
   <div class="badges"><span class="badge">Här avgörs er skattegissning från Blad 1</span></div>
-  <h2>Uppgift 4 · Vad är det egentligen som skiljer länderna åt?</h2>
+  <h2>Uppgift 5 · Vad är det egentligen som skiljer länderna åt?</h2>
   <p>Påminn er om gruppens gissning på Sveriges plats i skatteligan (Blad 1):
   <span class="writein" style="min-width:12mm"></span>. Nu kollar vi.</p>
   <div class="qrrow">
@@ -370,12 +407,12 @@ function studentSV() {
   vinklade?</em> Vems är datan (titta längst ner på webbsidan), och hur skulle ni kunna
   kontrollera den mot en annan källa? Diskutera 3 minuter – att fråga "hur vet vi det här?"
   är halva övningen.</div>
-  ${nästa(4)}
-  ${foot(3)}
+  ${nästa(5)}
+  ${foot(4)}
 </div>
 
 <div class="sheet">
-  <h1>Blad 4 · Vad betyder det här?</h1>
+  <h1>Blad 5 · Vad betyder det här?</h1>
   <div class="badges"><span class="badge">Sista bladet – diskussion och gruppens svar</span></div>
   <div class="fact">
     <h3>Faktaruta · Nästan allt som skiljer är politik</h3>
@@ -395,20 +432,69 @@ function studentSV() {
 
   <h2>Avslutning · Enas eller oenas</h2>
   <p>Gruppens svar på frågan <strong>"Är bensinen billig eller dyr i Sverige?"</strong> –
-  var och en motiverar med ETT valfritt mått, Sekreteraren antecknar:</p>
+  var och en motiverar med ETT valfritt mått (gärna ert eget från Blad 2!),
+  Sekreteraren antecknar:</p>
   <p><span class="writein" style="min-width:100%"></span></p>
   <p><span class="writein" style="min-width:100%"></span></p>
   <p>Om ni inte är eniga: skriv <em>varför</em>. Väl motiverad oenighet är ett lika bra
   resultat som enighet.</p>
+  ${foot(5)}
+</div>
 
+<div class="sheet">
+  <h1>Blad 6 · Fördjupning: Vad kostar bilåret?</h1>
+  <div class="badges"><span class="badge">Frivilligt – miniräknare behövs</span>
+  <span class="badge">Priser per ${FIX}</span></div>
+  <p>En liter säger inte allt – folk kör olika långt i olika länder. Nu räknar ni ut vad
+  <em>ett års bensin</em> kostar en genomsnittlig bilägare, i pengar och i arbetstid.</p>
   <div class="fact">
-    <h3>Extra (om ni hinner) · Hur stor del av lönen?</h3>
-    <p>Årskostnadens andel av lönen ≈ körsträcka (km/år) × förbrukning (l/km) × pris (€/l)
-    ÷ nettoårslön (€). Sverige: ca 11 000 km × 0,065 l/km × 1,45 € ÷ 33 200 € ≈ <strong>3 %</strong>.
-    Räkna samma sak med Bulgariens pris (~1,74 €) och nettoårslön (~11 900 €). Vad blir det?
-    Stämmer bilden med tidpriset?</p>
+    <h3>Data (källor: Odyssee-Mure 2023 / Eurostat 2024; löner Eurostat 2024)</h3>
+    <table class="mini">
+      <tr><th>Land</th><th>Körsträcka per bil</th><th>Bensinpris</th><th>Nettotimlön</th></tr>
+      <tr><td><strong>Sverige</strong></td><td>13 471 km/år</td><td>1,45 €/l</td><td>15,97 €/h</td></tr>
+      <tr><td><strong>Tyskland</strong></td><td>12 449 km/år</td><td>2,18 €/l</td><td>14,49 €/h</td></tr>
+      <tr><td><strong>Rumänien</strong></td><td>6 097 km/år</td><td>1,80 €/l</td><td>5,92 €/h</td></tr>
+      <tr><td>Danmark</td><td>14 844 km/år</td><td>2,46 €/l</td><td>19,32 €/h</td></tr>
+      <tr><td>Polen</td><td>12 216 km/år</td><td>1,76 €/l</td><td>7,23 €/h</td></tr>
+      <tr><td>Irland</td><td>16 726 km/år</td><td>1,82 €/l</td><td>20,37 €/h</td></tr>
+      <tr><td>Italien</td><td>8 030 km/år</td><td>1,99 €/l</td><td>11,52 €/h</td></tr>
+    </table>
+    <p><strong>Antagande:</strong> genomsnittsbilen drar 7,0 l/100 km i alla länder
+    (nybilar drar 5–6; äldre mer). Växelkurs: 10,98 kr/€.</p>
   </div>
-  ${foot(4)}
+  <h2>Uppgift · Räkna för Sverige, Tyskland och Rumänien</h2>
+  <p>Dela upp länderna mellan er och räkna i fyra steg (avrunda friskt):</p>
+  <ol>
+    <li><strong>Liter per år</strong> = körsträcka ÷ 100 × 7,0 →
+        SE <span class="writein" style="min-width:16mm"></span> l ·
+        DE <span class="writein" style="min-width:16mm"></span> l ·
+        RO <span class="writein" style="min-width:16mm"></span> l</li>
+    <li><strong>Euro per år</strong> = liter × pris →
+        SE <span class="writein" style="min-width:16mm"></span> € ·
+        DE <span class="writein" style="min-width:16mm"></span> € ·
+        RO <span class="writein" style="min-width:16mm"></span> €</li>
+    <li><strong>Kronor per år</strong> = euro × 10,98 →
+        SE <span class="writein" style="min-width:16mm"></span> kr ·
+        DE <span class="writein" style="min-width:16mm"></span> kr ·
+        RO <span class="writein" style="min-width:16mm"></span> kr</li>
+    <li><strong>Arbetstimmar per år</strong> = euro ÷ timlön →
+        SE <span class="writein" style="min-width:16mm"></span> h ·
+        DE <span class="writein" style="min-width:16mm"></span> h ·
+        RO <span class="writein" style="min-width:16mm"></span> h</li>
+  </ol>
+  <div class="talk">Tysken kör dubbelt så långt som rumänen – jämför ändå deras arbetstimmar.
+  Vad hände? Och Sverige? Kolla sedan ert resultat mot den färdiga vyn (QR-koden):
+  stämmer era tal ungefär?</div>
+  <div class="qrrow">
+    <div class="qrtask">
+      <div class="talk">Sista frågan – Skeptikerns favorit: modellen antar 7,0 l/100 km för
+      ALLA länder, räknar allt som bensinbil (inga dieslar eller elbilar) och använder
+      genomsnittslöner. <strong>Vilket antagande är svagast?</strong> Hur skulle resultatet
+      ändras om ni fixade det?</div>
+    </div>
+    ${qrblock(link('&v=curve&b=year'), 'Facit: årsarbetstid för bensin')}
+  </div>
+  ${foot(6)}
 </div>`;
 }
 
@@ -444,12 +530,13 @@ function teacherSV() {
 
   <h2>Förberedelser</h2>
   <ul>
-    <li>Skriv ut <strong>ett set av elevbladen (Blad 1–4) per grupp</strong> (välj samma
-    variant/datumläge som detta blad – väljs i verktygsraden innan utskrift) och
+    <li>Skriv ut <strong>ett set av elevbladen (Blad 1–5, ev. Blad 6) per grupp</strong>
+    (välj samma variant/datumläge som detta blad – väljs i verktygsraden innan utskrift) och
     <strong>dela ut ETT blad i taget</strong>: nästa blad först när gruppen visat sina svar.
-    Bladen är spoilerfria bakåt – gissningarna ligger på Blad 1, avslöjandena om priset på
-    Blad 2 och om skatten på Blad 3–4. Ge inte ut hela bunten på en gång!</li>
-    <li>Minst en mobil per grupp (från Blad 2).</li>
+    Bladen är spoilerfria bakåt – gissningarna ligger på Blad 1, prisavslöjandet på Blad 2,
+    PPP/tidpris förklaras först på Blad 3 (EFTER att gruppen uppfunnit ett eget mått på
+    Blad 2), och skatteavslöjandet kommer på Blad 4–5. Ge inte ut hela bunten på en gång!</li>
+    <li>Minst en mobil per grupp (från Blad 2) och miniräknare till Blad 6.</li>
     ${med ? `<li><strong>Modeller:</strong> skriv ut per grupp (eller en klassuppsättning):
     kartmodellen (nominellt läge) samt två kurvremsor – en i nominellt läge och en i
     tidprisläget. Export och färgläggning: fliken <em>3D-utskrift</em> på webbplatsen;
@@ -469,12 +556,16 @@ function teacherSV() {
     <tr><td>Intro + roller + <strong>Blad 1</strong> (gissa)</td><td>10 min</td><td>Betona
     regeln: gissa själv före diskussion (peer instruction – gissningen skapar engagemang och
     synliggör förförståelsen). Mobiler undan tills Blad 2.</td></tr>
-    <tr><td><strong>Blad 2</strong> (karta + måttbyte)</td><td>15 min</td><td>Dela ut när
-    gruppen visat gissningarna. Gå runt; fråga hur de resonerade. Hjälp grupper som fastnar
-    på PPP-frågan – se formuleringsstöd nedan.</td></tr>
-    <tr><td><strong>Blad 3</strong> (skatten)</td><td>10 min</td><td>Skattegissningen från
+    <tr><td><strong>Blad 2</strong> (karta + "uppfinn ett mått")</td><td>15 min</td><td>Dela ut
+    när gruppen visat gissningarna. Bladets kärna är uppgift 3: låt grupperna kämpa med att
+    uppfinna ett eget rättvisemått INNAN de får facit – ge inte PPP/tidpris i förväg, hur
+    frestande det än är. Räcker att måttet är en riktning ("räkna med lönen").</td></tr>
+    <tr><td><strong>Blad 3</strong> (PPP + tidpris)</td><td>10–15 min</td><td>Knyt an till
+    gruppernas egna mått: "ni uppfann X – ekonomerna kallar det Y". Faktarutorna bär
+    förklaringen; er roll är kopplingen. Formuleringsstöd nedan.</td></tr>
+    <tr><td><strong>Blad 4</strong> (skatten)</td><td>10 min</td><td>Skattegissningen från
     Blad 1 avgörs här – låt överraskningen landa i gruppen innan ni pratar i helklass.</td></tr>
-    <tr><td><strong>Blad 4</strong> (diskussion + avslut)</td><td>10 min</td><td>Styr mot
+    <tr><td><strong>Blad 5</strong> (diskussion + avslut)</td><td>10 min</td><td>Styr mot
     <em>mekanismen</em> (nettopriser lika, skatt skiljer) före värderingarna.</td></tr>
     <tr><td>Avslutning i helklass</td><td>10 min</td><td>Låt grupperna redovisa sitt svar +
     mått. Lyft fram välmotiverad oenighet som exempel på god argumentation.</td></tr>
@@ -498,7 +589,19 @@ function teacherSV() {
         världsmarknaden är gemensam</td></tr>
     <tr><td>Diesel</td><td>${N.seDiesel} kr/l</td><td>${N.euDiesel} kr/l</td>
         <td>bra följdfråga till snabba grupper: håller bensinbilden för diesel?</td></tr>
+    <tr><td>Årsarbetstid (Blad 6)</td><td>≈ 86 h/år</td><td>≈ 129 h/år</td>
+        <td>Grekland ≈ 230, Polen ≈ 208; Tyskland ≈ 131 och Rumänien ≈ 130 – trots att tysken
+        kör dubbelt så långt</td></tr>
   </table>
+  <p><strong>Facit Blad 6</strong> (avrundat): liter/år SE ≈ 943, DE ≈ 871, RO ≈ 427;
+  euro/år SE ≈ 1 370, DE ≈ 1 900, RO ≈ 770; kronor/år SE ≈ 15 000, DE ≈ 20 900, RO ≈ 8 450;
+  timmar/år SE ≈ 86, DE ≈ 131, RO ≈ 130. Poängen: rumänen kör hälften så långt som tysken men
+  betalar lika många arbetstimmar – och svensken ligger långt under båda.</p>
+  <p><strong>Vanliga elevmått i Blad 2 uppgift 3</strong> (alla är "rätt"): jämför med lönen
+  (→ tidpris), jämför med vad annat kostar (→ PPP), andel av månadslön (→ Blad 6/årsarbetstid),
+  jämför med minimilön eller medianlön (bättre än vårt medelmått – lyft det!). Grupper som
+  föreslår median förtjänar extra beröm: verktyget använder medellön och deklarerar det som
+  en svaghet.</p>
   <p><strong>Förväntade aha-upplevelser:</strong> (1) Sverige ligger näst lägst, inte högst –
   de flesta gissar plats 15–25. (2) Sverige har EU:s lägsta bensinskatt. (3) Tidpriset vänder
   kartan: billigast i öst blir dyrast.</p>
@@ -547,7 +650,7 @@ function studentEN() {
   const med = ST.variant === 'med3d';
   const fast = ST.datum === 'fast';
   const datumTxt = fast ? `prices for the week of ${FIX}` : "today's latest prices (the picture may differ from the fact boxes!)";
-  const foot = n => `<div class="foot">Petrol prices in the EU · ${SITE} · Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Wages &amp; price levels: Eurostat · <strong>Sheet ${n} of 4 – handed out one at a time</strong></div>`;
+  const foot = n => `<div class="foot">Petrol prices in the EU · ${SITE} · Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Wages &amp; price levels: Eurostat · Distances: Odyssee-Mure/Eurostat · <strong>${n === 6 ? 'Extension sheet (optional)' : 'Sheet ' + n + ' of 5 – handed out one at a time'}</strong></div>`;
   const next = n => `<p style="margin-top:4mm"><strong>✅ Done? Show your answers to the teacher and ask for Sheet ${n}.</strong></p>`;
   return `
 <div class="sheet">
@@ -585,8 +688,8 @@ function studentEN() {
         (1 = lowest tax in the EU, 27 = highest). Your own guess: <span class="writein"></span></li>
   </ol>
   <div class="talk">Show each other your numbers. Why did they differ? What are your guesses
-  based on – news, adults, social media, filling up yourselves? Agree on ONE group guess per
-  question and write them down: rank <span class="writein" style="min-width:12mm"></span> ·
+  based on? Agree on ONE group guess per question and write them down:
+  rank <span class="writein" style="min-width:12mm"></span> ·
   price <span class="writein" style="min-width:12mm"></span> SEK ·
   EU average <span class="writein" style="min-width:12mm"></span> SEK ·
   tax rank <span class="writein" style="min-width:12mm"></span></div>
@@ -595,7 +698,7 @@ function studentEN() {
 </div>
 
 <div class="sheet">
-  <h1>Sheet 2 · Check reality</h1>
+  <h1>Sheet 2 · Check reality – and find a problem</h1>
   <div class="badges"><span class="badge">${med ? 'Take out the map model' : 'Now the phone comes out'}</span></div>
   <h2>Task 2 · The map</h2>
   <div class="qrrow">
@@ -613,54 +716,92 @@ function studentEN() {
     ${qrblock(link('&v=map&b=nom'), 'The map – pump price')}
   </div>
   <div class="talk">Most groups guess that Sweden ranks <em>high</em>. If you did too: where
-  does that picture come from, do you think? Discuss for 2 minutes before moving on.</div>
+  does that picture come from, do you think? Discuss for 2 minutes.</div>
 
-  <div class="fact">
-    <h3>Fact box · Three ways to measure "expensive"</h3>
-    <table class="mini">
-      <tr><th>Measure</th><th>Meaning</th><th>Sweden ${fast ? FIX : '(' + FIX + ')'}</th></tr>
-      <tr><td><strong>Straight price</strong></td><td>SEK/litre at the pump</td>
-          <td>${NE.seNom} SEK – second lowest in the EU (only Malta lower); average ${NE.euNom}</td></tr>
-      <tr><td><strong>PPP-adjusted</strong></td><td>the price relative to the country's general
-          price level, expressed at Swedish price levels</td>
-          <td>${NE.sePpp} SEK – second lowest (only Luxembourg lower); average ${NE.euPpp}</td></tr>
-      <tr><td><strong>Time price</strong></td><td>minutes an average earner (net pay) works
-          for one litre</td>
-          <td>${NE.seTid} min – third lowest; average ${NE.euTid} min</td></tr>
-    </table>
-    <p>Time price = price in euros × 60 ÷ net hourly pay in euros. Net pay = pay after tax –
-    the money you can actually buy petrol with.</p>
-  </div>
-
-  <h2>Task 3 · Change the measure – change the map</h2>
-  <div class="qrrow">
-    <div class="qrtask">
-      ${med
-        ? `<p>Take the two <strong>curve strips</strong> (straight price and time price). Hold
-           one in each hand. Every country is a step; width is population
-           (1&nbsp;mm = 2 million people). Feel the difference in shape! Scan the QR codes on
-           the undersides for exact figures.</p>`
-        : `<p>Open the price curve in the two modes (codes to the right). Countries are sorted
-           cheapest → dearest; width is population.</p>`}
-      <p>Each of you silently picks <em>the country that moves the most</em> between measures.
-      Then compare your picks.</p>
-    </div>
-    ${qrblock(link('&v=curve&b=ppp'), 'Curve – PPP-adjusted')}
-    ${qrblock(link('&v=curve&b=time'), 'Curve – time price')}
-  </div>
-  <div class="talk">In PPP mode Romania's petrol costs ${fast ? NE.roPpp : 'over 40'} "Swedish
-  price-level kronor". That does NOT mean a Swedish tourist pays that at a Romanian pump. So
-  what does it mean – for a Romanian? (Hint: compare with what everything else costs there,
-  and look at the time price: ${fast ? NE.roTid : '~18'} minutes of work per litre against our
-  ${fast ? NE.seTid : '~5.5'}.) Agree on an explanation in your own words – the Scribe writes it down.</div>
+  <h2>Task 3 · Is 17 kronor = 17 kronor?</h2>
+  <p>Look at Bulgaria and Sweden on the map. ${fast
+    ? `The litre price is nearly the same: <strong>16.84 SEK in Bulgaria, 15.96 SEK in Sweden</strong>.`
+    : `The litre prices are often nearly the same (around ${FIX}: 16.84 SEK in Bulgaria, 15.96 in Sweden).`}
+  But an average Bulgarian wage is about <strong>a third</strong> of a Swedish one, and most
+  other things – rent, food, a haircut – are much cheaper there.</p>
+  <ol>
+    <li>Is filling up "equally expensive" in Bulgaria and Sweden? Each of you takes a silent
+    stance: YES / NO / IT DEPENDS – plus one sentence why.</li>
+    <li>Discuss: what more than the pump price would you need to know to compare
+    <em>fairly</em>? List at least two things:<br>
+    <span class="writein" style="min-width:70%"></span><br>
+    <span class="writein" style="min-width:70%"></span></li>
+    <li><strong>Invent your own measure:</strong> how would YOU calculate so that the
+    comparison feels fair? Describe in words or as a formula (there is no answer key – yet):<br>
+    <span class="writein" style="min-width:100%"></span><br>
+    <span class="writein" style="min-width:100%"></span></li>
+  </ol>
+  <div class="talk">The Scribe writes the group's measure clearly enough that another group
+  could compute with it. Keep it – you will compare it with the economists' standard measures
+  on the next sheet.</div>
   ${next(3)}
   ${foot(2)}
 </div>
 
 <div class="sheet">
-  <h1>Sheet 3 · The tax</h1>
+  <h1>Sheet 3 · Your measure meets the economists'</h1>
+  <div class="badges"><span class="badge">Now you get the answer to Task 3</span></div>
+  <p>Most groups propose bringing in <em>wages</em> or <em>what other things cost</em> in the
+  country. If so – congratulations, you have just invented the core of the economists' two
+  standard measures. Here they are for real:</p>
+
+  <div class="fact">
+    <h3>Measure 2 · Purchasing-power-adjusted price (PPP)</h3>
+    <p>Eurostat measures each country's <strong>general price level</strong> – what a whole
+    basket of goods (food, rent, services …) costs – with the EU average set to 100. Bulgaria
+    sits at <strong>57</strong>, Sweden at <strong>123</strong>: most things in Bulgaria cost
+    about half of what they do here. PPP adjustment restates the petrol price relative to the
+    country's price level, expressed at Swedish price levels:</p>
+    <p style="text-align:center"><code>PPP price = price × (price level Sweden ÷ price level country)</code></p>
+    <p>Bulgaria: 16.84 SEK × (123 ÷ 57) ≈ <strong>36 SEK</strong>. That is how expensive petrol
+    would be in Sweden if it were as expensive <em>relative to everything else</em> as it is
+    in Bulgaria. It is NOT what a Swedish tourist pays there – it is how expensive petrol is
+    for someone living with the country's prices.</p>
+  </div>
+  <div class="fact">
+    <h3>Measure 3 · Time price</h3>
+    <p>Even simpler: forget currency – count <strong>working time</strong>. How long does an
+    average earner (net pay, i.e. after tax) work for ONE litre?</p>
+    <p style="text-align:center"><code>time price = price in euros × 60 ÷ net hourly pay in euros</code></p>
+    <p>Sweden: €1.45 ÷ €15.97/h ≈ <strong>5.5 minutes</strong> per litre.
+    Romania: €1.80 ÷ €5.92/h ≈ <strong>18 minutes</strong>. The same litre – three times the work.</p>
+  </div>
+
+  <h2>Task 4 · Explore the new measures</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      ${med
+        ? `<p>Take the two <strong>curve strips</strong> (straight price and time price). Hold
+           one in each hand – feel the difference in shape! Then open the PPP curve digitally
+           (the code).</p>`
+        : `<p>Open the curves (codes to the right). Countries are sorted cheapest → dearest;
+           bar width is population.</p>`}
+      <ol>
+        <li>Each of you silently picks <em>the country that moves the most</em> when the
+        measure changes. Compare picks – why do those countries move?</li>
+        <li>Compare with YOUR measure from Sheet 2: do the economists' measures capture the
+        same thing? Is yours better at anything?</li>
+      </ol>
+    </div>
+    ${qrblock(link('&v=curve&b=ppp'), 'Curve – PPP-adjusted')}
+    ${qrblock(link('&v=curve&b=time'), 'Curve – time price')}
+  </div>
+  <div class="talk">Look at Romania in time-price mode: 18 minutes of work per litre, against
+  our 5.5. Put into your own words what that means in everyday life for a Romanian family that
+  needs the car – the Scribe writes the group's phrasing down.</div>
+  ${next(4)}
+  ${foot(3)}
+</div>
+
+<div class="sheet">
+  <h1>Sheet 4 · The tax</h1>
   <div class="badges"><span class="badge">Your tax guess from Sheet 1 gets settled here</span></div>
-  <h2>Task 4 · What actually separates the countries?</h2>
+  <h2>Task 5 · What actually separates the countries?</h2>
   <p>Recall your group's guess for Sweden's tax-league rank (Sheet 1):
   <span class="writein" style="min-width:12mm"></span>. Now check.</p>
   <div class="qrrow">
@@ -680,12 +821,12 @@ function studentEN() {
   <div class="talk">Surprised? The Skeptic's turn: <em>could the figures be wrong or biased?</em>
   Whose data is this (look at the bottom of the site), and how could you check it against
   another source? Discuss for 3 minutes – asking "how do we know this?" is half the exercise.</div>
-  ${next(4)}
-  ${foot(3)}
+  ${next(5)}
+  ${foot(4)}
 </div>
 
 <div class="sheet">
-  <h1>Sheet 4 · What does it mean?</h1>
+  <h1>Sheet 5 · What does it mean?</h1>
   <div class="badges"><span class="badge">Last sheet – discussion and the group's answer</span></div>
   <div class="fact">
     <h3>Fact box · Almost everything that differs is politics</h3>
@@ -705,20 +846,70 @@ function studentEN() {
 
   <h2>Wrap-up · Agree or disagree</h2>
   <p>The group's answer to <strong>"Is petrol cheap or expensive in Sweden?"</strong> – each
-  of you justifies with ONE measure of your choice, the Scribe records:</p>
+  of you justifies with ONE measure of your choice (feel free to use your own from Sheet 2!),
+  the Scribe records:</p>
   <p><span class="writein" style="min-width:100%"></span></p>
   <p><span class="writein" style="min-width:100%"></span></p>
   <p>If you disagree: write down <em>why</em>. Well-argued disagreement is as good a result
   as agreement.</p>
+  ${foot(5)}
+</div>
 
+<div class="sheet">
+  <h1>Sheet 6 · Extension: What does the car year cost?</h1>
+  <div class="badges"><span class="badge">Optional – calculator needed</span>
+  <span class="badge">Prices as of ${FIX}</span></div>
+  <p>One litre doesn't tell the whole story – people drive different distances in different
+  countries. Now you compute what <em>a year of petrol</em> costs an average car owner, in
+  money and in working time.</p>
   <div class="fact">
-    <h3>Extra (if time permits) · What share of pay?</h3>
-    <p>Annual cost share ≈ distance (km/yr) × consumption (l/km) × price (€/l) ÷ net annual
-    pay (€). Sweden: ≈ 11,000 km × 0.065 l/km × €1.45 ÷ €33,200 ≈ <strong>3%</strong>.
-    Now do the same with Bulgaria's price (~€1.74) and net annual pay (~€11,900). What do you
-    get? Does it match the time price?</p>
+    <h3>Data (sources: Odyssee-Mure 2023 / Eurostat 2024; wages Eurostat 2024)</h3>
+    <table class="mini">
+      <tr><th>Country</th><th>Distance per car</th><th>Petrol price</th><th>Net hourly pay</th></tr>
+      <tr><td><strong>Sweden</strong></td><td>13,471 km/yr</td><td>€1.45/l</td><td>€15.97/h</td></tr>
+      <tr><td><strong>Germany</strong></td><td>12,449 km/yr</td><td>€2.18/l</td><td>€14.49/h</td></tr>
+      <tr><td><strong>Romania</strong></td><td>6,097 km/yr</td><td>€1.80/l</td><td>€5.92/h</td></tr>
+      <tr><td>Denmark</td><td>14,844 km/yr</td><td>€2.46/l</td><td>€19.32/h</td></tr>
+      <tr><td>Poland</td><td>12,216 km/yr</td><td>€1.76/l</td><td>€7.23/h</td></tr>
+      <tr><td>Ireland</td><td>16,726 km/yr</td><td>€1.82/l</td><td>€20.37/h</td></tr>
+      <tr><td>Italy</td><td>8,030 km/yr</td><td>€1.99/l</td><td>€11.52/h</td></tr>
+    </table>
+    <p><strong>Assumption:</strong> the average car uses 7.0 l/100 km in every country
+    (new cars use 5–6; older ones more). Exchange rate: 10.98 SEK/€.</p>
   </div>
-  ${foot(4)}
+  <h2>Task · Compute for Sweden, Germany and Romania</h2>
+  <p>Split the countries between you and compute in four steps (round freely):</p>
+  <ol>
+    <li><strong>Litres per year</strong> = distance ÷ 100 × 7.0 →
+        SE <span class="writein" style="min-width:16mm"></span> l ·
+        DE <span class="writein" style="min-width:16mm"></span> l ·
+        RO <span class="writein" style="min-width:16mm"></span> l</li>
+    <li><strong>Euros per year</strong> = litres × price →
+        SE <span class="writein" style="min-width:16mm"></span> € ·
+        DE <span class="writein" style="min-width:16mm"></span> € ·
+        RO <span class="writein" style="min-width:16mm"></span> €</li>
+    <li><strong>SEK per year</strong> = euros × 10.98 →
+        SE <span class="writein" style="min-width:16mm"></span> ·
+        DE <span class="writein" style="min-width:16mm"></span> ·
+        RO <span class="writein" style="min-width:16mm"></span></li>
+    <li><strong>Working hours per year</strong> = euros ÷ hourly pay →
+        SE <span class="writein" style="min-width:16mm"></span> h ·
+        DE <span class="writein" style="min-width:16mm"></span> h ·
+        RO <span class="writein" style="min-width:16mm"></span> h</li>
+  </ol>
+  <div class="talk">The German drives twice as far as the Romanian – yet compare their working
+  hours. What happened? And Sweden? Then check your results against the ready-made view
+  (QR code): are your numbers roughly right?</div>
+  <div class="qrrow">
+    <div class="qrtask">
+      <div class="talk">Last question – the Skeptic's favourite: the model assumes 7.0 l/100 km
+      for ALL countries, treats everything as petrol cars (no diesels or EVs) and uses average
+      wages. <strong>Which assumption is weakest?</strong> How would the result change if you
+      fixed it?</div>
+    </div>
+    ${qrblock(link('&v=curve&b=year'), 'Answer key: annual work time for petrol')}
+  </div>
+  ${foot(6)}
 </div>`;
 }
 
@@ -754,12 +945,14 @@ function teacherEN() {
 
   <h2>Preparation</h2>
   <ul>
-    <li>Print <strong>one set of the student sheets (Sheets 1–4) per group</strong> (choose
-    the same variant/date mode as this guide – selectable in the toolbar before printing) and
-    <strong>hand out ONE sheet at a time</strong>: the next sheet only when the group has shown
-    its answers. The sheets are spoiler-free backwards – the guesses sit on Sheet 1, the price
-    reveal on Sheet 2 and the tax reveal on Sheets 3–4. Don't hand out the whole stack!</li>
-    <li>At least one phone per group (from Sheet 2).</li>
+    <li>Print <strong>one set of the student sheets (Sheets 1–5, optionally Sheet 6) per
+    group</strong> (choose the same variant/date mode as this guide – selectable in the toolbar
+    before printing) and <strong>hand out ONE sheet at a time</strong>: the next sheet only when
+    the group has shown its answers. The sheets are spoiler-free backwards – the guesses sit on
+    Sheet 1, the price reveal on Sheet 2, PPP/time price are explained only on Sheet 3 (AFTER
+    the group has invented its own measure on Sheet 2), and the tax reveal comes on Sheets 4–5.
+    Don't hand out the whole stack!</li>
+    <li>At least one phone per group (from Sheet 2) and a calculator for Sheet 6.</li>
     ${med ? `<li><strong>Models:</strong> per group (or one class set): the map model (nominal
     mode) plus two curve strips – nominal and time-price mode. Export and colouring: the
     <em>3D printing</em> tab on the site; the key points are a light base plate and a dark
@@ -778,12 +971,16 @@ function teacherEN() {
     <tr><td>Intro + roles + <strong>Sheet 1</strong> (guess)</td><td>10 min</td><td>Stress
     the rule: guess alone before discussing (peer instruction – committing to a guess creates
     engagement and surfaces preconceptions). Phones away until Sheet 2.</td></tr>
-    <tr><td><strong>Sheet 2</strong> (map + measures)</td><td>15 min</td><td>Hand out once the
-    group has shown its guesses. Circulate; ask how they reasoned. Help groups stuck on the
-    PPP question – see the phrasing support below.</td></tr>
-    <tr><td><strong>Sheet 3</strong> (the tax)</td><td>10 min</td><td>The tax guess from
+    <tr><td><strong>Sheet 2</strong> (map + "invent a measure")</td><td>15 min</td><td>Hand out
+    once the group has shown its guesses. The heart of the sheet is task 3: let groups struggle
+    to invent their own fairness measure BEFORE they get the answer – don't give away PPP/time
+    price early, however tempting. A direction ("bring in wages") is enough.</td></tr>
+    <tr><td><strong>Sheet 3</strong> (PPP + time price)</td><td>10–15 min</td><td>Connect to
+    the groups' own measures: "you invented X – economists call it Y". The fact boxes carry the
+    explanation; your role is the connection. Phrasing support below.</td></tr>
+    <tr><td><strong>Sheet 4</strong> (the tax)</td><td>10 min</td><td>The tax guess from
     Sheet 1 is settled here – let the surprise land in the group before any whole-class talk.</td></tr>
-    <tr><td><strong>Sheet 4</strong> (discussion + wrap-up)</td><td>10 min</td><td>Steer to
+    <tr><td><strong>Sheet 5</strong> (discussion + wrap-up)</td><td>10 min</td><td>Steer to
     the <em>mechanism</em> (net prices equal, tax differs) before the values debate.</td></tr>
     <tr><td>Whole-class wrap-up</td><td>10 min</td><td>Groups present their answer + measure.
     Highlight well-argued disagreement as an example of good reasoning.</td></tr>
@@ -807,7 +1004,19 @@ function teacherEN() {
         the world market is shared</td></tr>
     <tr><td>Diesel</td><td>${NE.seDiesel} SEK/l</td><td>${NE.euDiesel}</td>
         <td>good follow-up for fast groups: does the petrol picture hold for diesel?</td></tr>
+    <tr><td>Annual work time (Sheet 6)</td><td>≈ 86 h/yr</td><td>≈ 129 h/yr</td>
+        <td>Greece ≈ 230, Poland ≈ 208; Germany ≈ 131 and Romania ≈ 130 – although the German
+        drives twice as far</td></tr>
   </table>
+  <p><strong>Sheet 6 answer key</strong> (rounded): litres/yr SE ≈ 943, DE ≈ 871, RO ≈ 427;
+  euros/yr SE ≈ 1,370, DE ≈ 1,900, RO ≈ 770; SEK/yr SE ≈ 15,000, DE ≈ 20,900, RO ≈ 8,450;
+  hours/yr SE ≈ 86, DE ≈ 131, RO ≈ 130. The point: the Romanian drives half as far as the
+  German yet pays as many working hours – and the Swede sits far below both.</p>
+  <p><strong>Common student measures in Sheet 2 task 3</strong> (all are "right"): compare with
+  wages (→ time price), compare with what other things cost (→ PPP), share of monthly pay
+  (→ Sheet 6/annual work time), compare with minimum or median wage (better than our mean
+  measure – praise it!). Groups proposing the median deserve extra credit: the tool uses mean
+  wages and declares that as a weakness.</p>
   <p><strong>Expected aha moments:</strong> (1) Sweden ranks second lowest, not high – most
   guess rank 15–25. (2) Sweden has the EU's lowest petrol tax. (3) The time price flips the
   map: cheapest in the east becomes dearest.</p>

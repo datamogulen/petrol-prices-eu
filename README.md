@@ -84,7 +84,7 @@ Alla svar är JSON (UTF-8). `fuel` är `petrol` (default) eller `diesel`.
 
 `eur`/`sek` är pris med skatt per liter; `eur_net`/`sek_net` utan skatt.
 
-### Tre prislägen (D4)
+### Fyra prislägen (D4)
 
 1. **Nominellt** (kr/l) – huvudläsningen, svenskt plånboksperspektiv.
 2. **PPP-justerat** (kr/l): `pris × (PLI_SE / PLI_land)` (Eurostat
@@ -97,6 +97,12 @@ Alla svar är JSON (UTF-8). `fuel` är `petrol` (default) eller `diesel`.
    (fast löneår ⇒ visas ej i historiken; medel ≠ median) dokumenteras i
    Om-panelen. I tidprisläget är höjdskalan **1 mm = 1 minut** och fasta
    klasser 8/12/16 min/l.
+
+4. **Årsarbetstid** (h bensin/år, fördjupningsmått): `km/bil ×
+   7,0 l/100 km × pris_EUR / nettotimlön`. Körsträckor: Odyssee-Mure
+   2023 resp. Eurostat trafikarbete/bilpark 2024 (BE 2015; LU SK BG CY
+   saknas och utelämnas). Förbrukningen är ett deklarerat antagande.
+   Höjdskala 0,5 mm = 1 h. Räkneövning på arbetsblad 6.
 
 PPP- och lönetabellerna finns i både `config.php` och `index.html` –
 ändras den ena, ändra båda. Justeringarna görs i frontend (API:t
