@@ -430,6 +430,29 @@ function studentSV() {
   (c) Vem tjänar på att debatten använder pumppriset – och vem på att den använder tidpriset?
   ${ST.datum === 'aktuell' ? '(d) Ni använde dagens data: jämför med faktarutornas siffror från ' + FIX + ' – vad har ändrats, och kan ni komma på varför?' : ''}</div>
 
+  <h2>Uppgift 6 · Ett fjärde mått: det politiska avståndet</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      <p>Peka/hovra på ett land i kurvan, så visas raden <em>"Till EU-snittet: ±X % skatt"</em>
+      – så mycket skulle landets bensinskatt behöva ändras för att priset skulle hamna på
+      EU:s genomsnitt. Eftersom nettopriserna är nästan lika (Blad 4!) är avståndet till
+      snittet i praktiken ren skattepolitik. Fyll i tabellen – samma länder, två prislägen:</p>
+      <table class="mini">
+        <tr><th></th><th>Nominellt</th><th>Tidpris</th></tr>
+        <tr><td>Sverige</td><td><span class="writein" style="min-width:14mm"></span> %</td>
+            <td><span class="writein" style="min-width:14mm"></span> %</td></tr>
+        <tr><td>Rumänien</td><td><span class="writein" style="min-width:14mm"></span> %</td>
+            <td><span class="writein" style="min-width:14mm"></span> %</td></tr>
+      </table>
+    </div>
+    ${qrblock(link('&v=curve&b=nom'), 'Kurvan – nominellt')}
+    ${qrblock(link('&v=curve&b=time'), 'Kurvan – tidpris')}
+  </div>
+  <div class="talk">Jämför kolumnerna. Beror svaret på "borde skatten upp eller ner?" på
+  vilket mått man valt? För vilket land byter svaret <em>tecken</em>? Vad betyder det för
+  politiska förslag som hänvisar till "EU-snittet" – kan båda sidor i en debatt ha rätt,
+  beroende på mått?</div>
+
   <h2>Avslutning · Enas eller oenas</h2>
   <p>Gruppens svar på frågan <strong>"Är bensinen billig eller dyr i Sverige?"</strong> –
   var och en motiverar med ETT valfritt mått (gärna ert eget från Blad 2!),
@@ -565,8 +588,10 @@ function teacherSV() {
     förklaringen; er roll är kopplingen. Formuleringsstöd nedan.</td></tr>
     <tr><td><strong>Blad 4</strong> (skatten)</td><td>10 min</td><td>Skattegissningen från
     Blad 1 avgörs här – låt överraskningen landa i gruppen innan ni pratar i helklass.</td></tr>
-    <tr><td><strong>Blad 5</strong> (diskussion + avslut)</td><td>10 min</td><td>Styr mot
-    <em>mekanismen</em> (nettopriser lika, skatt skiljer) före värderingarna.</td></tr>
+    <tr><td><strong>Blad 5</strong> (mått 4 + diskussion + avslut)</td><td>10–15 min</td>
+    <td>Uppgift 6 (skatteändring till EU-snittet, via mouseover) är passets syntes: samma mål,
+    olika krav beroende på mått. Styr mot <em>mekanismen</em> (nettopriser lika, skatt skiljer)
+    före värderingarna. Mobiler behövs även här.</td></tr>
     <tr><td>Avslutning i helklass</td><td>10 min</td><td>Låt grupperna redovisa sitt svar +
     mått. Lyft fram välmotiverad oenighet som exempel på god argumentation.</td></tr>
   </table>
@@ -597,6 +622,11 @@ function teacherSV() {
   euro/år SE ≈ 1 370, DE ≈ 1 900, RO ≈ 770; kronor/år SE ≈ 15 000, DE ≈ 20 900, RO ≈ 8 450;
   timmar/år SE ≈ 86, DE ≈ 131, RO ≈ 130. Poängen: rumänen kör hälften så långt som tysken men
   betalar lika många arbetstimmar – och svensken ligger långt under båda.</p>
+  <p><strong>Facit Blad 5 uppgift 6</strong> (skatteändring till EU-snittet, ${FIX}):
+  Sverige +115 % nominellt men <strong>+307 %</strong> i tidpris; Rumänien +17 % nominellt men
+  <strong>−86 %</strong> i tidpris – svaret byter tecken! Det är passets metodpoäng i
+  koncentrat: "harmonisera med EU-snittet" är inte ett politiskt förslag utan flera, beroende
+  på vilket rättvisemått som avses. Låt gärna grupperna formulera det själva innan ni säger det.</p>
   <p><strong>Vanliga elevmått i Blad 2 uppgift 3</strong> (alla är "rätt"): jämför med lönen
   (→ tidpris), jämför med vad annat kostar (→ PPP), andel av månadslön (→ Blad 6/årsarbetstid),
   jämför med minimilön eller medianlön (bättre än vårt medelmått – lyft det!). Grupper som
@@ -844,6 +874,29 @@ function studentEN() {
   time price?
   ${ST.datum === 'aktuell' ? "(d) You used today's data: compare with the fact boxes' figures from " + FIX + ' – what changed, and can you figure out why?' : ''}</div>
 
+  <h2>Task 6 · A fourth measure: the political distance</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      <p>Point/hover at a country in the curve and the line <em>"To the EU average: ±X% tax"</em>
+      appears – how much that country's petrol tax would need to change for its price to land
+      on the EU average. Since net prices are nearly equal (Sheet 4!), the distance to the
+      average is in practice pure tax policy. Fill in the table – same countries, two bases:</p>
+      <table class="mini">
+        <tr><th></th><th>Nominal</th><th>Time price</th></tr>
+        <tr><td>Sweden</td><td><span class="writein" style="min-width:14mm"></span> %</td>
+            <td><span class="writein" style="min-width:14mm"></span> %</td></tr>
+        <tr><td>Romania</td><td><span class="writein" style="min-width:14mm"></span> %</td>
+            <td><span class="writein" style="min-width:14mm"></span> %</td></tr>
+      </table>
+    </div>
+    ${qrblock(link('&v=curve&b=nom'), 'Curve – nominal')}
+    ${qrblock(link('&v=curve&b=time'), 'Curve – time price')}
+  </div>
+  <div class="talk">Compare the columns. Does the answer to "should the tax go up or down?"
+  depend on the measure? For which country does the answer change <em>sign</em>? What does
+  that mean for political proposals that cite "the EU average" – can both sides of a debate
+  be right, depending on the measure?</div>
+
   <h2>Wrap-up · Agree or disagree</h2>
   <p>The group's answer to <strong>"Is petrol cheap or expensive in Sweden?"</strong> – each
   of you justifies with ONE measure of your choice (feel free to use your own from Sheet 2!),
@@ -980,8 +1033,10 @@ function teacherEN() {
     explanation; your role is the connection. Phrasing support below.</td></tr>
     <tr><td><strong>Sheet 4</strong> (the tax)</td><td>10 min</td><td>The tax guess from
     Sheet 1 is settled here – let the surprise land in the group before any whole-class talk.</td></tr>
-    <tr><td><strong>Sheet 5</strong> (discussion + wrap-up)</td><td>10 min</td><td>Steer to
-    the <em>mechanism</em> (net prices equal, tax differs) before the values debate.</td></tr>
+    <tr><td><strong>Sheet 5</strong> (measure 4 + discussion + wrap-up)</td><td>10–15 min</td>
+    <td>Task 6 (tax change to the EU average, via hover) is the session's synthesis: same goal,
+    different demands depending on the measure. Steer to the <em>mechanism</em> (net prices
+    equal, tax differs) before the values debate. Phones needed here too.</td></tr>
     <tr><td>Whole-class wrap-up</td><td>10 min</td><td>Groups present their answer + measure.
     Highlight well-argued disagreement as an example of good reasoning.</td></tr>
   </table>
@@ -1012,6 +1067,12 @@ function teacherEN() {
   euros/yr SE ≈ 1,370, DE ≈ 1,900, RO ≈ 770; SEK/yr SE ≈ 15,000, DE ≈ 20,900, RO ≈ 8,450;
   hours/yr SE ≈ 86, DE ≈ 131, RO ≈ 130. The point: the Romanian drives half as far as the
   German yet pays as many working hours – and the Swede sits far below both.</p>
+  <p><strong>Sheet 5 task 6 answer key</strong> (tax change to the EU average, ${FIX}):
+  Sweden +115% nominal but <strong>+307%</strong> in time price; Romania +17% nominal but
+  <strong>−86%</strong> in time price – the answer changes sign! This is the session's
+  methodological point in a nutshell: "harmonising with the EU average" is not one political
+  proposal but several, depending on which fairness measure is meant. Ideally let the groups
+  articulate this themselves before you say it.</p>
   <p><strong>Common student measures in Sheet 2 task 3</strong> (all are "right"): compare with
   wages (→ time price), compare with what other things cost (→ PPP), share of monthly pay
   (→ Sheet 6/annual work time), compare with minimum or median wage (better than our mean
