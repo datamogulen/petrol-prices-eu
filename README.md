@@ -144,7 +144,7 @@ och bygger karta + kurva från riktiga `europe.geojson` + `seed.json` i
 alla färglägen. Kontrollerar per solid: **vattentäthet** (varje riktad
 kant har exakt en motriktad partner) och **volym > 0**; dessutom binär
 STL-rundresa och att export-zipen passerar `unzip -t`. Malta utelämnas
-deklarerat ur kart-STL (projicerad yta < 1 mm², D6) – testet låser att
+deklarerat ur kart-STL (projicerad yta under areagränsen, D6) – testet låser att
 inget annat land saknas.
 
 ## STL-export (O4, strikt WYSIWYG)
