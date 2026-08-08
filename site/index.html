@@ -347,7 +347,7 @@ const I18N = {
     l_percap: 'Per invånare (i stället för per bil)',
     percap_note: 'Per invånare: värdet × bilar per invånare (Eurostat bilpark 2025 ÷ befolkning) – samhällets börda i stället för bilägarens. Sverige har EU:s fjärde lägsta bilinnehav (476/1000 mot snittets 588).',
     hint_yearnom: 'Årskostnad = körsträcka per bil × 6,85 l/100 km × literpris, i svenska kronor. LU, SK, BG och CY saknar körsträckedata och utelämnas.',
-    hint_yearppp: 'Årskostnad PPP = årskostnaden omräknad efter landets allmänna prisnivå till svensk prisnivå (hur stor kostnaden är relativt allt annat i landet).',
+    hint_yearppp: 'Årskostnad i PPP-kr: bensinåret tar i landet lika stor del av köpkraften som så här många kronor tar i Sverige. Ingen betalar summan – den översätter lokal börda till svensk måttstock.',
     year_note: 'Årsmåtten bygger på körsträcka/bil (SE: Trafikanalys 2024; övriga: Odyssee-Mure 2023 eller härlett ur Eurostat 2024) × flottsnittet 6,85 l/100 km (Odyssee, EU-nivå 2023). Grov, deklarerad modell – LU, SK, BG och CY saknar körsträckedata och utelämnas. Se Om/Metod.',
     hint_year: 'Årsarbetstid = hur många timmar om året en genomsnittlig löntagare arbetar för bilens bensin (körsträcka × 6,85 l/100 km × pris ÷ nettotimlön).',
     time_note: 'Tidpris: pris i EUR × 60 / nettotimlön (Eurostat 2024, ensamstående 100 % av genomsnittslön, årslön/2080 h). Läs: så många minuter arbetar en genomsnittlig löntagare för en liter. Se Om/Metod.',
@@ -371,11 +371,12 @@ const I18N = {
     hist_needs_api: 'Historiken kräver backend (api.php). Sidan visar just nu statisk seed-data.',
     hist_add: '+ Lägg till land …',
     added_to_hist: '{name} tillagd i historiken',
-    ppp_note: 'PPP-justerat = priset i förhållande till landets allmänna prisnivå, uttryckt i svensk prisnivå (inte vad en svensk turist betalar där). Beräkning: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
-    hint_ppp: 'PPP-justerat = bensinpriset i förhållande till landets allmänna prisnivå, uttryckt i svensk prisnivå: så dyr vore bensinen här, om den var lika dyr relativt allt annat som den är där. Sverige oförändrat.',
+    ppp_note: 'PPP-kr = hur stor köpkraft litern tar i landet, uttryckt i vad samma köpkraftsbit kostar i Sverige (inte vad någon betalar vid pumpen). Beräkning: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
+    hint_ppp: 'PPP-kr läses så här: en liter tar i landet lika stor del av köpkraften som SÅ HÄR många kronor tar i Sverige. En rumänsk hundralapp räcker till mycket mer mat och hyra än en svensk – men nästan lika lite bensin – därför blir Rumäniens liter över 40 PPP-kr. Ingen betalar detta vid pumpen; pumppriset syns när du hovrar. Sverige är ankare och oförändrat.',
     hint_time: 'Tidpris = hur många minuter en genomsnittlig löntagare (nettolön) arbetar för en liter.',
     tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
     tt_tomean: 'Till EU-snittet', tt_negtax: '→ kräver negativ skatt!',
+    tt_pump: 'Pumppris', tt_pppline: 'Motsvarar i svensk köpkraft',
     milj: 'milj.',
     min: 'min', max: 'max', minmax_lbl: 'seriens min/max',
     lang_switch: 'Switch to English',
@@ -401,7 +402,7 @@ const I18N = {
     l_percap: 'Per capita (instead of per car)',
     percap_note: 'Per capita: the value × cars per inhabitant (Eurostat car stock 2025 ÷ population) – society’s burden instead of the car owner’s. Sweden has the EU’s fourth lowest car ownership (476/1000 against the average 588).',
     hint_yearnom: 'Annual cost = distance per car × 6.85 l/100 km × litre price, in SEK. LU, SK, BG and CY lack distance data and are omitted.',
-    hint_yearppp: 'Annual cost PPP = the annual cost restated via the country’s general price level at Swedish price levels (how large the cost is relative to everything else there).',
+    hint_yearppp: 'Annual cost in PPP-SEK: the petrol year takes as large a bite of purchasing power there as this many kronor take in Sweden. Nobody pays the sum – it translates local burden into a Swedish yardstick.',
     year_note: 'The annual measures use distance/car (SE: Trafikanalys 2024; others: Odyssee-Mure 2023 or derived from Eurostat 2024) × the fleet average 6.85 l/100 km (Odyssee, EU level 2023). A rough, declared model – LU, SK, BG and CY lack distance data and are omitted. See About/Method.',
     hint_year: 'Annual work time = how many hours per year an average earner works for the car’s petrol (distance × 6.85 l/100 km × price ÷ net hourly pay).',
     time_note: 'Time price: price in EUR × 60 / net hourly earnings (Eurostat 2024, single person at 100% of average wage, annual pay/2080 h). Read: this many minutes an average earner works for one litre. See About/Method.',
@@ -425,11 +426,12 @@ const I18N = {
     hist_needs_api: 'The history view needs the backend (api.php). This page is currently showing static seed data.',
     hist_add: '+ Add country …',
     added_to_hist: '{name} added to history',
-    ppp_note: 'PPP-adjusted = the price relative to the country’s general price level, expressed at Swedish price levels (not what a Swedish tourist pays there). Calculation: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
-    hint_ppp: 'PPP-adjusted = the petrol price relative to the country’s general price level, expressed at Swedish price levels: this is how expensive petrol would be here if it were as expensive relative to everything else as it is there. Sweden unchanged.',
+    ppp_note: 'PPP-SEK = how much purchasing power the litre takes in the country, expressed as what the same slice of purchasing power costs in Sweden (not what anyone pays at the pump). Calculation: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
+    hint_ppp: 'Read PPP-SEK like this: a litre takes as large a bite of purchasing power there as THIS many kronor take in Sweden. A Romanian banknote buys far more food and rent than a Swedish one – but almost as little petrol – hence Romania’s litre exceeds 40 PPP-SEK. Nobody pays this at the pump; hover to see the pump price. Sweden is the anchor, unchanged.',
     hint_time: 'Time price = how many minutes an average earner (net pay) works for one litre.',
     tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
     tt_tomean: 'To the EU average', tt_negtax: '→ requires negative tax!',
+    tt_pump: 'Pump price', tt_pppline: 'Equivalent in Swedish purchasing power',
     milj: 'M',
     min: 'min', max: 'max', minmax_lbl: 'series min/max',
     lang_switch: 'Byt till svenska',
@@ -543,7 +545,9 @@ function unit() {
   const pc = S.percap ? (S.lang === 'sv' ? '/inv' : '/cap') : '';
   if (S.basis === 'time') return 'min/l';
   if (S.basis === 'year') return (S.lang === 'sv' ? 'h/år' : 'h/yr') + pc;
-  if (S.basis === 'yearnom' || S.basis === 'yearppp') return (S.lang === 'sv' ? 'kr/år' : 'SEK/yr') + pc;
+  if (S.basis === 'yearnom') return (S.lang === 'sv' ? 'kr/år' : 'SEK/yr') + pc;
+  if (S.basis === 'yearppp') return (S.lang === 'sv' ? 'PPP-kr/år' : 'PPP-SEK/yr') + pc;
+  if (S.basis === 'ppp') return S.lang === 'sv' ? 'PPP-kr/l' : 'PPP-SEK/l';
   return 'kr/l';
 }
 /** Justerat värde: nominellt (kr/l), PPP (kr/l) eller tidpris (min arbete/l). */
@@ -1551,8 +1555,12 @@ function renderCurve(payload) {
     const eNom = (payload.fuels[S.fuel] || {})[r.cc] || {};
     showTip(
       `<b>${META[r.cc][S.lang]}</b><br>` +
-      `${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
-      (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
+      (S.basis === 'ppp'
+        ? `${T('tt_pump')}: ${fmt(eNom.sek)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
+          `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr/l`
+        : `${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
+          (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`)) +
+      (S.basis === 'yearppp' ? `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr` : '') +
       (isYearBasis() ? `<br>${fmt(META[r.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km${S.percap ? ` × ${META[r.cc].cars}/1000 ${S.lang === 'sv' ? 'bilar/inv.' : 'cars/cap.'}` : ''}` : '') +
       (r.net != null ? `<br>${T('tt_net')}: ${vfmt(r.net)} · ${T('tt_tax')}: ${vfmt(r.tax)} ${unit()}` : '') +
       taxToMeanLine(payload, rows, r) +
@@ -1852,8 +1860,13 @@ function hoverMap(ev) {
     const r = rows.find(x => x.cc === hit.cc);
     if (r) {
       const eNom = (payload.fuels[S.fuel] || {})[hit.cc] || {};
-      showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
-        (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
+      showTip(`<b>${META[hit.cc][S.lang]}</b><br>` +
+        (S.basis === 'ppp'
+          ? `${T('tt_pump')}: ${fmt(eNom.sek)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
+            `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr/l`
+          : `${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
+            (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`)) +
+        (S.basis === 'yearppp' ? `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr` : '') +
         (isYearBasis() ? `<br>${fmt(META[hit.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km${S.percap ? ` × ${META[hit.cc].cars}/1000 ${S.lang === 'sv' ? 'bilar/inv.' : 'cars/cap.'}` : ''}` : '') +
         (r.net != null ? `<br>${T('tt_net')}: ${vfmt(r.net)} · ${T('tt_tax')}: ${vfmt(r.tax)} ${unit()}` : '') +
         taxToMeanLine(payload, rows, r), ev);
@@ -2003,12 +2016,15 @@ En källa, en kurs, inga externa valuta-API:er. Licens för källdata: CC BY-NC-
 <p>Befolkningsvikter: Eurostat, 1 januari 2025 (deklarerat källår, D5).
 PPP-läget använder Eurostats prisnivåindex (prc_ppp_ind, PLI_EU27_2020, kategori A01
 "faktisk individuell konsumtion", år 2024, EU27=100): justerat pris = nominellt pris ×
-(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>). <strong>I praktiken: hur dyr bensinen är i
-förhållande till landets övriga priser, omräknat till svensk prisnivå.</strong> Det är alltså
-inte vad en svensk turist betalar vid pumpen där, utan hur dyr bensinen är för den som lever
-med landets priser och konsumtion — Rumäniens fyrtiotal "prisnivå-kronor" betyder att
-bensin där är dyr <em>relativt allt annat</em>. Sverige är oförändrat ankare. Nominella kr/l
-är huvudläsningen (svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning.</p>
+(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>), och enheten skrivs <strong>PPP-kr</strong> för
+att markera att ingen betalar beloppet vid någon pump. <strong>Läs ett PPP-värde så här: en
+liter tar i landet lika stor del av köpkraften som så många kronor tar i Sverige.</strong>
+Rumäniens dryga 40 PPP-kr betyder alltså: för en rumän tar litern lika stor tugga ur
+plånboken som drygt 40 kr skulle ta för en svensk — en rumänsk hundralapp räcker till mycket
+mer mat, hyra och frisör än en svensk, men nästan lika lite bensin. (Pumppriset, ca 17 kr,
+visas alltid parallellt i vyerna.) Sverige är oförändrat ankare, per definition. Nominella
+kr/l är huvudläsningen (svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning,
+och tidpriset säger samma sak med lön i stället för varukorg.</p>
 <h2>Tidpris ("time price")</h2>
 <p>Tredje prisläget är <strong>tidpris</strong>: hur länge en genomsnittlig löntagare behöver
 arbeta för en liter. Begreppet är etablerat (bl.a. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -2080,13 +2096,16 @@ One source, one rate, no external currency APIs. Source data licence: CC BY-NC-N
 <p>Population weights: Eurostat, 1 January 2025 (declared source year, D5).
 The PPP mode uses Eurostat price level indices (prc_ppp_ind, PLI_EU27_2020, category A01
 "actual individual consumption", 2024, EU27=100): adjusted price = nominal price ×
-(PLI<sub>Sweden</sub>/PLI<sub>country</sub>). <strong>In practice: how expensive petrol is
-relative to the country's other prices, restated at Swedish price levels.</strong> It is not
-what a Swedish tourist pays at the pump there, but how expensive petrol is for someone living
-with the country's prices and consumption — Romania's forty-odd "price-level kronor" mean that
-petrol there is expensive <em>relative to everything else</em>. Sweden is the unchanged anchor.
-Nominal SEK/l is the primary reading (Swedish wallet perspective, D4); PPP is a declared
-sibling reading.</p>
+(PLI<sub>Sweden</sub>/PLI<sub>country</sub>), and the unit is written <strong>PPP-SEK</strong>
+to flag that nobody pays the amount at any pump. <strong>Read a PPP value like this: a litre
+takes as large a share of purchasing power in the country as this many kronor take in
+Sweden.</strong> Romania's forty-odd PPP-SEK thus mean: for a Romanian, the litre takes as big
+a bite out of the wallet as forty-odd kronor would for a Swede — a Romanian banknote buys far
+more food, rent and haircuts than a Swedish one, but almost as little petrol. (The pump price,
+about 17 SEK, is always shown alongside in the views.) Sweden is the unchanged anchor, by
+definition. Nominal SEK/l is the primary reading (Swedish wallet perspective, D4); PPP is a
+declared sibling reading, and the time price says the same thing with wages instead of a
+basket of goods.</p>
 <h2>Time price</h2>
 <p>The third price basis is the <strong>time price</strong>: how long an average earner must work
 for one litre. The concept is established (e.g. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -2375,10 +2394,11 @@ beroende på hur man räknar. (Siffrorna nedan avser veckan 2026-08-03 — hämt
 <li><strong>Rakt pris (nominellt, kr/l)</strong> — vad det kostar att tanka på plats, i svenska
 kronor. Sverige: 15,96 kr/l — näst lägst i EU (bara Malta lägre), ca 5,50 kr under genomsnittet
 i EU. <a href="?${q}&view=curve&fuel=petrol&basis=nom&color=quartile">Öppna i priskurvan →</a></li>
-<li><strong>PPP-justerat (kr/l)</strong> — bensinpriset i förhållande till landets allmänna
-prisnivå, uttryckt i svensk prisnivå: hur dyr bensinen är relativt allt annat man köper där
-(inte vad en turist betalar). Sverige: fortfarande 15,96 (ankare) — näst lägst
-(bara Luxemburg lägre), nästan 12 kr under genomsnittet i EU.
+<li><strong>PPP-justerat (PPP-kr/l)</strong> — läses personburet: en liter tar i landet
+lika stor del av köpkraften som så många kronor tar i Sverige. Rumäniens ~42 PPP-kr betyder
+att litern tar lika stor tugga ur en rumäns plånbok som 42 kr skulle ta ur en svensk
+(ingen betalar det vid pumpen — pumppriset visas parallellt). Sverige: 15,96 (ankare,
+per definition oförändrat) — näst lägst, nästan 12 PPP-kr under genomsnittet i EU.
 <a href="?${q}&view=curve&fuel=petrol&basis=ppp&color=quartile">Öppna →</a></li>
 <li><strong>Tidpris (min arbete/l)</strong> — hur länge en genomsnittlig löntagare (nettolön)
 arbetar för en liter. Sverige: ≈ 5,5 minuter — tredje lägst, efter Luxemburg (mycket höga löner)
@@ -2481,10 +2501,12 @@ different maps of Europe depending on how you count. (Figures below refer to the
 <li><strong>Straight price (nominal, SEK/l)</strong> — what filling up costs on site, in Swedish
 kronor. Sweden: 15.96 SEK/l — second lowest in the EU (only Malta lower), about 5.50 SEK below
 the EU average. <a href="?${q}&view=curve&fuel=petrol&basis=nom&color=quartile">Open in the curve →</a></li>
-<li><strong>PPP-adjusted (SEK/l)</strong> — the petrol price relative to the country's
-general price level, expressed at Swedish price levels: how expensive petrol is relative to
-everything else bought there (not what a tourist pays). Sweden: still 15.96 (anchor) — second
-lowest (only Luxembourg lower), almost 12 SEK below the EU average.
+<li><strong>PPP-adjusted (PPP-SEK/l)</strong> — read it person-first: a litre takes as
+large a share of purchasing power in the country as this many kronor take in Sweden.
+Romania's ~42 PPP-SEK mean the litre takes as big a bite out of a Romanian's wallet as 42
+kronor would out of a Swedish one (nobody pays it at the pump — the pump price is shown
+alongside). Sweden: 15.96 (anchor, unchanged by definition) — second lowest, almost 12
+PPP-SEK below the EU average.
 <a href="?${q}&view=curve&fuel=petrol&basis=ppp&color=quartile">Open →</a></li>
 <li><strong>Time price (min of work/l)</strong> — how long an average earner (net pay) works for
 one litre. Sweden: ≈ 5.5 minutes — third lowest, after Luxembourg (very high wages) and Ireland
