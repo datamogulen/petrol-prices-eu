@@ -1630,45 +1630,50 @@ function labelTexts(view) {
 }
 
 /**
- * Landskoder och landgränser på kurvremsan (endast full storlek):
- *  - Breda staplar: koden i upphöjd OpenSans-Bold PÅ STAPELNS FRAMSIDA
- *    (glyferna extruderas i z och roteras 90° ut ur frontytan – ren
- *    rotation, vattentätheten bevaras).
- *  - Smala staplar: koden på etikettbandet med ledare ("pil") till foten.
- *  - Vid varje landgräns en tunn upphöjd kontrastlist på framsidan –
- *    den fysiska motsvarigheten till diagrammets vita streck, så att
- *    grannländer i samma kvartilfärg går att skilja åt.
+ * Landskoder och landgränser på kurvremsan – i ALLA utskriftslayouter:
+ *  - Breda staplar: koden i upphöjd OpenSans-Bold PÅ STAPELNS FRAMSIDA.
+ *  - Övriga (bl.a. Sverige): koden på etikettbandet med ledare ("pil");
+ *    bandet använder upp till tre rader så att alla 27 länder får plats
+ *    även i miniatyrlayouterna.
+ *  - Tunna kontrastlister vid varje landgräns – fysiska "vita streck".
  * Allt hamnar i titel-filen (kontrastfärg).
  */
 function curveLabels(items, totalWidth) {
   const out = [];
   const RAISE = SCALE.TEXT_RAISE;
-  // (x,y,z) -> (x,-z,y): 90°-rotation kring x-axeln; det=+1, ingen omvindning
   const toFace = tris => tris.map(t => t.map(([x, y, z]) => [x, -z, y]));
-  const cap = 3.2, baseline = -9.5, leadTop = -4.6;
-  let x = 0, cursor = 1.5;
+  const cap = 3.2;
+  const rowsY = [-9.5, -15.0, -20.5];        // bandrader (baslinjer), fylls efter behov
+  const cursors = rowsY.map(() => 1.5);
+  let x = 0;
   const tops = items.map(it => Math.max(0, ...it.segments.map(sg => sg.z1)));
   items.forEach((it, i) => {
     const w = it.widthMm, cx = x + w / 2, hTop = tops[i];
     const faceCap = 3.5;
     const wFace = textOutlineWidth(it.cc, faceCap);
     if (w >= wFace + 2.4 && hTop >= faceCap + 3.5) {
-      // kod på stapelns framsida
       for (const tris of textOutlineSolids(it.cc, faceCap, 0, RAISE,
           ([gx, gy]) => [cx - wFace / 2 + gx, 1.5 + gy])) {
         out.push({ group: 'text', cc: it.cc, tris: toFace(tris) });
       }
     } else {
-      // smal eller låg stapel: kod på bandet + ledare
       const wB = textOutlineWidth(it.cc, cap);
-      let lx0 = Math.max(cursor, cx - wB / 2);
+      // välj bandrad med minst förskjutning från stapelns mitt
+      let ri = 0, best = Infinity;
+      rowsY.forEach((_, k) => {
+        const l = Math.max(cursors[k], cx - wB / 2);
+        const disp = Math.abs(l + wB / 2 - cx) + k * 0.5;   // föredra övre rader något
+        if (l + wB <= totalWidth - 1.5 && disp < best) { best = disp; ri = k; }
+      });
+      let lx0 = Math.max(cursors[ri], cx - wB / 2);
       if (lx0 + wB > totalWidth - 1.5) lx0 = totalWidth - 1.5 - wB;
-      cursor = lx0 + wB + 1.6;
-      const lcx = lx0 + wB / 2;
+      cursors[ri] = lx0 + wB + 1.6;
+      const lcx = lx0 + wB / 2, baseline = rowsY[ri];
       for (const tris of textOutlineSolids(it.cc, cap, 0, RAISE,
           ([gx, gy]) => [lx0 + gx, baseline + gy])) {
         out.push({ group: 'text', cc: it.cc, tris });
       }
+      const leadTop = baseline + cap * 1.5;
       if (Math.abs(lcx - cx) > 1.2) {
         const tris = extrudeSolid([[cx - 0.35, -0.5], [cx + 0.35, -0.5],
                                    [lcx + 0.35, leadTop], [lcx - 0.35, leadTop]], [], 0, RAISE);
@@ -1678,7 +1683,6 @@ function curveLabels(items, totalWidth) {
           tris: boxSolid(cx - 0.35, leadTop, 0, cx + 0.35, -0.5, RAISE) });
       }
     }
-    // tunn kontrastlist vid högra landgränsen (frontytan)
     if (i < items.length - 1) {
       const hSep = Math.min(hTop, tops[i + 1]) - 0.3;
       if (hSep > 1) {
@@ -2745,12 +2749,9 @@ function buildFollowsedel(info) {
     L.push(sv ? `Total längd: ${info.totalWidth.toFixed(1)} mm.` : `Total length: ${info.totalWidth.toFixed(1)} mm.`);
     L.push(sv ? 'Malta är ≈ 0,3 mm bred – ok som steg i sammanhängande solid, omöjlig fristående (D6).'
               : 'Malta is ≈ 0.3 mm wide – fine as a step in a contiguous solid, impossible free-standing (D6).');
-    L.push(sv ? (S.layout === 'full'
-        ? 'Landskoder i upphöjd kontrastfärg på stapelns framsida (smala länder: på bandet med ledare); tunna kontrastlister markerar varje landgräns. Allt i filen "titel-…".'
-        : 'Landskoder utelämnas i miniatyrlayouterna (får inte plats läsbart) – använd QR-tvillingen.')
-              : (S.layout === 'full'
-        ? 'Country codes in raised contrast colour on the bar fronts (narrow countries: on the band with leaders); thin contrast strips mark every country boundary. All in the "title-…" file.'
-        : 'Country codes are omitted in the miniature layouts (no readable room) – use the QR twin.'));
+    L.push(sv
+      ? 'Landskoder i upphöjd kontrastfärg: på stapelns framsida där de ryms, annars på etikettbandet (upp till tre rader) med ledare till stapelfoten; tunna kontrastlister markerar varje landgräns. Allt i filen "titel-…".'
+      : 'Country codes in raised contrast colour: on the bar fronts where they fit, otherwise on the label band (up to three rows) with leaders to the bar foot; thin contrast strips mark every country boundary. All in the "title-…" file.');
   } else {
     const mapK = SCALE.MAP_K * LAYOUTS[S.layout];
     const mmKm = mapK / KM_PER_DEG_LAT;
@@ -2833,7 +2834,7 @@ function doExportInner() {
                  qrText: txt.qr, qrModule: SCALE.QR_MODULE },
       });
       solids.push(...lp.solids);
-      if (S.layout === 'full') solids.push(...curveLabels(items, totalWidth));
+      solids.push(...curveLabels(items, totalWidth));
     } else {
       // dela vid landgräns närmast halva bredden; varje del får egen platta
       let x = 0, cut = 0, best = Infinity;
@@ -2854,7 +2855,7 @@ function doExportInner() {
                  qrText: txt.qr, qrModule: SCALE.QR_MODULE },
       });
       solids.push(...lpA.solids, ...lpB.solids);
-      if (S.layout === 'full') solids.push(...curveLabels(items, totalWidth));
+      solids.push(...curveLabels(items, totalWidth));
       for (const sd of solids) {
         const minX = Math.min(...sd.tris.flat().map(pt => pt[0]));
         const inB = minX >= cut - 1e-9;
