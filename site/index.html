@@ -346,6 +346,7 @@ const I18N = {
     bgrp_litre: 'Per liter', bgrp_year: 'Per år (körsträcka × förbrukning)',
     l_percap: 'Per invånare (i stället för per bil)',
     percap_note: 'Per invånare: värdet × bilar per invånare (Eurostat bilpark 2025 ÷ befolkning) – samhällets börda i stället för bilägarens. Sverige har EU:s fjärde lägsta bilinnehav (476/1000 mot snittets 588).',
+    percap_off_note: 'Kryssrutan "Per invånare" multiplicerar med bilinnehavet (bilar per invånare) och visar samhällets börda i stället för bilägarens.',
     hint_yearnom: 'Årskostnad = körsträcka per bil × 6,85 l/100 km × literpris, i svenska kronor. LU, SK, BG och CY saknar körsträckedata och utelämnas.',
     hint_yearppp: 'Årskostnad i PPP-kr: bensinåret tar i landet lika stor del av köpkraften som så här många kronor tar i Sverige. Ingen betalar summan – den översätter lokal börda till svensk måttstock.',
     year_note: 'Årsmåtten bygger på körsträcka/bil (SE: Trafikanalys 2024; övriga: Odyssee-Mure 2023 eller härlett ur Eurostat 2024) × flottsnittet 6,85 l/100 km (Odyssee, EU-nivå 2023). Grov, deklarerad modell – LU, SK, BG och CY saknar körsträckedata och utelämnas. Se Om/Metod.',
@@ -402,6 +403,7 @@ const I18N = {
     bgrp_litre: 'Per litre', bgrp_year: 'Per year (distance × consumption)',
     l_percap: 'Per capita (instead of per car)',
     percap_note: 'Per capita: the value × cars per inhabitant (Eurostat car stock 2025 ÷ population) – society’s burden instead of the car owner’s. Sweden has the EU’s fourth lowest car ownership (476/1000 against the average 588).',
+    percap_off_note: 'The "Per capita" checkbox multiplies by car ownership (cars per inhabitant), showing society’s burden instead of the car owner’s.',
     hint_yearnom: 'Annual cost = distance per car × 6.85 l/100 km × litre price, in SEK. LU, SK, BG and CY lack distance data and are omitted.',
     hint_yearppp: 'Annual cost in PPP-SEK: the petrol year takes as large a bite of purchasing power there as this many kronor take in Sweden. Nobody pays the sum – it translates local burden into a Swedish yardstick.',
     year_note: 'The annual measures use distance/car (SE: Trafikanalys 2024; others: Odyssee-Mure 2023 or derived from Eurostat 2024) × the fleet average 6.85 l/100 km (Odyssee, EU level 2023). A rough, declared model – LU, SK, BG and CY lack distance data and are omitted. See About/Method.',
@@ -1628,39 +1630,64 @@ function labelTexts(view) {
 }
 
 /**
- * Landskoder på kurvremsans etikettband: upphöjd kod (OpenSans-Bold) för
- * varje trappsteg, sekventiellt placerade så de aldrig överlappar; en tunn
- * upphöjd rygg ("pil") binder koden till stapelns fot – snedställd när
- * koden inte ryms rakt under sin stapel. Endast i full storlek (i
- * miniatyrlayouterna utelämnas koderna – deklareras på följesedeln).
+ * Landskoder och landgränser på kurvremsan (endast full storlek):
+ *  - Breda staplar: koden i upphöjd OpenSans-Bold PÅ STAPELNS FRAMSIDA
+ *    (glyferna extruderas i z och roteras 90° ut ur frontytan – ren
+ *    rotation, vattentätheten bevaras).
+ *  - Smala staplar: koden på etikettbandet med ledare ("pil") till foten.
+ *  - Vid varje landgräns en tunn upphöjd kontrastlist på framsidan –
+ *    den fysiska motsvarigheten till diagrammets vita streck, så att
+ *    grannländer i samma kvartilfärg går att skilja åt.
+ * Allt hamnar i titel-filen (kontrastfärg).
  */
 function curveLabels(items, totalWidth) {
   const out = [];
-  const cap = 3.2, gap = 1.6, baseline = -9.5, leadTop = -4.6;
+  const RAISE = SCALE.TEXT_RAISE;
+  // (x,y,z) -> (x,-z,y): 90°-rotation kring x-axeln; det=+1, ingen omvindning
+  const toFace = tris => tris.map(t => t.map(([x, y, z]) => [x, -z, y]));
+  const cap = 3.2, baseline = -9.5, leadTop = -4.6;
   let x = 0, cursor = 1.5;
-  for (const it of items) {
-    const cx = x + it.widthMm / 2;
-    const wTxt = textOutlineWidth(it.cc, cap);
-    let lx0 = Math.max(cursor, cx - wTxt / 2);
-    if (lx0 + wTxt > totalWidth - 1.5) lx0 = totalWidth - 1.5 - wTxt;
-    cursor = lx0 + wTxt + gap;
-    const lcx = lx0 + wTxt / 2;
-    for (const tris of textOutlineSolids(it.cc, cap, 0, SCALE.TEXT_RAISE,
-        ([gx, gy]) => [lx0 + gx, baseline + gy])) {
-      out.push({ group: 'text', cc: it.cc, tris });
-    }
-    if (Math.abs(lcx - cx) > 1.2) {
-      // snedställd ledare (parallellogram) från stapelfot till kodens överkant
-      const tris = extrudeSolid([[cx - 0.35, -0.5], [cx + 0.35, -0.5],
-                                 [lcx + 0.35, leadTop], [lcx - 0.35, leadTop]],
-                                [], 0, SCALE.TEXT_RAISE);
-      if (tris) out.push({ group: 'text', cc: it.cc, tris });
+  const tops = items.map(it => Math.max(0, ...it.segments.map(sg => sg.z1)));
+  items.forEach((it, i) => {
+    const w = it.widthMm, cx = x + w / 2, hTop = tops[i];
+    const faceCap = 3.5;
+    const wFace = textOutlineWidth(it.cc, faceCap);
+    if (w >= wFace + 2.4 && hTop >= faceCap + 3.5) {
+      // kod på stapelns framsida
+      for (const tris of textOutlineSolids(it.cc, faceCap, 0, RAISE,
+          ([gx, gy]) => [cx - wFace / 2 + gx, 1.5 + gy])) {
+        out.push({ group: 'text', cc: it.cc, tris: toFace(tris) });
+      }
     } else {
-      out.push({ group: 'text', cc: it.cc,
-        tris: boxSolid(cx - 0.35, leadTop, 0, cx + 0.35, -0.5, SCALE.TEXT_RAISE) });
+      // smal eller låg stapel: kod på bandet + ledare
+      const wB = textOutlineWidth(it.cc, cap);
+      let lx0 = Math.max(cursor, cx - wB / 2);
+      if (lx0 + wB > totalWidth - 1.5) lx0 = totalWidth - 1.5 - wB;
+      cursor = lx0 + wB + 1.6;
+      const lcx = lx0 + wB / 2;
+      for (const tris of textOutlineSolids(it.cc, cap, 0, RAISE,
+          ([gx, gy]) => [lx0 + gx, baseline + gy])) {
+        out.push({ group: 'text', cc: it.cc, tris });
+      }
+      if (Math.abs(lcx - cx) > 1.2) {
+        const tris = extrudeSolid([[cx - 0.35, -0.5], [cx + 0.35, -0.5],
+                                   [lcx + 0.35, leadTop], [lcx - 0.35, leadTop]], [], 0, RAISE);
+        if (tris) out.push({ group: 'text', cc: it.cc, tris });
+      } else {
+        out.push({ group: 'text', cc: it.cc,
+          tris: boxSolid(cx - 0.35, leadTop, 0, cx + 0.35, -0.5, RAISE) });
+      }
     }
-    x += it.widthMm;
-  }
+    // tunn kontrastlist vid högra landgränsen (frontytan)
+    if (i < items.length - 1) {
+      const hSep = Math.min(hTop, tops[i + 1]) - 0.3;
+      if (hSep > 1) {
+        out.push({ group: 'text', cc: null,
+          tris: boxSolid(x + w - 0.2, -RAISE, 0, x + w + 0.2, 0.05, hSep) });
+      }
+    }
+    x += w;
+  });
   return out;
 }
 
@@ -2017,44 +2044,21 @@ med och utan skatter. Alla priser i källan är EUR per 1000 liter; omräkning t
 sker med bulletinens egen veckokurs för SEK (EUR per SEK ur Sverige-kolumnen, samma datum).
 En källa, en kurs, inga externa valuta-API:er. Licens för källdata: CC BY-NC-ND —
 "Source: European Commission Weekly Oil Bulletin".</p>
-<p>Befolkningsvikter: Eurostat, 1 januari 2025 (deklarerat källår, D5).
-PPP-läget använder Eurostats prisnivåindex (prc_ppp_ind, PLI_EU27_2020, kategori A01
-"faktisk individuell konsumtion", år 2024, EU27=100): justerat pris = nominellt pris ×
-(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>), och enheten skrivs <strong>PPP-kr</strong> för
-att markera att ingen betalar beloppet vid någon pump. <strong>Läs ett PPP-värde så här: en
-liter tar i landet lika stor del av köpkraften som så många kronor tar i Sverige.</strong>
-Rumäniens dryga 40 PPP-kr betyder alltså: för en rumän tar litern lika stor tugga ur
-plånboken som drygt 40 kr skulle ta för en svensk — en rumänsk hundralapp räcker till mycket
-mer mat, hyra och frisör än en svensk, men nästan lika lite bensin. (Pumppriset, ca 17 kr,
-visas alltid parallellt i vyerna.) Sverige är oförändrat ankare, per definition.</p>
-<p><strong>Varför behövs PPP när tidpriset finns? Potatis-testet:</strong> tänk ett fattigt
-land där bensinen är procentuellt lika billig som potatisen och allt annat. Tidpriset blir
-ändå högt — men det beror då på låga löner, inte på att bensinen är dyr <em>relativt sett</em>.
-PPP-måttet skiljer de två åt: det svarar på "sticker bensinen ut ur landets egen prisbild?"
-I EU finns inget sådant potatis-land — bensin köps på världsmarknaden och blir inte billigare
-för att landet är billigt, och det är precis det PPP-läget synliggör (tooltippen visar
-relativpriset direkt: Rumäniens bensin är ~2,7× så dyr relativt landets övriga priser som
-Sveriges är relativt våra). Måtten kompletterar varandra: <em>tidpris = har folk råd;
-PPP = är bensinen relativt dyr där.</em></p>
-<table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
-<tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Fråga</th>
-<th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Rätt mått</th></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Vad kostar det att tanka, i mina kronor?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">Nominellt (kr/l)</td></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Är bensinen ovanligt dyr relativt allt annat i landet?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">PPP-justerat (PPP-kr/l)</td></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Har en genomsnittlig löntagare råd med bensin?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">Tidpris (min/l)</td></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Hur stor är årets bensinbörda — för bilägaren eller samhället?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">Årsmåtten (kr/år, h/år, per bil/invånare)</td></tr>
-</table>
-<p><em>Metodnot (deklarerad frihetsgrad):</em> vi använder prisnivåindex för AIC ("faktisk
-individuell konsumtion", inkl. offentligt finansierad sjukvård/utbildning värderad till
-produktionskostnad). Alternativen HFCE (endast det hushållen själva betalar) eller BNP-PPP
-ger ~5–6 % andra nivåer — HFCE vore snäppet mer naturligt som deflator för ett konsumentpris
-och är dessutom det val som är minst fördelaktigt för Sverige. Valet påverkar nivåerna,
-knappt rangordningen; tidpriset saknar helt denna frihetsgrad. Nominella kr/l är
-huvudläsningen (svenskt plånboksperspektiv, D4).</p>
+<p>Befolkningsvikter: Eurostat, 1 januari 2025 (deklarerat källår, D5).</p>
+<h2>Nominellt pris (kr/l)</h2>
+<p>Huvudläsningen (svenskt plånboksperspektiv, D4): pumppriset omräknat till svenska kronor
+med bulletinens egen veckokurs — det man faktiskt betalar vid pumpen.</p>
+<h2>PPP-justerat pris (PPP-kr/l)</h2>
+<p>Svarar på frågan: <strong>är bensinen ovanligt dyr relativt allt annat i landet?</strong>
+Beräkning: pris × (PLI<sub>Sverige</sub>/PLI<sub>landet</sub>), där PLI är Eurostats
+prisnivåindex för faktisk individuell konsumtion (AIC, 2024, EU27=100). Enheten skrivs
+<strong>PPP-kr</strong> för att markera att ingen betalar beloppet vid någon pump.
+<strong>Läs ett PPP-värde så här: en liter tar i landet lika stor del av köpkraften som så
+många kronor tar i Sverige.</strong> Rumäniens dryga 40 PPP-kr betyder alltså: för en rumän
+tar litern lika stor tugga ur plånboken som drygt 40 kr skulle ta för en svensk — en rumänsk
+hundralapp räcker till mycket mer mat, hyra och frisör än en svensk, men nästan lika lite
+bensin. Pumppriset visas alltid parallellt i vyerna, tillsammans med relativpriset
+("X× Sverige"). Sverige är oförändrat ankare, per definition.</p>
 <h2>Tidpris ("time price")</h2>
 <p>Tredje prisläget är <strong>tidpris</strong>: hur länge en genomsnittlig löntagare behöver
 arbeta för en liter. Begreppet är etablerat (bl.a. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -2076,6 +2080,27 @@ vilseledande "tidprisserie"; en riktig sådan kräver lönehistorik (framtida ut
 (b) Genomsnittslönen är inte medianlönen; i länder med skev lönefördelning underskattar
 genomsnittet den typiska löntagarens tidpris. (c) I tidprisläget är höjdskalan
 <code>1 mm = 1 minut arbete per liter</code> och de fasta klasserna ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
+<h2>Vilket mått svarar på vad?</h2>
+<p><strong>Potatis-testet</strong> skiljer måtten åt: tänk ett fattigt land där bensinen är
+procentuellt lika billig som potatisen och allt annat. Tidpriset blir ändå högt — men det
+beror då på låga löner, inte på att bensinen är dyr <em>relativt sett</em>. PPP-måttet
+skiljer de två åt. I EU finns inget sådant potatis-land: bensin köps på världsmarknaden och
+blir inte billigare för att landet är billigt — det är precis det PPP-läget synliggör
+(Rumäniens bensin är ~2,7× så dyr relativt landets övriga priser som Sveriges är relativt
+våra). Måtten kompletterar varandra: <em>tidpris = har folk råd; PPP = är bensinen relativt
+dyr där.</em></p>
+<table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
+<tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Fråga</th>
+<th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Rätt mått</th></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Vad kostar det att tanka, i mina kronor?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Nominellt (kr/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Är bensinen ovanligt dyr relativt allt annat i landet?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">PPP-justerat (PPP-kr/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Har en genomsnittlig löntagare råd med bensin?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Tidpris (min/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Hur stor är årets bensinbörda — för bilägaren eller samhället?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Årsmåtten (kr/år, h/år, per bil/invånare)</td></tr>
+</table>
 <h2>Årsmåtten (fördjupning): kostnad och arbetstid per år</h2>
 <p>Utöver litermåtten finns tre årsmått som kombinerar pris med hur mycket bilen faktiskt
 körs: <strong>Årskostnad</strong> <code>(kr/år) = körsträcka per bil × ${SCALE.FUEL_L100} l/100 km ×
@@ -2123,46 +2148,21 @@ with and without taxes. All prices in the source are EUR per 1000 litres; conver
 uses the bulletin's own weekly SEK rate (EUR per SEK from the Sweden column, same date).
 One source, one rate, no external currency APIs. Source data licence: CC BY-NC-ND —
 "Source: European Commission Weekly Oil Bulletin".</p>
-<p>Population weights: Eurostat, 1 January 2025 (declared source year, D5).
-The PPP mode uses Eurostat price level indices (prc_ppp_ind, PLI_EU27_2020, category A01
-"actual individual consumption", 2024, EU27=100): adjusted price = nominal price ×
-(PLI<sub>Sweden</sub>/PLI<sub>country</sub>), and the unit is written <strong>PPP-SEK</strong>
-to flag that nobody pays the amount at any pump. <strong>Read a PPP value like this: a litre
-takes as large a share of purchasing power in the country as this many kronor take in
-Sweden.</strong> Romania's forty-odd PPP-SEK thus mean: for a Romanian, the litre takes as big
-a bite out of the wallet as forty-odd kronor would for a Swede — a Romanian banknote buys far
-more food, rent and haircuts than a Swedish one, but almost as little petrol. (The pump price,
-about 17 SEK, is always shown alongside in the views.) Sweden is the unchanged anchor, by
-definition.</p>
-<p><strong>Why keep PPP when the time price exists? The potato test:</strong> imagine a poor
-country where petrol is proportionally as cheap as potatoes and everything else. The time
-price would still be high — but from low wages, not because petrol is expensive <em>in
-relative terms</em>. The PPP measure separates the two: it answers "does petrol stick out of
-the country's own price picture?" No such potato-country exists in the EU — petrol is bought
-on the world market and does not get cheaper because the country is cheap, which is exactly
-what the PPP mode reveals (the tooltip shows the relative price directly: Romania's petrol is
-~2.7× as expensive relative to its other prices as Sweden's is relative to ours). The
-measures complement each other: <em>time price = can people afford it; PPP = is petrol
-relatively expensive there.</em></p>
-<table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
-<tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Question</th>
-<th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Right measure</th></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">What does filling up cost, in my kronor?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">Nominal (SEK/l)</td></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Is petrol unusually expensive relative to everything else in the country?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">PPP-adjusted (PPP-SEK/l)</td></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Can an average earner afford petrol?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">Time price (min/l)</td></tr>
-<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">How large is the year's petrol burden — for the owner or society?</td>
-<td style="border:1px solid #C9BFA8;padding:3px 10px">The annual measures (SEK/yr, h/yr, per car/capita)</td></tr>
-</table>
-<p><em>Method note (a declared degree of freedom):</em> we use price level indices for AIC
-("actual individual consumption", incl. publicly financed healthcare/education valued at
-production cost). The alternatives HFCE (only what households pay themselves) or GDP-PPP give
-~5–6% different levels — HFCE would be marginally more natural as a deflator for a consumer
-price, and happens to be the choice least favourable to Sweden. The choice affects levels,
-barely rankings; the time price has no such degree of freedom at all. Nominal SEK/l remains
-the primary reading (Swedish wallet perspective, D4).</p>
+<p>Population weights: Eurostat, 1 January 2025 (declared source year, D5).</p>
+<h2>Nominal price (SEK/l)</h2>
+<p>The primary reading (Swedish wallet perspective, D4): the pump price converted to SEK with
+the bulletin's own weekly rate — what you actually pay at the pump.</p>
+<h2>PPP-adjusted price (PPP-SEK/l)</h2>
+<p>Answers the question: <strong>is petrol unusually expensive relative to everything else in
+the country?</strong> Calculation: price × (PLI<sub>Sweden</sub>/PLI<sub>country</sub>), where
+PLI is Eurostat's price level index for actual individual consumption (AIC, 2024, EU27=100).
+The unit is written <strong>PPP-SEK</strong> to flag that nobody pays the amount at any pump.
+<strong>Read a PPP value like this: a litre takes as large a share of purchasing power in the
+country as this many kronor take in Sweden.</strong> Romania's forty-odd PPP-SEK thus mean:
+for a Romanian, the litre takes as big a bite out of the wallet as forty-odd kronor would for
+a Swede — a Romanian banknote buys far more food, rent and haircuts than a Swedish one, but
+almost as little petrol. The pump price is always shown alongside in the views, together with
+the relative price ("X× Sweden"). Sweden is the unchanged anchor, by definition.</p>
 <h2>Time price</h2>
 <p>The third price basis is the <strong>time price</strong>: how long an average earner must work
 for one litre. The concept is established (e.g. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -2185,6 +2185,27 @@ year would yield a misleading "time price series"; a real one needs wage history
 extension). (b) The mean wage is not the median; in countries with skewed wage distributions the
 mean understates the typical earner's time price. (c) In time-price mode the height scale is
 <code>1 mm = 1 minute of work per litre</code> and the fixed classes are ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
+<h2>Which measure answers what?</h2>
+<p><strong>The potato test</strong> separates the measures: imagine a poor country where
+petrol is proportionally as cheap as potatoes and everything else. The time price would still
+be high — but from low wages, not because petrol is expensive <em>in relative terms</em>. The
+PPP measure separates the two. No such potato-country exists in the EU: petrol is bought on
+the world market and does not get cheaper because the country is cheap — which is exactly
+what the PPP mode reveals (Romania's petrol is ~2.7× as expensive relative to its other
+prices as Sweden's is relative to ours). The measures complement each other: <em>time price =
+can people afford it; PPP = is petrol relatively expensive there.</em></p>
+<table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
+<tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Question</th>
+<th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Right measure</th></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">What does filling up cost, in my kronor?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Nominal (SEK/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Is petrol unusually expensive relative to everything else in the country?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">PPP-adjusted (PPP-SEK/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Can an average earner afford petrol?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Time price (min/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">How large is the year's petrol burden — for the owner or society?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">The annual measures (SEK/yr, h/yr, per car/capita)</td></tr>
+</table>
 <h2>The annual measures (extension): cost and work time per year</h2>
 <p>Beyond the per-litre measures there are three annual measures combining price with how much
 the car is actually driven: <strong>Annual cost</strong> <code>(SEK/yr) = distance per car ×
@@ -2725,10 +2746,10 @@ function buildFollowsedel(info) {
     L.push(sv ? 'Malta är ≈ 0,3 mm bred – ok som steg i sammanhängande solid, omöjlig fristående (D6).'
               : 'Malta is ≈ 0.3 mm wide – fine as a step in a contiguous solid, impossible free-standing (D6).');
     L.push(sv ? (S.layout === 'full'
-        ? 'Landskoder i upphöjd text på etikettbandet, med ledare till respektive stapel (filen "titel-…").'
+        ? 'Landskoder i upphöjd kontrastfärg på stapelns framsida (smala länder: på bandet med ledare); tunna kontrastlister markerar varje landgräns. Allt i filen "titel-…".'
         : 'Landskoder utelämnas i miniatyrlayouterna (får inte plats läsbart) – använd QR-tvillingen.')
               : (S.layout === 'full'
-        ? 'Country codes in raised text on the label band, with leaders to each bar (in the "title-…" file).'
+        ? 'Country codes in raised contrast colour on the bar fronts (narrow countries: on the band with leaders); thin contrast strips mark every country boundary. All in the "title-…" file.'
         : 'Country codes are omitted in the miniature layouts (no readable room) – use the QR twin.'));
   } else {
     const mapK = SCALE.MAP_K * LAYOUTS[S.layout];
@@ -2987,8 +3008,8 @@ function syncControls() {
   else if (dataView && S.basis === 'yearnom' && S.view !== 'hist') { hint.textContent = T('hint_yearnom'); hint.style.display = ''; }
   else if (dataView && S.basis === 'yearppp' && S.view !== 'hist') { hint.textContent = T('hint_yearppp'); hint.style.display = ''; }
   else hint.style.display = 'none';
-  if (hint.style.display !== 'none' && isYearBasis() && S.percap) {
-    hint.textContent += ' ' + T('percap_note');
+  if (hint.style.display !== 'none' && isYearBasis()) {
+    hint.textContent += ' ' + (S.percap ? T('percap_note') : T('percap_off_note'));
   }
 }
 async function rerender() {
