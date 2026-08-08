@@ -73,7 +73,7 @@
     position: fixed; display: none; pointer-events: none; z-index: 50;
     background: #FFFDF6; border: 1px solid var(--accent); border-radius: 8px;
     padding: 7px 11px; font-size: 13px; box-shadow: 0 3px 12px rgba(60,45,20,.18);
-    max-width: 260px;
+    max-width: 320px;
   }
   #tooltip b { color: var(--accent); }
   #map3d { width: 100%; height: 560px; border-radius: 8px; overflow: hidden; cursor: grab; }
@@ -347,7 +347,7 @@ const I18N = {
     hint_ppp: 'PPP-justerat = bensinpriset i förhållande till landets allmänna prisnivå, uttryckt i svensk prisnivå: så dyr vore bensinen här, om den var lika dyr relativt allt annat som den är där. Sverige oförändrat.',
     hint_time: 'Tidpris = hur många minuter en genomsnittlig löntagare (nettolön) arbetar för en liter.',
     tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
-    tt_tomean: 'Skatteändring för att nå EU-snittet', tt_negtax: '→ kräver negativ skatt!',
+    tt_tomean: 'Till EU-snittet', tt_negtax: '→ kräver negativ skatt!',
     milj: 'milj.',
     min: 'min', max: 'max', minmax_lbl: 'seriens min/max',
     lang_switch: 'Switch to English',
@@ -394,7 +394,7 @@ const I18N = {
     hint_ppp: 'PPP-adjusted = the petrol price relative to the country’s general price level, expressed at Swedish price levels: this is how expensive petrol would be here if it were as expensive relative to everything else as it is there. Sweden unchanged.',
     hint_time: 'Time price = how many minutes an average earner (net pay) works for one litre.',
     tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
-    tt_tomean: 'Tax change to reach the EU average', tt_negtax: '→ requires negative tax!',
+    tt_tomean: 'To the EU average', tt_negtax: '→ requires negative tax!',
     milj: 'M',
     min: 'min', max: 'max', minmax_lbl: 'series min/max',
     lang_switch: 'Byt till svenska',
@@ -528,7 +528,7 @@ function taxToMeanLine(payload, rows, r) {
   if (taxNow <= 0.05) return '';
   const pct = Math.round(dKr / taxNow * 100);
   const sgn = pct >= 0 ? '+' : '−';
-  return `<br>${T('tt_tomean')}: ${sgn}${Math.abs(pct)} %` +
+  return `<br>${T('tt_tomean')}: ${sgn}${Math.abs(pct)} % ${T('tt_tax')}` +
          (taxNow + dKr < 0 ? ` ${T('tt_negtax')}` : '');
 }
 
@@ -1410,7 +1410,7 @@ const tooltip = document.getElementById('tooltip');
 function showTip(html, ev) {
   tooltip.innerHTML = html;
   tooltip.style.display = 'block';
-  const x = Math.min(ev.clientX + 14, innerWidth - 280), y = Math.min(ev.clientY + 12, innerHeight - 90);
+  const x = Math.min(ev.clientX + 14, innerWidth - 340), y = Math.min(ev.clientY + 12, innerHeight - 110);
   tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
 }
 function hideTip() { tooltip.style.display = 'none'; }
