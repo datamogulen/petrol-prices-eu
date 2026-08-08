@@ -158,16 +158,26 @@ objekt med få filamentbyten (D8). Följesedel
 (`FOLJESEDEL.txt`/`README.txt`, samma språk som UI) med datum, vy, läge,
 skalor, källa och licens ingår.
 
-**Textning och QR (D10, reviderad):** basplattan (karta OCH kurva, 2 mm,
-nollplan = ovansidan) har ett 36 mm etikettband med **upphöjd titel +
-QR-kod** (0,6 mm, egen STL-fil i kontrastfärg – tvåfärgsutskrift ger
-skarp, skanningsbar kod) samt **graverad källtext på undersidan**
-(0,6 mm, spegelvänd i modellen, läsbar när objektet vänds; byggs
-konstruktivt utan CSG). QR-koden är den digitala tvillingens URL via
-`hedin.it/r/?p=ppeu&…` – tryckta koder kan alltså pekas om utan omtryck.
-QR-encodern (byte-läge, ECC L, mask 0, v1–4) och 5×7-pixelfonten är
-egna, beroendefria implementationer; encodern verifieras bit-exakt mot
-jsQR-avkodning och strukturellt i testskriptet.
+**Textning och QR (D10, rev 3):** titeln är upphöjd **OpenSans-Bold**
+(konturer extraherade offline av `tools/make_font.py` och inlinade –
+ingen runtime-fontparser). **QR-koden och källtexten sitter på
+undersidan** som flush tvåfärgs-inlay (0,6 mm): plattans bottenskikt
+har hål exakt där bläcket sitter och `undersida`-filen fyller dem –
+färg ger kontrasten, inte djup. QR-moduler 1,3 mm (över det empiriska
+golvet 1,25 mm från inequality-in-dollars-praxisen); bygget vägrar
+exportera under golvet eller om koden inte får plats. Allt på
+undersidan är spegelvänt i modellen = rättvänt underifrån. QR:n är den
+digitala tvillingens URL via `hedin.it/r/?p=ppeu&…` – tryckta koder kan
+pekas om utan omtryck. QR-encodern (byte-läge, ECC L, mask 0, v1–4) är
+egen och beroendefri; verifierad bit-exakt mot jsQR-avkodning.
+
+**Konfigurerbart:** Z-skala 0,5×/1×/2× (avvikelser deklareras på
+följesedeln), utskriftslayout full/4 per platta (×1/2)/8 per platta
+(×1/3) där tornet (EU-genomsnittet) alltid ingår i rutnätslayouterna,
+samt färgläget **Enbart skatt** (höjd = skattedelen). Öar under 2 mm²
+slutlig yta utelämnas (för sköra att skriva ut, D6). Kartrotationen
+använder OrbitControls med dämpning (europaklimat-stilen); undersidan
+kan ses i webbvyn.
 
 Deklarerade skalor (samma för ALLA exporter och datum – två utskrifter
 från olika veckor är direkt fysiskt jämförbara, O2):

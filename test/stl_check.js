@@ -151,22 +151,58 @@ print('\\n'.join(''.join('1' if c else '0' for c in row) for row in q.modules))
   }
 } catch (e) { console.log('  (python-referens ej körbar – strukturkontrollerna ovan gäller)'); }
 
-// Etikettplatta: titel + QR + graverad undersida; allt vattentätt, plattvolymen stämmer
+// OpenSans-Bold-konturfonten: glyfer med hål (O, Å, 0) måste klassas rätt (C1)
+const FONT = vm.runInContext('typeof FONT_OS_BOLD !== "undefined" ? FONT_OS_BOLD : null', core);
+if (!FONT) { console.error('FEL: FONT_OS_BOLD saknas i kärnan'); failures++; }
+else {
+  for (const [ch, wantHoles] of [['O', 1], ['A', 1], ['B', 2], ['I', 0], ['%', 2]]) {
+    const polys = core.glyphPolys(FONT.glyphs[ch].c);
+    const holes = polys.reduce((n, p) => n + p.holes.length, 0);
+    if (holes !== wantHoles) { console.error(`FEL: glyf ${ch}: ${holes} hål, förväntade ${wantHoles}`); failures++; }
+  }
+  const glyphSolids = core.textOutlineSolids('ÅBQO 0.8 &?', 6, 0, 0.6, pt => pt);
+  for (const tris of glyphSolids) check('font/glyf', { tris });
+  console.log(`Font OK: ${glyphSolids.length} glyfsolider (OpenSans-Bold), hålklassning korrekt.`);
+}
+
+// Etikettplatta v3: upphöjd titel + undersida med flush QR/text-inlay
 const lp = core.labelAndPlate({
-  px0: 0, py0: -36, px1: 225, py1: 20, plateMm: 2, raiseMm: 0.6, engraveMm: 0.6,
-  title: { lines: ['BENSIN 95 EU', '2026-08-03 NOM'], pixel: 1.4, x: 5, y: -31 },
-  qr: { text: twinURL, module: 0.8, x: 225 - 5 - 26.4, y: -32 },
-  under: { lines: ['EC WEEKLY OIL BULLETIN', 'CC BY-NC-ND 1MM=1KR/L'], pixel: 1.2, x: 8, y: -28 },
+  px0: 0, py0: -32, px1: 225, py1: 20, plateMm: 2, inkMm: 0.6, raiseMm: 0.6,
+  title: { lines: ['BENSIN 95 EU', '2026-08-03 NOM'], capMm: 6, x: 5, y: -27 },
+  under: { lines: ['EC WEEKLY OIL BULLETIN', 'CC BY-NC-ND 1MM=1KR/L', 'HEDIN.IT/R/?P=PPEU'],
+           capMm: 4.2, qrText: twinURL, qrModule: 1.3 },
 });
 for (const s of lp.solids) check(`etikett/${s.group}`, s);
-const plateVol = lp.solids.filter(s => s.group === 'plate')
+if (lp.qrSizeMm < 33 * 1.25) { console.error(`FEL: QR ${lp.qrSizeMm} mm är för liten`); failures++; }
+const volOf = g => lp.solids.filter(s => s.group === g)
   .reduce((sum, s) => sum + core.solidVolume(s.tris), 0);
-const grossPlate = 225 * 56 * 2;
-if (!(plateVol < grossPlate && plateVol > grossPlate * 0.97)) {
-  console.error(`FEL: plattvolym ${plateVol.toFixed(0)} rimmar inte med brutto ${grossPlate} minus gravyr`); failures++;
+const grossPlate = 225 * 52 * 2;
+const pv = volOf('plate'), iv = volOf('ink'), tv = volOf('text');
+if (!(iv > 200)) { console.error(`FEL: ink-volym ${iv.toFixed(0)} orimligt liten`); failures++; }
+if (!(tv > 50)) { console.error(`FEL: titelvolym ${tv.toFixed(0)} orimligt liten`); failures++; }
+if (!(pv + iv < grossPlate + 1 && pv + iv > grossPlate * 0.93)) {
+  console.error(`FEL: platta+ink ${(pv + iv).toFixed(0)} rimmar inte med brutto ${grossPlate}`); failures++;
 } else {
-  console.log(`Etikettplatta OK: ${lp.solids.length} solider; gravyr tar ${(grossPlate - plateVol).toFixed(0)} mm³ av plattan.`);
+  console.log(`Etikettplatta OK: ${lp.solids.length} solider; QR ${lp.qrSizeMm.toFixed(1)} mm flush-inlay; platta+ink = ${(100 * (pv + iv) / grossPlate).toFixed(1)} % av brutto (resten är luft kring glyfer).`);
 }
+
+// Modulgolvet (G23): bygget ska VÄGRA under 1,25 mm/modul
+let gateFired = false;
+try {
+  core.labelAndPlate({ px0: 0, py0: 0, px1: 60, py1: 60, plateMm: 2, inkMm: 0.6, raiseMm: 0.6,
+    title: null, under: { lines: [], qrText: twinURL, qrModule: 1.0 } });
+} catch (e) { gateFired = true; }
+if (!gateFired) { console.error('FEL: modulgolvsspärren utlöstes inte vid 1,0 mm'); failures++; }
+else console.log('Modulgolv OK: bygget vägrar QR-moduler under 1,25 mm.');
+
+// För liten platta: QR får inte tvingas in
+let sizeGate = false;
+try {
+  core.labelAndPlate({ px0: 0, py0: 0, px1: 40, py1: 40, plateMm: 2, inkMm: 0.6, raiseMm: 0.6,
+    title: null, under: { lines: [], qrText: twinURL, qrModule: 1.3 } });
+} catch (e) { sizeGate = true; }
+if (!sizeGate) { console.error('FEL: platt-storleksspärren utlöstes inte'); failures++; }
+else console.log('Storleksspärr OK: för liten platta stoppar exporten.');
 
 /* ---- 4. Binär STL: rundresa ------------------------------------------- */
 const sample = core.buildCurveSolids(
