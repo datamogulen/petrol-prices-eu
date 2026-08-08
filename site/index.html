@@ -169,7 +169,7 @@
     <label for="ctxChk" id="l_ctx" style="cursor:pointer"></label>
   </span>
   <span class="grp" id="refGrp">
-    <input type="checkbox" id="refChk" checked>
+    <input type="checkbox" id="refChk">
     <label for="refChk" id="l_ref" style="cursor:pointer"></label>
   </span>
   <span class="grp" id="splitGrp" style="display:none">
@@ -316,7 +316,7 @@ const I18N = {
     tab_curve: 'Priskurva', tab_map: 'Karta', tab_hist: 'Historik', tab_about: 'Om / Metod',
     tab_print3d: '3D-utskrift', tab_grammar: 'Designgrammatik', tab_teach: 'Pedagogik',
     l_date: 'Vecka', l_fuel: 'Bränsle', l_basis: 'Prisläge', l_color: 'Färgläsning',
-    l_ctx: 'Grannländer', l_ref: 'Referensstapel (genomsnitt i EU)', l_split: 'Dela remsan i två delar',
+    l_ctx: 'Grannländer', l_ref: 'Lägg till jämförelsetorn (genomsnitt i EU) i exporten', l_split: 'Utskriften är ~22 cm bred – dela i två delar för mindre skrivare',
     fuel_petrol: 'Bensin 95', fuel_diesel: 'Diesel',
     basis_nom: 'Nominellt (kr/l)', basis_ppp: 'PPP-justerat (kr/l)',
     basis_time: 'Tidpris (min arbete/l)',
@@ -347,6 +347,7 @@ const I18N = {
     hint_ppp: 'PPP-justerat = bensinpriset i förhållande till landets allmänna prisnivå, uttryckt i svensk prisnivå: så dyr vore bensinen här, om den var lika dyr relativt allt annat som den är där. Sverige oförändrat.',
     hint_time: 'Tidpris = hur många minuter en genomsnittlig löntagare (nettolön) arbetar för en liter.',
     tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
+    tt_tomean: 'Skatteändring för att nå EU-snittet', tt_negtax: '→ kräver negativ skatt!',
     milj: 'milj.',
     min: 'min', max: 'max', minmax_lbl: 'seriens min/max',
     lang_switch: 'Switch to English',
@@ -362,7 +363,7 @@ const I18N = {
     tab_curve: 'Price curve', tab_map: 'Map', tab_hist: 'History', tab_about: 'About / Method',
     tab_print3d: '3D printing', tab_grammar: 'Design grammar', tab_teach: 'Teaching',
     l_date: 'Week', l_fuel: 'Fuel', l_basis: 'Price basis', l_color: 'Colour reading',
-    l_ctx: 'Neighbouring countries', l_ref: 'Reference bar (EU mean)', l_split: 'Split strip in two parts',
+    l_ctx: 'Neighbouring countries', l_ref: 'Add comparison tower (EU mean) to the export', l_split: 'The print is ~22 cm wide – split in two for smaller printers',
     fuel_petrol: 'Petrol 95', fuel_diesel: 'Diesel',
     basis_nom: 'Nominal (SEK/l)', basis_ppp: 'PPP-adjusted (SEK/l)',
     basis_time: 'Time price (min of work/l)',
@@ -393,6 +394,7 @@ const I18N = {
     hint_ppp: 'PPP-adjusted = the petrol price relative to the country’s general price level, expressed at Swedish price levels: this is how expensive petrol would be here if it were as expensive relative to everything else as it is there. Sweden unchanged.',
     hint_time: 'Time price = how many minutes an average earner (net pay) works for one litre.',
     tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
+    tt_tomean: 'Tax change to reach the EU average', tt_negtax: '→ requires negative tax!',
     milj: 'M',
     min: 'min', max: 'max', minmax_lbl: 'series min/max',
     lang_switch: 'Byt till svenska',
@@ -502,6 +504,32 @@ function adjVal(cc, eur, sek) {
   if (S.basis === 'time') return eur == null ? null : eur * 60 / META[cc].wage;
   if (S.basis === 'ppp')  return sek == null ? null : sek * META.SE.pli / META[cc].pli;
   return sek;
+}
+
+/**
+ * "Skatteändring till EU-snittet": eftersom nettopriserna är nästan lika i
+ * hela EU är avståndet till det befolkningsviktade genomsnittet i praktiken
+ * en skattefråga. Avståndet i visningsenheten räknas om till nominella kr/l
+ * (PPP via prisnivån, tidpris/årsarbetstid via lönen) och jämförs med
+ * dagens skatt; blir den nya skatten negativ flaggas det.
+ */
+function taxToMeanLine(payload, rows, r) {
+  const e = (payload.fuels[S.fuel] || {})[r.cc];
+  if (!e || e.sek == null || e.sek_net == null) return '';
+  const mean = euMeanOf(rows);
+  if (mean == null) return '';
+  const dDisp = mean - dispOf(r);
+  let f = 1;   // visningsenhet -> nominella kr/l
+  if (S.basis === 'ppp') f = META[r.cc].pli / META.SE.pli;
+  else if (S.basis === 'time') f = META[r.cc].wage / 60 * payload.sek_per_eur;
+  else if (S.basis === 'year') f = META[r.cc].wage / (META[r.cc].km * SCALE.FUEL_L100 / 100) * payload.sek_per_eur;
+  const dKr = dDisp * f;
+  const taxNow = e.sek - e.sek_net;
+  if (taxNow <= 0.05) return '';
+  const pct = Math.round(dKr / taxNow * 100);
+  const sgn = pct >= 0 ? '+' : '−';
+  return `<br>${T('tt_tomean')}: ${sgn}${Math.abs(pct)} %` +
+         (taxNow + dKr < 0 ? ` ${T('tt_negtax')}` : '');
 }
 
 /** Radlista för valt datum+bränsle+prisläge: [{cc,tot,net,tax,pop}] sorterad stigande. */
@@ -1410,15 +1438,32 @@ function renderCurve(payload) {
 
   let x = ML;
   const bars = [];
+  const leaders = [];   // etiketter för smala staplar: text + pil i nivåer
+  const lastX = [-1e9, -1e9, -1e9, -1e9, -1e9];
   rows.forEach((r, i) => {
     const w = r.pop / totalPop * pw;
     for (const seg of segmentsForRow(r, breaks)) {
       s += `<rect data-i="${i}" x="${x.toFixed(2)}" y="${yPix(seg.z1).toFixed(2)}" width="${Math.max(w, 0.6).toFixed(2)}" height="${(yPix(seg.z0) - yPix(seg.z1)).toFixed(2)}" fill="${groupColor(seg.group)}" stroke="#F7F2E6" stroke-width="0.5"/>`;
     }
-    if (w > 16) s += `<text x="${(x + w / 2).toFixed(1)}" y="${(yPix(dispOf(r)) - 5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#2B2620">${r.cc}</text>`;
+    if (w > 16) {
+      s += `<text x="${(x + w / 2).toFixed(1)}" y="${(yPix(dispOf(r)) - 5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#2B2620">${r.cc}</text>`;
+    } else {
+      // smal stapel: landskod ovanför med linje ner till stapeln, i nivåer
+      const cx = x + w / 2;
+      const topHere = Math.max(dispOf(r),
+        i > 0 ? dispOf(rows[i - 1]) : 0, i < rows.length - 1 ? dispOf(rows[i + 1]) : 0);
+      let L = 0;
+      while (L < 4 && cx - lastX[L] < 22) L++;
+      lastX[L] = cx;
+      const ly = yPix(topHere) - 10 - L * 12;
+      leaders.push(
+        `<line x1="${cx.toFixed(1)}" y1="${(yPix(dispOf(r)) - 1).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(ly + 2).toFixed(1)}" stroke="#8A8073" stroke-width="0.7"/>` +
+        `<text x="${cx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#5C5348">${r.cc}</text>`);
+    }
     bars.push({ x0: x, x1: x + w, row: r });
     x += w;
   });
+  s += leaders.join('');
   s += `<line x1="${ML}" y1="${yPix(mean)}" x2="${W - MR}" y2="${yPix(mean)}" stroke="#2F5A8F" stroke-width="2" stroke-dasharray="8 5"/>`;
   s += `<text x="${W - MR - 4}" y="${yPix(mean) - 6}" text-anchor="end" font-size="12.5" fill="#2F5A8F" font-weight="600">${T('eu_mean')}: ${fmt(mean)} ${unit()}</text>`;
   s += `<line x1="${ML}" y1="${MT + ph}" x2="${W - MR}" y2="${MT + ph}" stroke="#2B2620" stroke-width="1.5"/>`;
@@ -1440,6 +1485,7 @@ function renderCurve(payload) {
       (S.basis === 'time' || S.basis === 'year' ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
       (S.basis === 'year' ? `<br>${fmt(META[r.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km` : '') +
       (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} ${unit()}` : '') +
+      taxToMeanLine(payload, rows, r) +
       `<br>${T('tt_pop')}: ${fmt(r.pop / 1e6, 1)} ${T('milj')}`, ev);
   });
   svg.addEventListener('mouseleave', hideTip);
@@ -1489,6 +1535,43 @@ function labelTexts(view) {
             `${S.date} ${T('fuel_' + S.fuel)} ${basis}`, 'HEDIN.IT/R/?P=PPEU'],
     qr: qrStateURL(view),
   };
+}
+
+/**
+ * Landskoder på kurvremsans etikettband: upphöjd kod (OpenSans-Bold) för
+ * varje trappsteg, sekventiellt placerade så de aldrig överlappar; en tunn
+ * upphöjd rygg ("pil") binder koden till stapelns fot – snedställd när
+ * koden inte ryms rakt under sin stapel. Endast i full storlek (i
+ * miniatyrlayouterna utelämnas koderna – deklareras på följesedeln).
+ */
+function curveLabels(items, totalWidth) {
+  const out = [];
+  const cap = 3.2, gap = 1.6, baseline = -9.5, leadTop = -4.6;
+  let x = 0, cursor = 1.5;
+  for (const it of items) {
+    const cx = x + it.widthMm / 2;
+    const wTxt = textOutlineWidth(it.cc, cap);
+    let lx0 = Math.max(cursor, cx - wTxt / 2);
+    if (lx0 + wTxt > totalWidth - 1.5) lx0 = totalWidth - 1.5 - wTxt;
+    cursor = lx0 + wTxt + gap;
+    const lcx = lx0 + wTxt / 2;
+    for (const tris of textOutlineSolids(it.cc, cap, 0, SCALE.TEXT_RAISE,
+        ([gx, gy]) => [lx0 + gx, baseline + gy])) {
+      out.push({ group: 'text', cc: it.cc, tris });
+    }
+    if (Math.abs(lcx - cx) > 1.2) {
+      // snedställd ledare (parallellogram) från stapelfot till kodens överkant
+      const tris = extrudeSolid([[cx - 0.35, -0.5], [cx + 0.35, -0.5],
+                                 [lcx + 0.35, leadTop], [lcx - 0.35, leadTop]],
+                                [], 0, SCALE.TEXT_RAISE);
+      if (tris) out.push({ group: 'text', cc: it.cc, tris });
+    } else {
+      out.push({ group: 'text', cc: it.cc,
+        tris: boxSolid(cx - 0.35, leadTop, 0, cx + 0.35, -0.5, SCALE.TEXT_RAISE) });
+    }
+    x += it.widthMm;
+  }
+  return out;
 }
 
 function mapSolidsForState(payload) {
@@ -1693,7 +1776,8 @@ function hoverMap(ev) {
       showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_price')}: ${fmt(r.tot)} ${unit()} ` +
         (S.basis === 'time' || S.basis === 'year' ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
         (S.basis === 'year' ? `<br>${fmt(META[hit.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km` : '') +
-        (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} ${unit()}` : ''), ev);
+        (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} ${unit()}` : '') +
+        taxToMeanLine(payload, rows, r), ev);
     } else {
       showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_no_data')}`, ev);
     }
@@ -2020,7 +2104,7 @@ följesedeln). Detta är priset för ärliga, fasta skalor.</p>
 <ul>
 <li>Höjderna är låga (ca 5–45 mm beroende på prisläge) — snabb utskrift, ihålig/gles fyllnad ok.</li>
 <li>Färggrupperna ger få filamentbyten (D8): varje STL-fil = en färg.</li>
-<li>Kurvremsan är ~225 mm lång: kryssa "Dela remsan i två delar" om bädden är mindre.</li>
+<li>Kurvremsan är ~225 mm lång i full storlek: kryssa "dela i två delar"-rutan om skrivarbädden är mindre, eller välj en mindre utskriftslayout.</li>
 <li>Verifiering: alla solider är vattentäta (testade med <code>test/stl_check.js</code>).</li>
 </ul>` : `
 <h2>What the export gives you</h2>
@@ -2079,7 +2163,7 @@ step in a contiguous solid. On the map Malta falls below the area threshold and 
 <ul>
 <li>Heights are low (≈ 5–45 mm depending on price basis) — fast prints, sparse infill is fine.</li>
 <li>The colour groups give few filament changes (D8): each STL file = one colour.</li>
-<li>The curve strip is ~225 mm long: tick "Split strip in two parts" if your bed is smaller.</li>
+<li>The curve strip is ~225 mm long at full size: tick the "split in two" box if your print bed is smaller, or pick a smaller print layout.</li>
 <li>Verification: all solids are watertight (tested by <code>test/stl_check.js</code>).</li>
 </ul>`;
   document.getElementById('printBody').innerHTML = html;
@@ -2428,6 +2512,12 @@ function buildFollowsedel(info) {
     L.push(sv ? `Total längd: ${info.totalWidth.toFixed(1)} mm.` : `Total length: ${info.totalWidth.toFixed(1)} mm.`);
     L.push(sv ? 'Malta är ≈ 0,3 mm bred – ok som steg i sammanhängande solid, omöjlig fristående (D6).'
               : 'Malta is ≈ 0.3 mm wide – fine as a step in a contiguous solid, impossible free-standing (D6).');
+    L.push(sv ? (S.layout === 'full'
+        ? 'Landskoder i upphöjd text på etikettbandet, med ledare till respektive stapel (filen "titel-…").'
+        : 'Landskoder utelämnas i miniatyrlayouterna (får inte plats läsbart) – använd QR-tvillingen.')
+              : (S.layout === 'full'
+        ? 'Country codes in raised text on the label band, with leaders to each bar (in the "title-…" file).'
+        : 'Country codes are omitted in the miniature layouts (no readable room) – use the QR twin.'));
   } else {
     const mapK = SCALE.MAP_K * LAYOUTS[S.layout];
     const mmKm = mapK / KM_PER_DEG_LAT;
@@ -2496,14 +2586,21 @@ function doExportInner() {
     totalWidth = solids.totalWidth;
     const band = SCALE.LABEL_BAND, txt = labelTexts('curve');
     const common = { plateMm: SCALE.PLATE_MM, inkMm: SCALE.INK_MM, raiseMm: SCALE.TEXT_RAISE };
+    // Enradstitel längst ner på bandet (landskoderna tar övre delen);
+    // krymps till bredden, golv 2,6 mm (E2).
+    const oneTitle = txt.title.join(' - ');
+    let titleCap = 4.5;
+    const tw = textOutlineWidth(oneTitle, titleCap);
+    if (tw > totalWidth - 10) titleCap = Math.max(2.6, titleCap * (totalWidth - 10) / tw);
     if (!S.split) {
       const lp = labelAndPlate({ ...common,
         px0: 0, py0: -band, px1: totalWidth, py1: SCALE.CURVE_DEPTH,
-        title: { lines: txt.title, capMm: SCALE.TITLE_CAP, x: 5, y: -band + 5 },
+        title: { lines: [oneTitle], capMm: titleCap, x: 5, y: -band + 3 },
         under: { lines: txt.under, capMm: SCALE.UNDER_CAP,
                  qrText: txt.qr, qrModule: SCALE.QR_MODULE },
       });
       solids.push(...lp.solids);
+      if (S.layout === 'full') solids.push(...curveLabels(items, totalWidth));
     } else {
       // dela vid landgräns närmast halva bredden; varje del får egen platta
       let x = 0, cut = 0, best = Infinity;
@@ -2514,7 +2611,7 @@ function doExportInner() {
       const part = S.lang === 'sv' ? 'DEL' : 'PART';
       const lpA = labelAndPlate({ ...common,
         px0: 0, py0: -band, px1: cut, py1: SCALE.CURVE_DEPTH,
-        title: { lines: txt.title, capMm: SCALE.TITLE_CAP, x: 5, y: -band + 5 },
+        title: { lines: [oneTitle], capMm: Math.min(titleCap, 3.6), x: 5, y: -band + 3 },
         under: { lines: [txt.under[2] + ' ' + part + ' A'], capMm: SCALE.UNDER_CAP },
       });
       const lpB = labelAndPlate({ ...common,
@@ -2524,6 +2621,7 @@ function doExportInner() {
                  qrText: txt.qr, qrModule: SCALE.QR_MODULE },
       });
       solids.push(...lpA.solids, ...lpB.solids);
+      if (S.layout === 'full') solids.push(...curveLabels(items, totalWidth));
       for (const sd of solids) {
         const minX = Math.min(...sd.tris.flat().map(pt => pt[0]));
         const inB = minX >= cut - 1e-9;
