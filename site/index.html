@@ -372,11 +372,12 @@ const I18N = {
     hist_add: '+ Lägg till land …',
     added_to_hist: '{name} tillagd i historiken',
     ppp_note: 'PPP-kr = hur stor köpkraft litern tar i landet, uttryckt i vad samma köpkraftsbit kostar i Sverige (inte vad någon betalar vid pumpen). Beräkning: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
-    hint_ppp: 'PPP-kr läses så här: en liter tar i landet lika stor del av köpkraften som SÅ HÄR många kronor tar i Sverige. En rumänsk hundralapp räcker till mycket mer mat och hyra än en svensk – men nästan lika lite bensin – därför blir Rumäniens liter över 40 PPP-kr. Ingen betalar detta vid pumpen; pumppriset syns när du hovrar. Sverige är ankare och oförändrat.',
+    hint_ppp: 'PPP-läget svarar på det tidpriset inte kan: är bensinen ovanligt dyr RELATIVT ALLT ANNAT i landet? Läs värdet så: en liter tar där lika stor del av köpkraften som så många kronor tar i Sverige. Ingen betalar det vid pumpen (hovra för pumppriset); Sverige är ankare och oförändrat.',
     hint_time: 'Tidpris = hur många minuter en genomsnittlig löntagare (nettolön) arbetar för en liter.',
     tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
     tt_tomean: 'Till EU-snittet', tt_negtax: '→ kräver negativ skatt!',
     tt_pump: 'Pumppris', tt_pppline: 'Motsvarar i svensk köpkraft',
+    tt_rel: 'Bensin relativt landets prisbild, jämfört med Sverige',
     milj: 'milj.',
     min: 'min', max: 'max', minmax_lbl: 'seriens min/max',
     lang_switch: 'Switch to English',
@@ -427,11 +428,12 @@ const I18N = {
     hist_add: '+ Add country …',
     added_to_hist: '{name} added to history',
     ppp_note: 'PPP-SEK = how much purchasing power the litre takes in the country, expressed as what the same slice of purchasing power costs in Sweden (not what anyone pays at the pump). Calculation: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
-    hint_ppp: 'Read PPP-SEK like this: a litre takes as large a bite of purchasing power there as THIS many kronor take in Sweden. A Romanian banknote buys far more food and rent than a Swedish one – but almost as little petrol – hence Romania’s litre exceeds 40 PPP-SEK. Nobody pays this at the pump; hover to see the pump price. Sweden is the anchor, unchanged.',
+    hint_ppp: 'The PPP mode answers what the time price cannot: is petrol unusually expensive RELATIVE TO EVERYTHING ELSE in the country? Read the value like this: a litre takes as large a share of purchasing power there as this many kronor take in Sweden. Nobody pays it at the pump (hover for the pump price); Sweden is the anchor, unchanged.',
     hint_time: 'Time price = how many minutes an average earner (net pay) works for one litre.',
     tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
     tt_tomean: 'To the EU average', tt_negtax: '→ requires negative tax!',
     tt_pump: 'Pump price', tt_pppline: 'Equivalent in Swedish purchasing power',
+    tt_rel: 'Petrol vs the country’s price picture, compared with Sweden',
     milj: 'M',
     min: 'min', max: 'max', minmax_lbl: 'series min/max',
     lang_switch: 'Byt till svenska',
@@ -1557,7 +1559,8 @@ function renderCurve(payload) {
       `<b>${META[r.cc][S.lang]}</b><br>` +
       (S.basis === 'ppp'
         ? `${T('tt_pump')}: ${fmt(eNom.sek)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
-          `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr/l`
+          `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr/l` +
+          `<br>${T('tt_rel')}: ${fmt(r.tot / (rows.find(q => q.cc === 'SE') || r).tot, 1)}×`
         : `${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
           (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`)) +
       (S.basis === 'yearppp' ? `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr` : '') +
@@ -1863,7 +1866,8 @@ function hoverMap(ev) {
       showTip(`<b>${META[hit.cc][S.lang]}</b><br>` +
         (S.basis === 'ppp'
           ? `${T('tt_pump')}: ${fmt(eNom.sek)} kr/l (${fmt(eNom.eur, 3)} €/l)` +
-            `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr/l`
+            `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr/l` +
+            `<br>${T('tt_rel')}: ${fmt(r.tot / (rows.find(q => q.cc === 'SE') || r).tot, 1)}×`
           : `${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
             (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`)) +
         (S.basis === 'yearppp' ? `<br>${T('tt_pppline')}: ${vfmt(r.tot)} kr` : '') +
@@ -2022,9 +2026,35 @@ liter tar i landet lika stor del av köpkraften som så många kronor tar i Sver
 Rumäniens dryga 40 PPP-kr betyder alltså: för en rumän tar litern lika stor tugga ur
 plånboken som drygt 40 kr skulle ta för en svensk — en rumänsk hundralapp räcker till mycket
 mer mat, hyra och frisör än en svensk, men nästan lika lite bensin. (Pumppriset, ca 17 kr,
-visas alltid parallellt i vyerna.) Sverige är oförändrat ankare, per definition. Nominella
-kr/l är huvudläsningen (svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning,
-och tidpriset säger samma sak med lön i stället för varukorg.</p>
+visas alltid parallellt i vyerna.) Sverige är oförändrat ankare, per definition.</p>
+<p><strong>Varför behövs PPP när tidpriset finns? Potatis-testet:</strong> tänk ett fattigt
+land där bensinen är procentuellt lika billig som potatisen och allt annat. Tidpriset blir
+ändå högt — men det beror då på låga löner, inte på att bensinen är dyr <em>relativt sett</em>.
+PPP-måttet skiljer de två åt: det svarar på "sticker bensinen ut ur landets egen prisbild?"
+I EU finns inget sådant potatis-land — bensin köps på världsmarknaden och blir inte billigare
+för att landet är billigt, och det är precis det PPP-läget synliggör (tooltippen visar
+relativpriset direkt: Rumäniens bensin är ~2,7× så dyr relativt landets övriga priser som
+Sveriges är relativt våra). Måtten kompletterar varandra: <em>tidpris = har folk råd;
+PPP = är bensinen relativt dyr där.</em></p>
+<table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
+<tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Fråga</th>
+<th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Rätt mått</th></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Vad kostar det att tanka, i mina kronor?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Nominellt (kr/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Är bensinen ovanligt dyr relativt allt annat i landet?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">PPP-justerat (PPP-kr/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Har en genomsnittlig löntagare råd med bensin?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Tidpris (min/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Hur stor är årets bensinbörda — för bilägaren eller samhället?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Årsmåtten (kr/år, h/år, per bil/invånare)</td></tr>
+</table>
+<p><em>Metodnot (deklarerad frihetsgrad):</em> vi använder prisnivåindex för AIC ("faktisk
+individuell konsumtion", inkl. offentligt finansierad sjukvård/utbildning värderad till
+produktionskostnad). Alternativen HFCE (endast det hushållen själva betalar) eller BNP-PPP
+ger ~5–6 % andra nivåer — HFCE vore snäppet mer naturligt som deflator för ett konsumentpris
+och är dessutom det val som är minst fördelaktigt för Sverige. Valet påverkar nivåerna,
+knappt rangordningen; tidpriset saknar helt denna frihetsgrad. Nominella kr/l är
+huvudläsningen (svenskt plånboksperspektiv, D4).</p>
 <h2>Tidpris ("time price")</h2>
 <p>Tredje prisläget är <strong>tidpris</strong>: hur länge en genomsnittlig löntagare behöver
 arbeta för en liter. Begreppet är etablerat (bl.a. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -2103,9 +2133,36 @@ Sweden.</strong> Romania's forty-odd PPP-SEK thus mean: for a Romanian, the litr
 a bite out of the wallet as forty-odd kronor would for a Swede — a Romanian banknote buys far
 more food, rent and haircuts than a Swedish one, but almost as little petrol. (The pump price,
 about 17 SEK, is always shown alongside in the views.) Sweden is the unchanged anchor, by
-definition. Nominal SEK/l is the primary reading (Swedish wallet perspective, D4); PPP is a
-declared sibling reading, and the time price says the same thing with wages instead of a
-basket of goods.</p>
+definition.</p>
+<p><strong>Why keep PPP when the time price exists? The potato test:</strong> imagine a poor
+country where petrol is proportionally as cheap as potatoes and everything else. The time
+price would still be high — but from low wages, not because petrol is expensive <em>in
+relative terms</em>. The PPP measure separates the two: it answers "does petrol stick out of
+the country's own price picture?" No such potato-country exists in the EU — petrol is bought
+on the world market and does not get cheaper because the country is cheap, which is exactly
+what the PPP mode reveals (the tooltip shows the relative price directly: Romania's petrol is
+~2.7× as expensive relative to its other prices as Sweden's is relative to ours). The
+measures complement each other: <em>time price = can people afford it; PPP = is petrol
+relatively expensive there.</em></p>
+<table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
+<tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Question</th>
+<th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Right measure</th></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">What does filling up cost, in my kronor?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Nominal (SEK/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Is petrol unusually expensive relative to everything else in the country?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">PPP-adjusted (PPP-SEK/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">Can an average earner afford petrol?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">Time price (min/l)</td></tr>
+<tr><td style="border:1px solid #C9BFA8;padding:3px 10px">How large is the year's petrol burden — for the owner or society?</td>
+<td style="border:1px solid #C9BFA8;padding:3px 10px">The annual measures (SEK/yr, h/yr, per car/capita)</td></tr>
+</table>
+<p><em>Method note (a declared degree of freedom):</em> we use price level indices for AIC
+("actual individual consumption", incl. publicly financed healthcare/education valued at
+production cost). The alternatives HFCE (only what households pay themselves) or GDP-PPP give
+~5–6% different levels — HFCE would be marginally more natural as a deflator for a consumer
+price, and happens to be the choice least favourable to Sweden. The choice affects levels,
+barely rankings; the time price has no such degree of freedom at all. Nominal SEK/l remains
+the primary reading (Swedish wallet perspective, D4).</p>
 <h2>Time price</h2>
 <p>The third price basis is the <strong>time price</strong>: how long an average earner must work
 for one litre. The concept is established (e.g. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
