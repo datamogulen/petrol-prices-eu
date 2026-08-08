@@ -471,24 +471,25 @@ function studentSV() {
   <p>En liter säger inte allt – folk kör olika långt i olika länder. Nu räknar ni ut vad
   <em>ett års bensin</em> kostar en genomsnittlig bilägare, i pengar och i arbetstid.</p>
   <div class="fact">
-    <h3>Data (källor: Odyssee-Mure 2023 / Eurostat 2024; löner Eurostat 2024)</h3>
+    <h3>Data (källor: Trafikanalys 2024 [SE], Odyssee-Mure 2023 / Eurostat 2024; löner Eurostat 2024)</h3>
     <table class="mini">
       <tr><th>Land</th><th>Körsträcka per bil</th><th>Bensinpris</th><th>Nettotimlön</th></tr>
-      <tr><td><strong>Sverige</strong></td><td>13 471 km/år</td><td>1,45 €/l</td><td>15,97 €/h</td></tr>
+      <tr><td><strong>Sverige</strong></td><td>11 410 km/år</td><td>1,45 €/l</td><td>15,97 €/h</td></tr>
       <tr><td><strong>Tyskland</strong></td><td>12 449 km/år</td><td>2,18 €/l</td><td>14,49 €/h</td></tr>
-      <tr><td><strong>Rumänien</strong></td><td>6 097 km/år</td><td>1,80 €/l</td><td>5,92 €/h</td></tr>
-      <tr><td>Danmark</td><td>14 844 km/år</td><td>2,46 €/l</td><td>19,32 €/h</td></tr>
+      <tr><td><strong>Rumänien</strong>*</td><td>6 097 km/år</td><td>1,80 €/l</td><td>5,92 €/h</td></tr>
+      <tr><td>Danmark*</td><td>14 844 km/år</td><td>2,46 €/l</td><td>19,32 €/h</td></tr>
       <tr><td>Polen</td><td>12 216 km/år</td><td>1,76 €/l</td><td>7,23 €/h</td></tr>
       <tr><td>Irland</td><td>16 726 km/år</td><td>1,82 €/l</td><td>20,37 €/h</td></tr>
       <tr><td>Italien</td><td>8 030 km/år</td><td>1,99 €/l</td><td>11,52 €/h</td></tr>
     </table>
-    <p><strong>Antagande:</strong> genomsnittsbilen drar 7,0 l/100 km i alla länder
-    (nybilar drar 5–6; äldre mer). Växelkurs: 10,98 kr/€.</p>
+    <p><strong>Antagande:</strong> genomsnittsbilen drar 6,85 l/100 km i alla länder
+    (EU-flottans snitt 2023 enligt Odyssee; nybilar drar 5–6). Växelkurs: 10,98 kr/€.
+    Rader märkta * är härledda ur Eurostat (trafikarbete ÷ bilpark) och osäkrare.</p>
   </div>
   <h2>Uppgift · Räkna för Sverige, Tyskland och Rumänien</h2>
   <p>Dela upp länderna mellan er och räkna i fyra steg (avrunda friskt):</p>
   <ol>
-    <li><strong>Liter per år</strong> = körsträcka ÷ 100 × 7,0 →
+    <li><strong>Liter per år</strong> = körsträcka ÷ 100 × 6,85 →
         SE <span class="writein" style="min-width:16mm"></span> l ·
         DE <span class="writein" style="min-width:16mm"></span> l ·
         RO <span class="writein" style="min-width:16mm"></span> l</li>
@@ -510,7 +511,7 @@ function studentSV() {
   stämmer era tal ungefär?</div>
   <div class="qrrow">
     <div class="qrtask">
-      <div class="talk">Sista frågan – Skeptikerns favorit: modellen antar 7,0 l/100 km för
+      <div class="talk">Sista frågan – Skeptikerns favorit: modellen antar samma förbrukning (6,85 l/100 km, ett EU-snitt) för
       ALLA länder, räknar allt som bensinbil (inga dieslar eller elbilar) och använder
       genomsnittslöner. <strong>Vilket antagande är svagast?</strong> Hur skulle resultatet
       ändras om ni fixade det?</div>
@@ -615,13 +616,13 @@ function teacherSV() {
         världsmarknaden är gemensam</td></tr>
     <tr><td>Diesel</td><td>${N.seDiesel} kr/l</td><td>${N.euDiesel} kr/l</td>
         <td>bra följdfråga till snabba grupper: håller bensinbilden för diesel?</td></tr>
-    <tr><td>Årsarbetstid (Blad 6)</td><td>≈ 86 h/år</td><td>≈ 129 h/år</td>
-        <td>Grekland ≈ 230, Polen ≈ 208; Tyskland ≈ 131 och Rumänien ≈ 130 – trots att tysken
+    <tr><td>Årsarbetstid (Blad 6)</td><td>≈ 71 h/år</td><td>≈ 126 h/år</td>
+        <td>Grekland ≈ 226, Polen ≈ 203; Tyskland ≈ 129 och Rumänien ≈ 127 – trots att tysken
         kör dubbelt så långt</td></tr>
   </table>
-  <p><strong>Facit Blad 6</strong> (avrundat): liter/år SE ≈ 943, DE ≈ 871, RO ≈ 427;
-  euro/år SE ≈ 1 370, DE ≈ 1 900, RO ≈ 770; kronor/år SE ≈ 15 000, DE ≈ 20 900, RO ≈ 8 450;
-  timmar/år SE ≈ 86, DE ≈ 131, RO ≈ 130. Poängen: rumänen kör hälften så långt som tysken men
+  <p><strong>Facit Blad 6</strong> (avrundat): liter/år SE ≈ 782, DE ≈ 853, RO ≈ 418;
+  euro/år SE ≈ 1 135, DE ≈ 1 860, RO ≈ 755; kronor/år SE ≈ 12 500, DE ≈ 20 500, RO ≈ 8 300;
+  timmar/år SE ≈ 71, DE ≈ 129, RO ≈ 127. Poängen: rumänen kör hälften så långt som tysken men
   betalar lika många arbetstimmar – och svensken ligger långt under båda.</p>
   <p><strong>Facit Blad 5 uppgift 6</strong> (skatteändring till EU-snittet, ${FIX}):
   Sverige +115 % nominellt men <strong>+307 %</strong> i tidpris; Rumänien +17 % nominellt men
@@ -917,24 +918,25 @@ function studentEN() {
   countries. Now you compute what <em>a year of petrol</em> costs an average car owner, in
   money and in working time.</p>
   <div class="fact">
-    <h3>Data (sources: Odyssee-Mure 2023 / Eurostat 2024; wages Eurostat 2024)</h3>
+    <h3>Data (sources: Trafikanalys 2024 [SE], Odyssee-Mure 2023 / Eurostat 2024; wages Eurostat 2024)</h3>
     <table class="mini">
       <tr><th>Country</th><th>Distance per car</th><th>Petrol price</th><th>Net hourly pay</th></tr>
-      <tr><td><strong>Sweden</strong></td><td>13,471 km/yr</td><td>€1.45/l</td><td>€15.97/h</td></tr>
+      <tr><td><strong>Sweden</strong></td><td>11,410 km/yr</td><td>€1.45/l</td><td>€15.97/h</td></tr>
       <tr><td><strong>Germany</strong></td><td>12,449 km/yr</td><td>€2.18/l</td><td>€14.49/h</td></tr>
-      <tr><td><strong>Romania</strong></td><td>6,097 km/yr</td><td>€1.80/l</td><td>€5.92/h</td></tr>
-      <tr><td>Denmark</td><td>14,844 km/yr</td><td>€2.46/l</td><td>€19.32/h</td></tr>
+      <tr><td><strong>Romania</strong>*</td><td>6,097 km/yr</td><td>€1.80/l</td><td>€5.92/h</td></tr>
+      <tr><td>Denmark*</td><td>14,844 km/yr</td><td>€2.46/l</td><td>€19.32/h</td></tr>
       <tr><td>Poland</td><td>12,216 km/yr</td><td>€1.76/l</td><td>€7.23/h</td></tr>
       <tr><td>Ireland</td><td>16,726 km/yr</td><td>€1.82/l</td><td>€20.37/h</td></tr>
       <tr><td>Italy</td><td>8,030 km/yr</td><td>€1.99/l</td><td>€11.52/h</td></tr>
     </table>
-    <p><strong>Assumption:</strong> the average car uses 7.0 l/100 km in every country
-    (new cars use 5–6; older ones more). Exchange rate: 10.98 SEK/€.</p>
+    <p><strong>Assumption:</strong> the average car uses 6.85 l/100 km in every country
+    (the EU fleet average 2023 per Odyssee; new cars use 5–6). Exchange rate: 10.98 SEK/€.
+    Rows marked * are derived from Eurostat (traffic ÷ stock) and less certain.</p>
   </div>
   <h2>Task · Compute for Sweden, Germany and Romania</h2>
   <p>Split the countries between you and compute in four steps (round freely):</p>
   <ol>
-    <li><strong>Litres per year</strong> = distance ÷ 100 × 7.0 →
+    <li><strong>Litres per year</strong> = distance ÷ 100 × 6.85 →
         SE <span class="writein" style="min-width:16mm"></span> l ·
         DE <span class="writein" style="min-width:16mm"></span> l ·
         RO <span class="writein" style="min-width:16mm"></span> l</li>
@@ -956,7 +958,7 @@ function studentEN() {
   (QR code): are your numbers roughly right?</div>
   <div class="qrrow">
     <div class="qrtask">
-      <div class="talk">Last question – the Skeptic's favourite: the model assumes 7.0 l/100 km
+      <div class="talk">Last question – the Skeptic's favourite: the model assumes the same consumption (6.85 l/100 km, an EU average)
       for ALL countries, treats everything as petrol cars (no diesels or EVs) and uses average
       wages. <strong>Which assumption is weakest?</strong> How would the result change if you
       fixed it?</div>
@@ -1061,13 +1063,13 @@ function teacherEN() {
         the world market is shared</td></tr>
     <tr><td>Diesel</td><td>${NE.seDiesel} SEK/l</td><td>${NE.euDiesel}</td>
         <td>good follow-up for fast groups: does the petrol picture hold for diesel?</td></tr>
-    <tr><td>Annual work time (Sheet 6)</td><td>≈ 86 h/yr</td><td>≈ 129 h/yr</td>
-        <td>Greece ≈ 230, Poland ≈ 208; Germany ≈ 131 and Romania ≈ 130 – although the German
+    <tr><td>Annual work time (Sheet 6)</td><td>≈ 71 h/yr</td><td>≈ 126 h/yr</td>
+        <td>Greece ≈ 226, Poland ≈ 203; Germany ≈ 129 and Romania ≈ 127 – although the German
         drives twice as far</td></tr>
   </table>
-  <p><strong>Sheet 6 answer key</strong> (rounded): litres/yr SE ≈ 943, DE ≈ 871, RO ≈ 427;
-  euros/yr SE ≈ 1,370, DE ≈ 1,900, RO ≈ 770; SEK/yr SE ≈ 15,000, DE ≈ 20,900, RO ≈ 8,450;
-  hours/yr SE ≈ 86, DE ≈ 131, RO ≈ 130. The point: the Romanian drives half as far as the
+  <p><strong>Sheet 6 answer key</strong> (rounded): litres/yr SE ≈ 782, DE ≈ 853, RO ≈ 418;
+  euros/yr SE ≈ 1,135, DE ≈ 1,860, RO ≈ 755; SEK/yr SE ≈ 12,500, DE ≈ 20,500, RO ≈ 8,300;
+  hours/yr SE ≈ 71, DE ≈ 129, RO ≈ 127. The point: the Romanian drives half as far as the
   German yet pays as many working hours – and the Swede sits far below both.</p>
   <p><strong>Sheet 5 task 6 answer key</strong> (tax change to the EU average, ${FIX}):
   Sweden +115% nominal but <strong>+307%</strong> in time price; Romania +17% nominal but
