@@ -1,0 +1,11 @@
+# Cache-regler: HTML och arbetsblad ska alltid revalideras (annars kan
+# webblasare kora en gammal version av appen efter deploy); data och
+# STL-relaterade resurser kan cachas kort.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(json|geojson|png)$">
+    Header set Cache-Control "max-age=3600"
+  </FilesMatch>
+</IfModule>
