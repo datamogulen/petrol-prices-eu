@@ -36,6 +36,10 @@ site/
     seed.json       Senaste bulletinens priser (båda bränslena) – statisk
                     fallback när api.php inte nås.
     prices.sqlite   Skapas av update.php (ligger i .gitignore).
+  arbetsblad.html   Utskrivbara arbetsblad (A4) för grupparbete: elevblad i
+                    två varianter (med/utan 3D-modeller) x två datumlägen
+                    (fast 2026-08-03 / dagens data) + lärarhandledning med
+                    lärandemål och facit; sv/en; QR-koder via r/-redirecten.
 test/
   stl_check.js      Verifierar STL-geometrikärnan (se Verifiering).
 ```

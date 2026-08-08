@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbetsblad – Bensinpriser i EU</title>
+<meta name="robots" content="noindex">
+<style>
+  /* Utskriftsvänligt: vit bakgrund, A4, tydliga sidbrytningar. */
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #E8E4DA; color: #1E1A14;
+         font: 11.5pt/1.45 "Avenir Next", "Segoe UI", system-ui, sans-serif; }
+  .toolbar { background: #2F5A8F; color: #fff; padding: 10px 16px;
+             display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  .toolbar select, .toolbar button { font: inherit; padding: 4px 8px; border-radius: 6px; border: none; }
+  .toolbar button { background: #fff; color: #2F5A8F; font-weight: 600; cursor: pointer; }
+  .sheet { background: #fff; width: 210mm; min-height: 296mm; margin: 8mm auto;
+           padding: 13mm 15mm; box-shadow: 0 2px 14px rgba(0,0,0,.25); position: relative; }
+  h1 { font-size: 17pt; color: #2F5A8F; margin: 0 0 2mm; }
+  h2 { font-size: 12.5pt; color: #2F5A8F; margin: 5mm 0 1.5mm;
+       border-bottom: 1.5px solid #2F5A8F; padding-bottom: 0.5mm; }
+  h3 { font-size: 11.5pt; margin: 3mm 0 1mm; }
+  p, li { margin: 0 0 1.6mm; }
+  ul, ol { margin: 0 0 2mm; padding-left: 5.5mm; }
+  .badges { margin-bottom: 3mm; }
+  .badge { display: inline-block; border: 1.2pt solid #2F5A8F; color: #2F5A8F; font-weight: 600;
+           border-radius: 4mm; padding: 0.6mm 3.2mm; font-size: 9.5pt; margin-right: 2mm; }
+  .badge.warn { border-color: #B5443C; color: #B5443C; }
+  .fact { background: #F4EFE3; border: 1pt solid #C9BFA8; border-radius: 2.5mm;
+          padding: 2.6mm 3.6mm; margin: 2.5mm 0; font-size: 10.5pt; }
+  .fact h3 { margin-top: 0; color: #6B5E3A; font-size: 10.5pt; text-transform: uppercase; letter-spacing: .4pt; }
+  .talk { background: #E9EFF7; border-left: 2.5mm solid #2F5A8F; border-radius: 0 2mm 2mm 0;
+          padding: 2.4mm 3.6mm; margin: 2.5mm 0; }
+  .talk::before { content: "💬 "; }
+  .qrrow { display: flex; gap: 5mm; align-items: flex-start; margin: 2mm 0; flex-wrap: wrap; }
+  .qrbox { text-align: center; font-size: 8pt; color: #444; width: 24mm; flex: none; }
+  .qrbox svg { width: 22mm; height: 22mm; display: block; margin: 0 auto 1mm; }
+  .qrtask { flex: 1; min-width: 60mm; }
+  table.mini { border-collapse: collapse; font-size: 10pt; margin: 1.5mm 0; }
+  table.mini td, table.mini th { border: 0.7pt solid #999; padding: 0.9mm 2.4mm; text-align: left; }
+  table.mini th { background: #F4EFE3; }
+  .writein { border-bottom: 0.9pt solid #888; display: inline-block; min-width: 26mm; height: 4.5mm; }
+  .foot { position: absolute; bottom: 8mm; left: 15mm; right: 15mm;
+          font-size: 8pt; color: #666; border-top: 0.7pt solid #bbb; padding-top: 1.2mm; }
+  .cols2 { column-count: 2; column-gap: 7mm; }
+  .rolls td { vertical-align: top; }
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    .sheet { box-shadow: none; margin: 0; width: auto; min-height: auto;
+             page-break-after: always; padding: 0; }
+    .sheet:last-child { page-break-after: auto; }
+    @page { size: A4; margin: 12mm 14mm; }
+    .foot { position: static; margin-top: 6mm; }
+  }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <b id="tb_title">Arbetsblad</b>
+  <label>Dokument
+    <select id="docSel">
+      <option value="elev">Elevblad</option>
+      <option value="larare">Lärarhandledning</option>
+    </select></label>
+  <label id="l_variant">Variant
+    <select id="varSel">
+      <option value="med3d">Med 3D-modeller</option>
+      <option value="utan3d">Utan 3D-modeller</option>
+    </select></label>
+  <label>Datum
+    <select id="datSel">
+      <option value="fast">Fast (2026-08-03)</option>
+      <option value="aktuell">Dagens data</option>
+    </select></label>
+  <label>Språk
+    <select id="langSel"><option value="sv">Svenska</option><option value="en">English</option></select></label>
+  <button onclick="print()" id="printBtn">Skriv ut / spara som PDF</button>
+</div>
+<div id="pages"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+ *  QR-encoder – kopia av den testade implementationen i index.html
+ *  (byte-läge, ECC L, mask 0, version 1–4). Kanonisk kopia + tester
+ *  ligger i index.html/test/stl_check.js; ändra där först.
+ * ===================================================================== */
+function qrMatrix(text) {
+  const bytes = [];
+  for (const ch of text) {
+    const c = ch.codePointAt(0);
+    if (c > 255) throw new Error('QR: endast Latin-1-tecken');
+    bytes.push(c);
+  }
+  const CAP = { 1: [26, 19], 2: [44, 34], 3: [70, 55], 4: [100, 80] };
+  let ver = 0;
+  for (const v of [1, 2, 3, 4]) if (bytes.length <= CAP[v][1] - 2) { ver = v; break; }
+  if (!ver) throw new Error('QR: texten är för lång (' + bytes.length + ' tecken)');
+  const [total, dataLen] = CAP[ver], eccLen = total - dataLen;
+  const bits = [];
+  const push = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+  push(4, 4); push(bytes.length, 8);
+  for (const b of bytes) push(b, 8);
+  push(0, Math.min(4, dataLen * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+    data.push(b);
+  }
+  const PAD = [0xEC, 0x11];
+  for (let i = 0; data.length < dataLen; i ^= 1) data.push(PAD[i]);
+  const EXP = new Array(512), LOG = new Array(256);
+  for (let i = 0, x = 1; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+  let gen = [1];
+  for (let i = 0; i < eccLen; i++) {
+    const q = [1, EXP[i]], r = new Array(gen.length + 1).fill(0);
+    for (let a = 0; a < gen.length; a++) for (let b = 0; b < 2; b++) r[a + b] ^= mul(gen[a], q[b]);
+    gen = r;
+  }
+  const rem = data.concat(new Array(eccLen).fill(0));
+  for (let i = 0; i < dataLen; i++) {
+    const f = rem[i];
+    if (f) for (let j = 0; j < gen.length; j++) rem[i + j] ^= mul(gen[j], f);
+  }
+  const cw = data.concat(rem.slice(dataLen));
+  const size = 17 + 4 * ver;
+  const M = Array.from({ length: size }, () => new Array(size).fill(null));
+  const set = (x, y, v) => { M[y][x] = v; };
+  const finder = (fx, fy) => {
+    for (let y = -1; y <= 7; y++) for (let x = -1; x <= 7; x++) {
+      const gx = fx + x, gy = fy + y;
+      if (gx < 0 || gx >= size || gy < 0 || gy >= size) continue;
+      const inC = x >= 0 && x <= 6 && y >= 0 && y <= 6;
+      set(gx, gy, inC && (x === 0 || x === 6 || y === 0 || y === 6 ||
+                          (x >= 2 && x <= 4 && y >= 2 && y <= 4)) ? 1 : 0);
+    }
+  };
+  finder(0, 0); finder(size - 7, 0); finder(0, size - 7);
+  for (let i = 8; i < size - 8; i++) {
+    if (M[6][i] === null) M[6][i] = i % 2 === 0 ? 1 : 0;
+    if (M[i][6] === null) M[i][6] = i % 2 === 0 ? 1 : 0;
+  }
+  if (ver >= 2) {
+    const c = size - 7;
+    for (let y = -2; y <= 2; y++) for (let x = -2; x <= 2; x++)
+      set(c + x, c + y, Math.max(Math.abs(x), Math.abs(y)) !== 1 ? 1 : 0);
+  }
+  const fmt = (0b01 << 3) | 0;
+  let bch = fmt;
+  for (let i = 0; i < 10; i++) bch = (bch << 1) ^ ((bch >> 9) * 0x537);
+  const fbits = ((fmt << 10) | bch) ^ 0x5412;
+  const fbit = i => (fbits >> i) & 1;
+  for (let i = 0; i <= 5; i++) set(8, i, fbit(i));
+  set(8, 7, fbit(6)); set(8, 8, fbit(7)); set(7, 8, fbit(8));
+  for (let i = 9; i < 15; i++) set(14 - i, 8, fbit(i));
+  for (let i = 0; i < 8; i++) set(size - 1 - i, 8, fbit(i));
+  for (let i = 8; i < 15; i++) set(8, size - 15 + i, fbit(i));
+  set(8, size - 8, 1);
+  let bi = 0; const totalBits = cw.length * 8;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let vert = 0; vert < size; vert++) {
+      for (let j = 0; j < 2; j++) {
+        const x = right - j;
+        const upward = ((right + 1) & 2) === 0;
+        const y = upward ? size - 1 - vert : vert;
+        if (M[y][x] !== null) continue;
+        let bit = 0;
+        if (bi < totalBits) { bit = (cw[bi >> 3] >> (7 - (bi & 7))) & 1; bi++; }
+        if ((x + y) % 2 === 0) bit ^= 1;
+        M[y][x] = bit;
+      }
+    }
+  }
+  return { size, get: (x, y) => M[y][x] === 1 };
+}
+function qrSVG(url) {
+  const q = qrMatrix(url), n = q.size, quiet = 2, dim = n + 2 * quiet;
+  let rects = '';
+  for (let y = 0; y < n; y++) {
+    let run = -1;
+    for (let x = 0; x <= n; x++) {
+      const on = x < n && q.get(x, y);
+      if (on && run < 0) run = x;
+      if (!on && run >= 0) {
+        rects += `<rect x="${run + quiet}" y="${y + quiet}" width="${x - run}" height="1.02"/>`;
+        run = -1;
+      }
+    }
+  }
+  return `<svg viewBox="0 0 ${dim} ${dim}" xmlns="http://www.w3.org/2000/svg">` +
+         `<rect width="${dim}" height="${dim}" fill="#fff"/><g fill="#000">${rects}</g></svg>`;
+}
+
+/* ===================================================================== */
+const P = new URLSearchParams(location.search);
+const ST = {
+  doc: ['elev', 'larare'].includes(P.get('doc')) ? P.get('doc') : 'elev',
+  variant: ['med3d', 'utan3d'].includes(P.get('variant')) ? P.get('variant') : 'med3d',
+  datum: ['fast', 'aktuell'].includes(P.get('datum')) ? P.get('datum') : 'fast',
+  lang: ['sv', 'en'].includes(P.get('lang')) ? P.get('lang')
+      : (navigator.language || 'sv').toLowerCase().startsWith('sv') ? 'sv' : 'en',
+};
+const FIX = '2026-08-03';
+const BASE = 'https://hedin.it/r/?p=ppeu';
+function link(params) {   // params utan datum; fast läge lägger till d=
+  let u = BASE + params;
+  if (ST.datum === 'fast') u += '&d=' + FIX;
+  return u;
+}
+const SITE = 'hedin.it/petrol-prices-eu';
+
+/* Verifierade nyckeltal för det fasta datumet 2026-08-03 (bensin 95). */
+const N = {
+  seNom: '15,96', mtNom: '14,72', euNom: '21,43',
+  sePpp: '15,96', luPpp: '15,31', euPpp: '27,74', roPpp: '42,4',
+  seTid: '5,5', luTid: '4,1', ieTid: '5,3', euTid: '10,5', roTid: '18',
+  seNet: '11,19', seSkatt: '4,76', euSkatt: '10,44', nlSkatt: '13,8',
+  seDiesel: '20,05', euDiesel: '22,64',
+};
+const NE = {};   // engelska decimalpunkter
+for (const k of Object.keys(N)) NE[k] = N[k].replace(',', '.');
+
+function qrblock(url, caption) {
+  return `<div class="qrbox">${qrSVG(url)}${caption}</div>`;
+}
+
+/* ===================================================================== *
+ *  INNEHÅLL                                                             *
+ * ===================================================================== */
+function studentSV() {
+  const med = ST.variant === 'med3d';
+  const fast = ST.datum === 'fast';
+  const datumTxt = fast ? `priser för veckan ${FIX}` : 'dagens senaste priser (bilden kan skilja sig från faktarutorna!)';
+  return `
+<div class="sheet">
+  <h1>Vad kostar bensinen – egentligen?</h1>
+  <div class="badges">
+    <span class="badge">${med ? 'Med 3D-modeller' : 'Utan 3D-modeller (mobil räcker)'}</span>
+    <span class="badge">${fast ? 'Fast datum: ' + FIX : 'Dagens data'}</span>
+    <span class="badge">Grupp om 4–5</span>
+  </div>
+  <p>Ni ska undersöka bensinpriser i EU:s 27 länder och upptäcka att svaret på
+  "är bensinen dyr i Sverige?" beror på <em>hur man mäter</em>. Ni använder ${datumTxt}.</p>
+
+  <div class="fact">
+    <h3>Så jobbar ni</h3>
+    <p>Utse roller (byt gärna halvvägs): <strong>Uppläsare</strong> (läser uppgifterna högt),
+    <strong>Sekreterare</strong> (skriver gruppens svar), <strong>Skeptiker</strong> (frågar
+    "håller alla verkligen med? hur vet vi det?"), <strong>Tekniker</strong> (sköter
+    ${med ? 'modellerna och mobilen' : 'mobilen'}).</p>
+    <p><strong>Viktigaste regeln:</strong> vid varje uppgift gissar/svarar var och en
+    <em>själv först</em> – sedan jämför ni och diskuterar er fram till ett gruppsvar.
+    Titta aldrig i facit/verktyget före gissningen!</p>
+  </div>
+
+  <h2>Uppgift 1 · Gissa först (5 min – inga hjälpmedel!)</h2>
+  <ol>
+    <li>Var ligger Sverige bland EU:s 27 länder i bensinpris vid pumpen?
+        (1 = billigast, 27 = dyrast). Var och en skriver sin siffra: <span class="writein"></span></li>
+    <li>Gissa literpriset i Sverige: <span class="writein"></span> kr,
+        och EU-genomsnittet: <span class="writein"></span> kr.</li>
+  </ol>
+  <div class="talk">Jämför era gissningar. Varför gissade ni olika? Enas om EN gruppgissning
+  på placeringen innan ni går vidare – och skriv upp den: <span class="writein"></span></div>
+
+  <h2>Uppgift 2 · Kolla verkligheten (10 min)</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      ${med
+        ? `<p>Ta fram <strong>kartmodellen</strong>. Hitta Sverige med fingret. Höjd = pris
+           (1&nbsp;mm = 1&nbsp;kr/liter). Jämför Sveriges höjd med Tysklands, Danmarks och Polens
+           – känn med fingertopparna. Vänd sedan på plattan och skanna QR-koden på undersidan:
+           där finns exakt samma karta digitalt, med exakta siffror när ni hovrar.</p>`
+        : `<p>Skanna koden och öppna <strong>3D-kartan</strong>. Snurra med fingret, hovra/klicka
+           på länder för exakta siffror. Hitta Sverige och jämför med Tyskland, Danmark och Polen.</p>`}
+      <p>Hur nära låg gruppens gissning? Vem i gruppen var närmast?</p>
+    </div>
+    ${qrblock(link('&v=map&b=nom'), 'Kartan – pris vid pumpen')}
+  </div>
+  <div class="talk">De flesta gissar att Sverige ligger <em>högt</em>. Om ni också gjorde det:
+  varifrån kommer den bilden? Nyheter? Vuxna? Sociala medier? Diskutera 2 minuter.</div>
+
+  <div class="fact">
+    <h3>Faktaruta 1 · Tre sätt att mäta "dyrt"</h3>
+    <table class="mini">
+      <tr><th>Mått</th><th>Betyder</th><th>Sverige ${fast ? FIX : '(' + FIX + ')'}</th></tr>
+      <tr><td><strong>Rakt pris</strong></td><td>kr/liter vid pumpen, i svenska kronor</td>
+          <td>${N.seNom} kr (näst lägst i EU – bara Malta lägre; snittet ${N.euNom} kr)</td></tr>
+      <tr><td><strong>PPP-justerat</strong></td><td>priset i förhållande till landets allmänna
+          prisnivå, uttryckt i svensk prisnivå</td>
+          <td>${N.sePpp} kr (näst lägst – bara Luxemburg lägre; snittet ${N.euPpp} kr)</td></tr>
+      <tr><td><strong>Tidpris</strong></td><td>minuter en genomsnittlig löntagare (nettolön)
+          arbetar för en liter</td>
+          <td>${N.seTid} min (tredje lägst; snittet ${N.euTid} min)</td></tr>
+    </table>
+    <p>Tidpris = pris i euro × 60 ÷ nettotimlön i euro. Nettolön = lön efter skatt –
+    det är de pengarna man faktiskt kan tanka för.</p>
+  </div>
+  <div class="foot">Bensinpriser i EU · ${SITE} · Källa: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Löner &amp; prisnivåer: Eurostat · Blad 1/2</div>
+</div>
+
+<div class="sheet">
+  <h2>Uppgift 3 · Byt mått – byt karta (10 min)</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      ${med
+        ? `<p>Ta fram de två <strong>kurvremsorna</strong> (rakt pris och tidpris). Håll en i
+           varje hand. Varje land är ett trappsteg; bredden är landets befolkning
+           (1&nbsp;mm = 2 miljoner människor), höjden är priset. Känn skillnaden i form!
+           Skanna QR-koderna på undersidorna om ni vill se exakta siffror.</p>`
+        : `<p>Öppna priskurvan i de två lägena (koderna här intill). Länderna är sorterade
+           billigast → dyrast; bredden är landets befolkning (så ni ser hur många människor
+           som lever på varje prisnivå).</p>`}
+      <p>Var och en väljer tyst ut <em>ett land som byter plats mest</em> mellan måtten.
+      Jämför sedan era val.</p>
+    </div>
+    ${qrblock(link('&v=curve&b=ppp'), 'Kurvan – PPP-justerat')}
+    ${qrblock(link('&v=curve&b=time'), 'Kurvan – tidpris')}
+  </div>
+  <div class="talk">I PPP-läget kostar Rumäniens bensin ${fast ? N.roPpp : 'över 40'} "svenska
+  prisnivå-kronor". Det betyder INTE att en svensk turist betalar så vid rumänsk pump. Vad
+  betyder det då – för en rumän? (Ledtråd: jämför med vad allt annat kostar där. Tänk på
+  tidpriset: ${fast ? N.roTid : '~18'} minuters arbete per liter, mot våra ${fast ? N.seTid : '~5,5'}.)
+  Enas om en förklaring med egna ord – Sekreteraren skriver ner den.</div>
+
+  <h2>Uppgift 4 · Skatten – det som faktiskt skiljer (10 min)</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      <p>Byt färgläge till <strong>Netto + skatt</strong> (första koden): nu delas varje stapel
+      i nettopris (blått) och skatt (rött). Byt sedan till <strong>Enbart skatt</strong>
+      (andra koden).</p>
+      <ol>
+        <li>Hur lika är de blå nettopriserna över EU? Varför är det så, tror ni?</li>
+        <li>Var ligger Sverige i <em>skatteligan</em>? Gissa först – kolla sedan!</li>
+      </ol>
+    </div>
+    ${qrblock(link('&v=curve&c=tax'), 'Netto + skatt')}
+    ${qrblock(link('&v=curve&c=taxonly'), 'Enbart skatt')}
+  </div>
+  <div class="fact">
+    <h3>Faktaruta 2 · Nästan allt som skiljer är politik</h3>
+    <p>Bensin köps på samma världsmarknad, så nettopriserna är nästan lika i hela EU
+    (${fast ? `Sverige ${N.seNet} kr` : `Sverige ca ${N.seNet} kr ${FIX}`}). Det som skiljer
+    länderna åt är skatten: energiskatt + koldioxidskatt + moms.
+    ${fast ? `Den ${FIX} hade Sverige EU:s LÄGSTA bensinskatt (${N.seSkatt} kr/l; snittet
+    ${N.euSkatt}, högst Nederländerna ≈ ${N.nlSkatt}).` : `Vid ${FIX} hade Sverige EU:s lägsta
+    bensinskatt (${N.seSkatt} kr/l mot snittets ${N.euSkatt}) – kolla om det fortfarande stämmer!`}</p>
+  </div>
+  <div class="talk">Diskutera – låt Skeptikern leda: (a) Vad är bensinskattens syfte? Vägar?
+  Klimat? Statskassan? (b) Om Sverige höjde skatten 3 kr – var skulle vi hamna i prisligan
+  och i skatteligan? (c) Vem tjänar på att debatten använder pumppriset – och vem på att den
+  använder tidpriset? ${ST.datum === 'aktuell' ? '(d) Jämför dagens siffror med faktarutorna från ' + FIX + ' – vad har ändrats, och kan ni komma på varför?' : ''}</div>
+
+  <h2>Avslutning · Enas eller oenas (5 min)</h2>
+  <p>Gruppens svar på frågan <strong>"Är bensinen billig eller dyr i Sverige?"</strong> –
+  var och en motiverar med ETT valfritt mått, Sekreteraren antecknar:</p>
+  <p><span class="writein" style="min-width:100%"></span></p>
+  <p><span class="writein" style="min-width:100%"></span></p>
+  <p>Om ni inte är eniga: skriv <em>varför</em>. Väl motiverad oenighet är ett lika bra
+  resultat som enighet.</p>
+
+  <div class="fact">
+    <h3>Extra (om ni hinner) · Hur stor del av lönen?</h3>
+    <p>Årskostnadens andel av lönen ≈ körsträcka (km/år) × förbrukning (l/km) × pris (€/l)
+    ÷ nettoårslön (€). Sverige: ca 11 000 km × 0,065 l/km × 1,45 € ÷ 33 200 € ≈ <strong>3 %</strong>.
+    Räkna samma sak med Bulgariens pris (~1,74 €) och nettoårslön (~11 900 €). Vad blir det?
+    Stämmer bilden med tidpriset? ${med ? 'Skatteligan finns också som utskrivbar modell – fråga läraren.' : ''}</p>
+  </div>
+  <div class="foot">Bensinpriser i EU · ${SITE} · Källa: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Löner &amp; prisnivåer: Eurostat · Blad 2/2</div>
+</div>`;
+}
+
+function teacherSV() {
+  const med = ST.variant === 'med3d';
+  const fast = ST.datum === 'fast';
+  return `
+<div class="sheet">
+  <h1>Lärarhandledning · Vad kostar bensinen – egentligen?</h1>
+  <div class="badges">
+    <span class="badge warn">Endast för läraren</span>
+    <span class="badge">${med ? 'Variant: med 3D-modeller' : 'Variant: utan 3D-modeller'}</span>
+    <span class="badge">${fast ? 'Fast datum: ' + FIX : 'Dagens data'}</span>
+    <span class="badge">45–60 min · grupper om 4–5</span>
+  </div>
+
+  <h2>Lärandemål</h2>
+  <p>Efter passet ska eleverna kunna:</p>
+  <ol>
+    <li><strong>Redogöra</strong> för tre sätt att jämföra priser mellan länder – nominellt,
+    köpkraftsjusterat (PPP) och tidpris – och <strong>förklara</strong> varför ländernas
+    rangordning ändras när måttet byts.</li>
+    <li><strong>Skilja</strong> nettopris från skatt och <strong>beskriva</strong> att
+    EU:s bensinprisskillnader nästan helt är skattepolitik, inte marknadspriser.</li>
+    <li><strong>Granska</strong> påståenden i stil med "Sverige har Europas dyraste bensin"
+    genom att ställa motfrågan <em>"i vilket mått?"</em> – och själva verifiera mot källan.</li>
+    <li>(Fördjupning) <strong>Genomföra</strong> en enkel andel-av-inkomst-beräkning och
+    <strong>redovisa</strong> vilka antaganden den vilar på.</li>
+    <li>(Samarbete) <strong>Motivera</strong> en ståndpunkt för kamrater och <strong>redovisa
+    saklig oenighet</strong> – bladet är byggt så att oenighet med motivering räknas som
+    fullgott resultat.</li>
+  </ol>
+
+  <h2>Förberedelser</h2>
+  <ul>
+    <li>Skriv ut <strong>ett elevblad per grupp</strong> (välj samma variant/datumläge som
+    detta blad – väljs uppe i verktygsraden innan utskrift). Minst en mobil per grupp.</li>
+    ${med ? `<li><strong>Modeller:</strong> skriv ut per grupp (eller en klassuppsättning):
+    kartmodellen (nominellt läge) samt två kurvremsor – en i nominellt läge och en i
+    tidprisläget. Export och färgläggning: fliken <em>3D-utskrift</em> på webbplatsen;
+    viktigast är att basplattan är ljus och undersidefilen mörk (annars skannar inte
+    QR-koden på undersidan). Räkna med några timmars utskriftstid per uppsättning –
+    layouten "4 per platta" sparar tid för klassuppsättningar.</li>` : `
+    <li>Ingen utskrift av modeller behövs – all utforskning sker via QR-länkarna.
+    Kontrollera att elevernas mobiler når webbplatsen.</li>`}
+    <li>Datumläge: <strong>${fast ? `fast (${FIX})` : 'dagens data'}</strong>.
+    ${fast ? 'Facit nedan stämmer exakt.' : `Faktarutorna på elevbladet anger läget ${FIX};
+    dagens bild kan skilja sig – det är en del av övningen (uppgift 4d).`}</li>
+  </ul>
+
+  <h2>Tidsplan (45–60 min)</h2>
+  <table class="mini">
+    <tr><th>Moment</th><th>Tid</th><th>Din roll</th></tr>
+    <tr><td>Intro + roller</td><td>5 min</td><td>Betona regeln: gissa själv före diskussion
+    (peer instruction – gissningen skapar engagemang och synliggör förförståelsen).</td></tr>
+    <tr><td>Uppgift 1–2 (gissa + karta)</td><td>15 min</td><td>Gå runt; fråga grupper hur de
+    resonerade. Släpp inte facit i helklass ännu.</td></tr>
+    <tr><td>Uppgift 3 (måttbyte)</td><td>10 min</td><td>Hjälp grupper som fastnar på
+    PPP-frågan – se formuleringsstöd nedan.</td></tr>
+    <tr><td>Uppgift 4 (skatten)</td><td>10 min</td><td>Skattefrågan väcker åsikter – styr mot
+    <em>mekanismen</em> (nettopriser lika, skatt skiljer) före värderingarna.</td></tr>
+    <tr><td>Avslutning i helklass</td><td>10 min</td><td>Låt grupperna redovisa sitt svar +
+    mått. Lyft fram välmotiverad oenighet som exempel på god argumentation.</td></tr>
+  </table>
+  <div class="foot">Lärarhandledning · Bensinpriser i EU · ${SITE} · Blad 1/2</div>
+</div>
+
+<div class="sheet">
+  <h2>Facit och nyckeltal (${FIX}, bensin 95)</h2>
+  <table class="mini">
+    <tr><th>Mått</th><th>Sverige</th><th>EU-snitt</th><th>Ytterligheter</th></tr>
+    <tr><td>Rakt pris</td><td>${N.seNom} kr/l · <strong>plats 2</strong> av 27</td>
+        <td>${N.euNom} kr/l</td><td>Malta lägst ${N.mtNom}; Nederländerna högst ≈ 27</td></tr>
+    <tr><td>PPP-justerat</td><td>${N.sePpp} kr/l · plats 2</td><td>${N.euPpp} kr/l</td>
+        <td>Luxemburg lägst ${N.luPpp}; Rumänien högst ${N.roPpp}</td></tr>
+    <tr><td>Tidpris</td><td>${N.seTid} min/l · plats 3</td><td>${N.euTid} min/l</td>
+        <td>Luxemburg ${N.luTid}, Irland ${N.ieTid} lägre; Rumänien/Grekland ≈ ${N.roTid}</td></tr>
+    <tr><td>Skatt</td><td>${N.seSkatt} kr/l · <strong>LÄGST i EU</strong></td>
+        <td>${N.euSkatt} kr/l</td><td>Nederländerna högst ≈ ${N.nlSkatt}</td></tr>
+    <tr><td>Nettopris</td><td>${N.seNet} kr/l</td><td colspan="2">spannet i EU är litet –
+        världsmarknaden är gemensam</td></tr>
+    <tr><td>Diesel</td><td>${N.seDiesel} kr/l</td><td>${N.euDiesel} kr/l</td>
+        <td>bra följdfråga till snabba grupper: håller bensinbilden för diesel?</td></tr>
+  </table>
+  <p><strong>Förväntade aha-upplevelser:</strong> (1) Sverige ligger näst lägst, inte högst –
+  de flesta gissar plats 15–25. (2) Sverige har EU:s lägsta bensinskatt. (3) Tidpriset vänder
+  kartan: billigast i öst blir dyrast.</p>
+
+  <h2>Formuleringsstöd: PPP utan att gå vilse</h2>
+  <p>PPP-priset är <em>inte</em> vad en svensk turist betalar i Rumänien. Det är bensinpriset
+  satt i relation till landets <em>allmänna prisnivå</em>, omräknat till svensk prisnivå:
+  "om bensinen i Sverige vore lika dyr <em>i förhållande till allt annat</em> som den är i
+  Rumänien, skulle den kosta ${N.roPpp} kr". Bra elevformulering att sikta mot: "bensinen är
+  dyr <em>för rumäner</em>, för allt annat de köper är billigt men bensinen är det inte."
+  Tidpriset säger samma sak ännu enklare: ${N.roTid} minuters arbete per liter mot våra ${N.seTid}.</p>
+
+  <h2>Vanliga missuppfattningar</h2>
+  <ul>
+    <li><em>"Sverige har Europas dyraste bensin."</em> Stämmer inte i något av måtten
+    (${FIX}). Låt påståendet möta datan – och visa hur man verifierar själv.</li>
+    <li><em>"PPP = vad det kostar för mig som turist."</em> Nej – se formuleringsstödet.</li>
+    <li><em>"Genomsnittslön = vanlig lön."</em> Genomsnittet överskattar den typiska
+    löntagaren i länder med skev fördelning; tidpriserna för låglöneländer är i så fall
+    <em>underskattade</em>. (Verktyget deklarerar detta under Om/Metod.)</li>
+    <li><em>"Irlands låga tidpris är en BNP-artefakt."</em> Delvis rimlig invändning – men
+    måttet bygger på faktiska nettolöner (Eurostat), inte BNP. Irländska genomsnittslöner är
+    genuint höga, om än draget av multinationell sektor.</li>
+  </ul>
+
+  <h2>Differentiering</h2>
+  <ul>
+    <li><strong>Snabba grupper:</strong> extrauppgiften (andel av lön), dieselfrågan, eller:
+    "designa om den svenska bensinskatten – vilka mål väger ni mot varandra?"</li>
+    <li><strong>Grupper som fastnar:</strong> be dem bara göra uppgift 1, 2 och 4 – kärnan
+    är gissning → verklighet → skattens roll.</li>
+    <li><strong>Historik:</strong> QR-koden här intill öppnar historikvyn (SE/DE/PL) –
+    vad hände 2022? (Ukraina-kriget + tillfälliga skattesänkningar.)</li>
+  </ul>
+  <div class="qrrow">
+    ${qrblock(link('&v=hist'), 'Historik 2005–nu')}
+    ${qrblock(BASE + '&v=teach', 'Pedagogik-fliken (mer material)')}
+    ${qrblock(BASE + '&v=print3d', '3D-utskrift (export & färger)')}
+  </div>
+  <div class="foot">Lärarhandledning · Bensinpriser i EU · ${SITE} · Blad 2/2</div>
+</div>`;
+}
+
+/* --------------------------- English versions --------------------------- */
+function studentEN() {
+  const med = ST.variant === 'med3d';
+  const fast = ST.datum === 'fast';
+  const datumTxt = fast ? `prices for the week of ${FIX}` : "today's latest prices (the picture may differ from the fact boxes!)";
+  return `
+<div class="sheet">
+  <h1>What does petrol really cost?</h1>
+  <div class="badges">
+    <span class="badge">${med ? 'With 3D models' : 'Without 3D models (a phone is enough)'}</span>
+    <span class="badge">${fast ? 'Fixed date: ' + FIX : "Today's data"}</span>
+    <span class="badge">Groups of 4–5</span>
+  </div>
+  <p>You will investigate petrol prices across the EU's 27 countries and discover that the
+  answer to "is petrol expensive in Sweden?" depends on <em>how you measure</em>.
+  You will use ${datumTxt}.</p>
+
+  <div class="fact">
+    <h3>How to work</h3>
+    <p>Assign roles (swap halfway): <strong>Reader</strong> (reads tasks aloud),
+    <strong>Scribe</strong> (writes the group's answers), <strong>Skeptic</strong> (asks
+    "do we all really agree? how do we know?"), <strong>Operator</strong> (handles
+    ${med ? 'the models and the phone' : 'the phone'}).</p>
+    <p><strong>The most important rule:</strong> for every task, each of you guesses/answers
+    <em>alone first</em> – then compare and discuss your way to a group answer. Never peek
+    at the tool before guessing!</p>
+  </div>
+
+  <h2>Task 1 · Guess first (5 min – no tools!)</h2>
+  <ol>
+    <li>Where does Sweden rank among the EU's 27 countries in pump price?
+        (1 = cheapest, 27 = dearest). Each of you writes a number: <span class="writein"></span></li>
+    <li>Guess the litre price in Sweden: <span class="writein"></span> SEK,
+        and the EU average: <span class="writein"></span> SEK.</li>
+  </ol>
+  <div class="talk">Compare your guesses. Why did they differ? Agree on ONE group guess for
+  the ranking before moving on – write it here: <span class="writein"></span></div>
+
+  <h2>Task 2 · Check reality (10 min)</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      ${med
+        ? `<p>Take the <strong>map model</strong>. Find Sweden with your finger. Height = price
+           (1&nbsp;mm = 1&nbsp;SEK/litre). Compare Sweden's height with Germany, Denmark and
+           Poland – feel it. Then flip the plate and scan the QR code on the underside: the
+           same map, digital, with exact figures on hover.</p>`
+        : `<p>Scan the code and open the <strong>3D map</strong>. Spin it, hover/click countries
+           for exact figures. Find Sweden and compare with Germany, Denmark and Poland.</p>`}
+      <p>How close was your group's guess? Who was closest?</p>
+    </div>
+    ${qrblock(link('&v=map&b=nom'), 'The map – pump price')}
+  </div>
+  <div class="talk">Most people guess that Sweden ranks <em>high</em>. If you did too: where
+  does that picture come from? News? Adults? Social media? Discuss for 2 minutes.</div>
+
+  <div class="fact">
+    <h3>Fact box 1 · Three ways to measure "expensive"</h3>
+    <table class="mini">
+      <tr><th>Measure</th><th>Meaning</th><th>Sweden ${fast ? FIX : '(' + FIX + ')'}</th></tr>
+      <tr><td><strong>Straight price</strong></td><td>SEK/litre at the pump</td>
+          <td>${NE.seNom} SEK (second lowest in the EU – only Malta lower; average ${NE.euNom})</td></tr>
+      <tr><td><strong>PPP-adjusted</strong></td><td>the price relative to the country's general
+          price level, expressed at Swedish price levels</td>
+          <td>${NE.sePpp} SEK (second lowest – only Luxembourg lower; average ${NE.euPpp})</td></tr>
+      <tr><td><strong>Time price</strong></td><td>minutes an average earner (net pay) works
+          for one litre</td>
+          <td>${NE.seTid} min (third lowest; average ${NE.euTid} min)</td></tr>
+    </table>
+    <p>Time price = price in euros × 60 ÷ net hourly pay in euros. Net pay = pay after tax –
+    the money you can actually buy petrol with.</p>
+  </div>
+  <div class="foot">Petrol prices in the EU · ${SITE} · Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Wages &amp; price levels: Eurostat · Sheet 1/2</div>
+</div>
+
+<div class="sheet">
+  <h2>Task 3 · Change the measure – change the map (10 min)</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      ${med
+        ? `<p>Take the two <strong>curve strips</strong> (straight price and time price). Hold
+           one in each hand. Every country is a step; width is population
+           (1&nbsp;mm = 2 million people), height is the price. Feel the difference in shape!
+           Scan the QR codes on the undersides for exact figures.</p>`
+        : `<p>Open the price curve in the two modes (codes to the right). Countries are sorted
+           cheapest → dearest; width is population (so you can see how many people live at
+           each price level).</p>`}
+      <p>Each of you silently picks <em>the country that moves the most</em> between measures.
+      Then compare your picks.</p>
+    </div>
+    ${qrblock(link('&v=curve&b=ppp'), 'Curve – PPP-adjusted')}
+    ${qrblock(link('&v=curve&b=time'), 'Curve – time price')}
+  </div>
+  <div class="talk">In PPP mode Romania's petrol costs ${fast ? NE.roPpp : 'over 40'} "Swedish
+  price-level kronor". That does NOT mean a Swedish tourist pays that at a Romanian pump. So
+  what does it mean – for a Romanian? (Hint: compare with what everything else costs there.
+  Think of the time price: ${fast ? NE.roTid : '~18'} minutes of work per litre, against our
+  ${fast ? NE.seTid : '~5.5'}.) Agree on an explanation in your own words – the Scribe writes it down.</div>
+
+  <h2>Task 4 · The tax – what actually differs (10 min)</h2>
+  <div class="qrrow">
+    <div class="qrtask">
+      <p>Switch the colour mode to <strong>Net + tax</strong> (first code): every bar splits
+      into net price (blue) and tax (red). Then switch to <strong>Tax only</strong> (second code).</p>
+      <ol>
+        <li>How similar are the blue net prices across the EU? Why is that, do you think?</li>
+        <li>Where does Sweden rank in the <em>tax league</em>? Guess first – then check!</li>
+      </ol>
+    </div>
+    ${qrblock(link('&v=curve&c=tax'), 'Net + tax')}
+    ${qrblock(link('&v=curve&c=taxonly'), 'Tax only')}
+  </div>
+  <div class="fact">
+    <h3>Fact box 2 · Almost everything that differs is politics</h3>
+    <p>Petrol is bought on the same world market, so net prices are nearly equal across the EU
+    (Sweden ${NE.seNet} SEK ${fast ? '' : 'on ' + FIX}). What separates countries is tax:
+    energy tax + carbon tax + VAT. ${fast ? `On ${FIX} Sweden had the EU's LOWEST petrol tax
+    (${NE.seSkatt} SEK/l; average ${NE.euSkatt}, highest the Netherlands ≈ ${NE.nlSkatt}).`
+    : `As of ${FIX} Sweden had the EU's lowest petrol tax (${NE.seSkatt} SEK/l against the
+    average ${NE.euSkatt}) – check whether that still holds!`}</p>
+  </div>
+  <div class="talk">Discuss – let the Skeptic lead: (a) What is the purpose of petrol tax?
+  Roads? Climate? The treasury? (b) If Sweden raised the tax by 3 SEK – where would we land
+  in the price league and the tax league? (c) Who benefits when the debate uses the pump
+  price – and who when it uses the time price?
+  ${ST.datum === 'aktuell' ? "(d) Compare today's figures with the fact boxes from " + FIX + ' – what changed, and can you figure out why?' : ''}</div>
+
+  <h2>Wrap-up · Agree or disagree (5 min)</h2>
+  <p>The group's answer to <strong>"Is petrol cheap or expensive in Sweden?"</strong> – each
+  of you justifies with ONE measure of your choice, the Scribe records:</p>
+  <p><span class="writein" style="min-width:100%"></span></p>
+  <p><span class="writein" style="min-width:100%"></span></p>
+  <p>If you disagree: write down <em>why</em>. Well-argued disagreement is as good a result
+  as agreement.</p>
+
+  <div class="fact">
+    <h3>Extra (if time permits) · What share of pay?</h3>
+    <p>Annual cost share ≈ distance (km/yr) × consumption (l/km) × price (€/l) ÷ net annual
+    pay (€). Sweden: ≈ 11,000 km × 0.065 l/km × €1.45 ÷ €33,200 ≈ <strong>3%</strong>.
+    Now do the same with Bulgaria's price (~€1.74) and net annual pay (~€11,900). What do you
+    get? Does it match the time price?</p>
+  </div>
+  <div class="foot">Petrol prices in the EU · ${SITE} · Source: European Commission Weekly Oil Bulletin (CC BY-NC-ND) · Wages &amp; price levels: Eurostat · Sheet 2/2</div>
+</div>`;
+}
+
+function teacherEN() {
+  const med = ST.variant === 'med3d';
+  const fast = ST.datum === 'fast';
+  return `
+<div class="sheet">
+  <h1>Teacher's guide · What does petrol really cost?</h1>
+  <div class="badges">
+    <span class="badge warn">Teacher's eyes only</span>
+    <span class="badge">${med ? 'Variant: with 3D models' : 'Variant: without 3D models'}</span>
+    <span class="badge">${fast ? 'Fixed date: ' + FIX : "Today's data"}</span>
+    <span class="badge">45–60 min · groups of 4–5</span>
+  </div>
+
+  <h2>Learning objectives</h2>
+  <p>After the session, students should be able to:</p>
+  <ol>
+    <li><strong>Describe</strong> three ways of comparing prices across countries – nominal,
+    purchasing-power-adjusted (PPP) and time price – and <strong>explain</strong> why country
+    rankings change with the measure.</li>
+    <li><strong>Distinguish</strong> net price from tax and <strong>describe</strong> that
+    EU petrol price differences are almost entirely tax policy, not market prices.</li>
+    <li><strong>Examine</strong> claims like "Sweden has Europe's most expensive petrol" by
+    asking <em>"in which measure?"</em> – and verify against the source themselves.</li>
+    <li>(Extension) <strong>Carry out</strong> a simple share-of-income calculation and
+    <strong>state</strong> the assumptions it rests on.</li>
+    <li>(Collaboration) <strong>Justify</strong> a position to peers and <strong>report
+    substantiated disagreement</strong> – the sheet treats well-argued disagreement as a
+    fully valid outcome.</li>
+  </ol>
+
+  <h2>Preparation</h2>
+  <ul>
+    <li>Print <strong>one student sheet per group</strong> (choose the same variant/date mode
+    as this guide – selectable in the toolbar before printing). At least one phone per group.</li>
+    ${med ? `<li><strong>Models:</strong> per group (or one class set): the map model (nominal
+    mode) plus two curve strips – nominal and time-price mode. Export and colouring: the
+    <em>3D printing</em> tab on the site; the key points are a light base plate and a dark
+    underside file (or the underside QR will not scan). Allow a few hours of printing per
+    set – the "4 per plate" layout saves time for class sets.</li>` : `
+    <li>No model printing needed – all exploration goes via the QR links. Check that student
+    phones can reach the site.</li>`}
+    <li>Date mode: <strong>${fast ? `fixed (${FIX})` : "today's data"}</strong>.
+    ${fast ? 'The key below is exact.' : `The student sheet's fact boxes state the ${FIX}
+    situation; today's picture may differ – that is part of the exercise (task 4d).`}</li>
+  </ul>
+
+  <h2>Timeline (45–60 min)</h2>
+  <table class="mini">
+    <tr><th>Phase</th><th>Time</th><th>Your role</th></tr>
+    <tr><td>Intro + roles</td><td>5 min</td><td>Stress the rule: guess alone before discussing
+    (peer instruction – committing to a guess creates engagement and surfaces preconceptions).</td></tr>
+    <tr><td>Tasks 1–2 (guess + map)</td><td>15 min</td><td>Circulate; ask groups how they
+    reasoned. Don't reveal the answer to the whole class yet.</td></tr>
+    <tr><td>Task 3 (changing measures)</td><td>10 min</td><td>Help groups stuck on the PPP
+    question – see the phrasing support below.</td></tr>
+    <tr><td>Task 4 (the tax)</td><td>10 min</td><td>The tax question stirs opinions – steer
+    to the <em>mechanism</em> (net prices equal, tax differs) before the values debate.</td></tr>
+    <tr><td>Whole-class wrap-up</td><td>10 min</td><td>Groups present their answer + measure.
+    Highlight well-argued disagreement as an example of good reasoning.</td></tr>
+  </table>
+  <div class="foot">Teacher's guide · Petrol prices in the EU · ${SITE} · Sheet 1/2</div>
+</div>
+
+<div class="sheet">
+  <h2>Answer key (${FIX}, petrol 95)</h2>
+  <table class="mini">
+    <tr><th>Measure</th><th>Sweden</th><th>EU average</th><th>Extremes</th></tr>
+    <tr><td>Straight price</td><td>${NE.seNom} SEK/l · <strong>rank 2</strong> of 27</td>
+        <td>${NE.euNom}</td><td>Malta lowest ${NE.mtNom}; Netherlands highest ≈ 27</td></tr>
+    <tr><td>PPP-adjusted</td><td>${NE.sePpp} SEK/l · rank 2</td><td>${NE.euPpp}</td>
+        <td>Luxembourg lowest ${NE.luPpp}; Romania highest ${NE.roPpp}</td></tr>
+    <tr><td>Time price</td><td>${NE.seTid} min/l · rank 3</td><td>${NE.euTid} min/l</td>
+        <td>Luxembourg ${NE.luTid}, Ireland ${NE.ieTid} lower; Romania/Greece ≈ ${NE.roTid}</td></tr>
+    <tr><td>Tax</td><td>${NE.seSkatt} SEK/l · <strong>LOWEST in the EU</strong></td>
+        <td>${NE.euSkatt}</td><td>Netherlands highest ≈ ${NE.nlSkatt}</td></tr>
+    <tr><td>Net price</td><td>${NE.seNet} SEK/l</td><td colspan="2">the EU span is small –
+        the world market is shared</td></tr>
+    <tr><td>Diesel</td><td>${NE.seDiesel} SEK/l</td><td>${NE.euDiesel}</td>
+        <td>good follow-up for fast groups: does the petrol picture hold for diesel?</td></tr>
+  </table>
+  <p><strong>Expected aha moments:</strong> (1) Sweden ranks second lowest, not high – most
+  guess rank 15–25. (2) Sweden has the EU's lowest petrol tax. (3) The time price flips the
+  map: cheapest in the east becomes dearest.</p>
+
+  <h2>Phrasing support: PPP without getting lost</h2>
+  <p>The PPP price is <em>not</em> what a Swedish tourist pays in Romania. It is the petrol
+  price relative to the country's <em>general price level</em>, restated at Swedish price
+  levels: "if petrol in Sweden were as expensive <em>relative to everything else</em> as it
+  is in Romania, it would cost ${NE.roPpp} SEK". A good student phrasing to aim for: "petrol
+  is expensive <em>for Romanians</em>, because everything else they buy is cheap but petrol
+  is not." The time price says the same thing even more simply: ${NE.roTid} minutes of work
+  per litre against our ${NE.seTid}.</p>
+
+  <h2>Common misconceptions</h2>
+  <ul>
+    <li><em>"Sweden has Europe's most expensive petrol."</em> Not true in any of the measures
+    (${FIX}). Let the claim meet the data – and show how to verify it.</li>
+    <li><em>"PPP = what it costs me as a tourist."</em> No – see the phrasing support.</li>
+    <li><em>"Average pay = typical pay."</em> The mean overstates the typical earner in
+    countries with skewed distributions; low-wage countries' time prices are then
+    <em>understated</em>. (Declared under About/Method in the tool.)</li>
+    <li><em>"Ireland's low time price is a GDP artefact."</em> A partly fair objection – but
+    the measure uses actual net earnings (Eurostat), not GDP. Irish average wages are
+    genuinely high, though pulled up by the multinational sector.</li>
+  </ul>
+
+  <h2>Differentiation</h2>
+  <ul>
+    <li><strong>Fast groups:</strong> the extra task (share of pay), the diesel question, or:
+    "redesign the Swedish petrol tax – which goals do you trade off?"</li>
+    <li><strong>Struggling groups:</strong> tasks 1, 2 and 4 only – the core is
+    guess → reality → the role of tax.</li>
+    <li><strong>History:</strong> the QR code opens the history view – what happened in 2022?
+    (The war in Ukraine + temporary tax cuts.)</li>
+  </ul>
+  <div class="qrrow">
+    ${qrblock(link('&v=hist'), 'History 2005–now')}
+    ${qrblock(BASE + '&v=teach', 'Teaching tab (more material)')}
+    ${qrblock(BASE + '&v=print3d', '3D printing (export & colours)')}
+  </div>
+  <div class="foot">Teacher's guide · Petrol prices in the EU · ${SITE} · Sheet 2/2</div>
+</div>`;
+}
+
+/* ------------------------------ rendering ------------------------------ */
+function render() {
+  document.documentElement.lang = ST.lang;
+  const sv = ST.lang === 'sv';
+  document.title = (ST.doc === 'larare' ? (sv ? 'Lärarhandledning' : "Teacher's guide")
+                                        : (sv ? 'Arbetsblad' : 'Worksheet')) +
+                   ' – Bensinpriser i EU';
+  document.getElementById('tb_title').textContent = document.title;
+  document.getElementById('docSel').value = ST.doc;
+  document.getElementById('varSel').value = ST.variant;
+  document.getElementById('datSel').value = ST.datum;
+  document.getElementById('langSel').value = ST.lang;
+  document.getElementById('docSel').options[0].text = sv ? 'Elevblad' : 'Student sheet';
+  document.getElementById('docSel').options[1].text = sv ? 'Lärarhandledning' : "Teacher's guide";
+  document.getElementById('varSel').options[0].text = sv ? 'Med 3D-modeller' : 'With 3D models';
+  document.getElementById('varSel').options[1].text = sv ? 'Utan 3D-modeller' : 'Without 3D models';
+  document.getElementById('datSel').options[0].text = (sv ? 'Fast (' : 'Fixed (') + FIX + ')';
+  document.getElementById('datSel').options[1].text = sv ? 'Dagens data' : "Today's data";
+  document.getElementById('printBtn').textContent = sv ? 'Skriv ut / spara som PDF' : 'Print / save as PDF';
+  const body = ST.doc === 'larare'
+    ? (sv ? teacherSV() : teacherEN())
+    : (sv ? studentSV() : studentEN());
+  document.getElementById('pages').innerHTML = body;
+  const q = new URLSearchParams({ doc: ST.doc, variant: ST.variant, datum: ST.datum, lang: ST.lang });
+  history.replaceState(null, '', '?' + q.toString());
+}
+for (const [id, key] of [['docSel', 'doc'], ['varSel', 'variant'], ['datSel', 'datum'], ['langSel', 'lang']]) {
+  document.getElementById(id).addEventListener('change', ev => { ST[key] = ev.target.value; render(); });
+}
+render();
+</script>
+</body>
+</html>

@@ -329,8 +329,8 @@ const I18N = {
     hist_needs_api: 'Historiken kräver backend (api.php). Sidan visar just nu statisk seed-data.',
     hist_add: '+ Lägg till land …',
     added_to_hist: '{name} tillagd i historiken',
-    ppp_note: 'PPP-justerat = vad priset skulle kännas som för en svensk plånbok. Beräkning: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
-    hint_ppp: 'PPP-justerat = vad priset skulle kännas som för en svensk plånbok. Sveriges pris är oförändrat; övriga länders priser räknas om efter deras prisnivå.',
+    ppp_note: 'PPP-justerat = priset i förhållande till landets allmänna prisnivå, uttryckt i svensk prisnivå (inte vad en svensk turist betalar där). Beräkning: pris × (PLI Sverige / PLI landet); Eurostat prisnivåindex (A01, 2024). Sverige oförändrat ankare.',
+    hint_ppp: 'PPP-justerat = bensinpriset i förhållande till landets allmänna prisnivå, uttryckt i svensk prisnivå: så dyr vore bensinen här, om den var lika dyr relativt allt annat som den är där. Sverige oförändrat.',
     hint_time: 'Tidpris = hur många minuter en genomsnittlig löntagare (nettolön) arbetar för en liter.',
     tt_price: 'Pris', tt_net: 'netto', tt_tax: 'skatt', tt_pop: 'Befolkning', tt_no_data: 'ingen data',
     milj: 'milj.',
@@ -372,8 +372,8 @@ const I18N = {
     hist_needs_api: 'The history view needs the backend (api.php). This page is currently showing static seed data.',
     hist_add: '+ Add country …',
     added_to_hist: '{name} added to history',
-    ppp_note: 'PPP-adjusted = what the price would feel like to a Swedish wallet. Calculation: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
-    hint_ppp: 'PPP-adjusted = what the price would feel like to a Swedish wallet. Sweden’s price is unchanged; other countries’ prices are rescaled by their price level.',
+    ppp_note: 'PPP-adjusted = the price relative to the country’s general price level, expressed at Swedish price levels (not what a Swedish tourist pays there). Calculation: price × (PLI Sweden / PLI country); Eurostat price level indices (A01, 2024). Sweden is the unchanged anchor.',
+    hint_ppp: 'PPP-adjusted = the petrol price relative to the country’s general price level, expressed at Swedish price levels: this is how expensive petrol would be here if it were as expensive relative to everything else as it is there. Sweden unchanged.',
     hint_time: 'Time price = how many minutes an average earner (net pay) works for one litre.',
     tt_price: 'Price', tt_net: 'net', tt_tax: 'tax', tt_pop: 'Population', tt_no_data: 'no data',
     milj: 'M',
@@ -1803,9 +1803,12 @@ En källa, en kurs, inga externa valuta-API:er. Licens för källdata: CC BY-NC-
 <p>Befolkningsvikter: Eurostat, 1 januari 2025 (deklarerat källår, D5).
 PPP-läget använder Eurostats prisnivåindex (prc_ppp_ind, PLI_EU27_2020, kategori A01
 "faktisk individuell konsumtion", år 2024, EU27=100): justerat pris = nominellt pris ×
-(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>). <strong>I praktiken: vad priset skulle kännas
-som för en svensk plånbok.</strong> Sverige är oförändrat ankare. Nominella kr/l är
-huvudläsningen (svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning.</p>
+(PLI<sub>Sverige</sub>/PLI<sub>landet</sub>). <strong>I praktiken: hur dyr bensinen är i
+förhållande till landets övriga priser, omräknat till svensk prisnivå.</strong> Det är alltså
+inte vad en svensk turist betalar vid pumpen där, utan hur dyr bensinen är för den som lever
+med landets priser och konsumtion — Rumäniens fyrtiotal "prisnivå-kronor" betyder att
+bensin där är dyr <em>relativt allt annat</em>. Sverige är oförändrat ankare. Nominella kr/l
+är huvudläsningen (svenskt plånboksperspektiv, D4); PPP är en deklarerad syskonläsning.</p>
 <h2>Tidpris ("time price")</h2>
 <p>Tredje prisläget är <strong>tidpris</strong>: hur länge en genomsnittlig löntagare behöver
 arbeta för en liter. Begreppet är etablerat (bl.a. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -1850,9 +1853,13 @@ One source, one rate, no external currency APIs. Source data licence: CC BY-NC-N
 <p>Population weights: Eurostat, 1 January 2025 (declared source year, D5).
 The PPP mode uses Eurostat price level indices (prc_ppp_ind, PLI_EU27_2020, category A01
 "actual individual consumption", 2024, EU27=100): adjusted price = nominal price ×
-(PLI<sub>Sweden</sub>/PLI<sub>country</sub>). <strong>In practice: what the price would feel
-like to a Swedish wallet.</strong> Sweden is the unchanged anchor. Nominal SEK/l is the primary
-reading (Swedish wallet perspective, D4); PPP is a declared sibling reading.</p>
+(PLI<sub>Sweden</sub>/PLI<sub>country</sub>). <strong>In practice: how expensive petrol is
+relative to the country's other prices, restated at Swedish price levels.</strong> It is not
+what a Swedish tourist pays at the pump there, but how expensive petrol is for someone living
+with the country's prices and consumption — Romania's forty-odd "price-level kronor" mean that
+petrol there is expensive <em>relative to everything else</em>. Sweden is the unchanged anchor.
+Nominal SEK/l is the primary reading (Swedish wallet perspective, D4); PPP is a declared
+sibling reading.</p>
 <h2>Time price</h2>
 <p>The third price basis is the <strong>time price</strong>: how long an average earner must work
 for one litre. The concept is established (e.g. Tupy &amp; Pooley, <em>Superabundance</em>, 2022):
@@ -2115,8 +2122,9 @@ beroende på hur man räknar. (Siffrorna nedan avser veckan 2026-08-03 — hämt
 <li><strong>Rakt pris (nominellt, kr/l)</strong> — vad det kostar att tanka på plats, i svenska
 kronor. Sverige: 15,96 kr/l — näst lägst i EU (bara Malta lägre), ca 5,50 kr under genomsnittet
 i EU. <a href="?${q}&view=curve&fuel=petrol&basis=nom&color=quartile">Öppna i priskurvan →</a></li>
-<li><strong>PPP-justerat (kr/l)</strong> — vad priset skulle kännas som för en svensk plånbok:
-priserna räknas om efter ländernas prisnivå. Sverige: fortfarande 15,96 (ankare) — näst lägst
+<li><strong>PPP-justerat (kr/l)</strong> — bensinpriset i förhållande till landets allmänna
+prisnivå, uttryckt i svensk prisnivå: hur dyr bensinen är relativt allt annat man köper där
+(inte vad en turist betalar). Sverige: fortfarande 15,96 (ankare) — näst lägst
 (bara Luxemburg lägre), nästan 12 kr under genomsnittet i EU.
 <a href="?${q}&view=curve&fuel=petrol&basis=ppp&color=quartile">Öppna →</a></li>
 <li><strong>Tidpris (min arbete/l)</strong> — hur länge en genomsnittlig löntagare (nettolön)
@@ -2162,6 +2170,17 @@ tidprisets? Diskutera felkällor: elbilsandel, dieselandel, tjänstebilar, stad/
 länderna och kan peka. Skriv gärna ut kurvan i två prislägen (nominellt och tidpris) och låt
 gruppen hålla en i varje hand — skillnaden i form <em>känns</em>. QR-koden på modellen leder
 tillbaka till exakt den vy som skrevs ut.</p>
+<h2>Arbetsblad för grupparbete (skriv ut och dela ut)</h2>
+<p>Självbärande arbetsblad för grupper om 4–5 — gruppen genomför hela passet enbart med
+bladet: roller, gissa-först-regel (peer instruction), QR-koder till exakta vyer, faktarutor
+och diskussionsfrågor. Två varianter (med/utan utskrivna 3D-modeller) och två datumlägen
+(fast 2026-08-03 med känt facit, eller dagens data där förändringar sedan dess blir en egen
+uppgift). Välj i verktygsraden på bladsidan och skriv ut med webbläsaren (Ctrl+P → PDF).</p>
+<ul>
+<li><a href="arbetsblad.html?doc=elev&variant=med3d&datum=fast&lang=sv">Elevblad – med 3D-modeller →</a></li>
+<li><a href="arbetsblad.html?doc=elev&variant=utan3d&datum=fast&lang=sv">Elevblad – utan 3D-modeller (mobil räcker) →</a></li>
+<li><a href="arbetsblad.html?doc=larare&variant=med3d&datum=fast&lang=sv">Lärarhandledning – endast för läraren: lärandemål, tidsplan, facit, missuppfattningar →</a></li>
+</ul>
 <h2>För läraren: ladda ner, skriv ut och färglägg</h2>
 <ol>
 <li><strong>Välj vad som ska skrivas ut:</strong> gå till Karta (rekommenderas för igenkänning)
@@ -2194,9 +2213,10 @@ different maps of Europe depending on how you count. (Figures below refer to the
 <li><strong>Straight price (nominal, SEK/l)</strong> — what filling up costs on site, in Swedish
 kronor. Sweden: 15.96 SEK/l — second lowest in the EU (only Malta lower), about 5.50 SEK below
 the EU average. <a href="?${q}&view=curve&fuel=petrol&basis=nom&color=quartile">Open in the curve →</a></li>
-<li><strong>PPP-adjusted (SEK/l)</strong> — what the price would feel like to a Swedish wallet:
-prices rescaled by each country's price level. Sweden: still 15.96 (anchor) — second lowest
-(only Luxembourg lower), almost 12 SEK below the EU average.
+<li><strong>PPP-adjusted (SEK/l)</strong> — the petrol price relative to the country's
+general price level, expressed at Swedish price levels: how expensive petrol is relative to
+everything else bought there (not what a tourist pays). Sweden: still 15.96 (anchor) — second
+lowest (only Luxembourg lower), almost 12 SEK below the EU average.
 <a href="?${q}&view=curve&fuel=petrol&basis=ppp&color=quartile">Open →</a></li>
 <li><strong>Time price (min of work/l)</strong> — how long an average earner (net pay) works for
 one litre. Sweden: ≈ 5.5 minutes — third lowest, after Luxembourg (very high wages) and Ireland
@@ -2239,6 +2259,18 @@ compared. <strong>The map model</strong> is the best classroom starting point �
 recognise the countries and can point. Also print the curve in two bases (nominal and time
 price) and let the group hold one in each hand — the difference in shape can be <em>felt</em>.
 The QR code on the model leads back to exactly the view that was printed.</p>
+<h2>Worksheets for group work (print and hand out)</h2>
+<p>Self-contained worksheets for groups of 4–5 — the group runs the whole session from the
+sheet alone: roles, guess-first rule (peer instruction), QR codes to exact views, fact boxes
+and discussion prompts. Two variants (with/without printed 3D models) and two date modes
+(fixed 2026-08-03 with a known answer key, or today's data where changes since then become a
+task of their own). Choose in the toolbar on the sheet page and print with the browser
+(Ctrl+P → PDF).</p>
+<ul>
+<li><a href="arbetsblad.html?doc=elev&variant=med3d&datum=fast&lang=en">Student sheet – with 3D models →</a></li>
+<li><a href="arbetsblad.html?doc=elev&variant=utan3d&datum=fast&lang=en">Student sheet – without 3D models (a phone is enough) →</a></li>
+<li><a href="arbetsblad.html?doc=larare&variant=med3d&datum=fast&lang=en">Teacher's guide – teacher's eyes only: objectives, timeline, answer key, misconceptions →</a></li>
+</ul>
 <h2>For the teacher: download, print and colour</h2>
 <ol>
 <li><strong>Choose what to print:</strong> go to Map (recommended for recognition) or Price
