@@ -515,7 +515,8 @@ function studentSV() {
       genomsnittslöner. <strong>Vilket antagande är svagast?</strong> Hur skulle resultatet
       ändras om ni fixade det?</div>
     </div>
-    ${qrblock(link('&v=curve&b=year'), 'Facit: årsarbetstid för bensin')}
+    ${qrblock(link('&v=curve&b=yearnom'), 'Facit: årskostnad (kr/år)')}
+    ${qrblock(link('&v=curve&b=year'), 'Facit: årsarbetstid (h/år)')}
   </div>
   ${foot(6)}
 </div>`;
@@ -960,7 +961,8 @@ function studentEN() {
       wages. <strong>Which assumption is weakest?</strong> How would the result change if you
       fixed it?</div>
     </div>
-    ${qrblock(link('&v=curve&b=year'), 'Answer key: annual work time for petrol')}
+    ${qrblock(link('&v=curve&b=yearnom'), 'Answer key: annual cost (SEK/yr)')}
+    ${qrblock(link('&v=curve&b=year'), 'Answer key: annual work time (h/yr)')}
   </div>
   ${foot(6)}
 </div>`;

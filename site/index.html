@@ -133,10 +133,16 @@
   <span class="grp" id="basisGrp">
     <label id="l_basis"></label>
     <select id="basisSel">
-      <option value="nom"></option>
-      <option value="ppp"></option>
-      <option value="time"></option>
-      <option value="year"></option>
+      <optgroup id="bgrpLitre">
+        <option value="nom"></option>
+        <option value="ppp"></option>
+        <option value="time"></option>
+      </optgroup>
+      <optgroup id="bgrpYear">
+        <option value="yearnom"></option>
+        <option value="yearppp"></option>
+        <option value="year"></option>
+      </optgroup>
     </select>
   </span>
   <span class="grp" id="colorGrp">
@@ -295,8 +301,10 @@ const SCALE = {
   ZSCALES: [0.5, 1, 2],   // valbara Z-skalor (mm per kr/l resp. min/l)
   FUEL_L100: 7.0,         // ANTAGEN flottförbrukning l/100 km, samma för alla länder
                           // (deklarerat antagande; nybilar ~5-6 enl. Odyssee)
-  YEAR_MM: 0.5,           // årsarbetstidsläget: 0,5 mm = 1 h arbete/år (spann ~60-230 h)
-  YEAR_BREAKS: [100, 150, 200],  // fasta klasser i årsarbetstidsläget (h/år)
+  YEAR_MM: 0.5,           // årsarbetstid: 0,5 mm = 1 h arbete/år (spann ~60-230 h)
+  YEAR_BREAKS: [100, 150, 200],  // fasta klasser, årsarbetstid (h/år)
+  YEARKR_MM: 1 / 500,     // årskostnad: 1 mm = 500 kr/år (spann ~8-30 tkr)
+  YEARKR_BREAKS: [12000, 18000, 24000],  // fasta klasser, årskostnad (kr/år)
 };
 const LAYOUTS = { full: 1, quad: 0.5, nine: 1 / 3 };   // fotavtrycksskala per utskriftslayout
 const KM_PER_DEG_LAT = 111.13;
@@ -320,7 +328,11 @@ const I18N = {
     fuel_petrol: 'Bensin 95', fuel_diesel: 'Diesel',
     basis_nom: 'Nominellt (kr/l)', basis_ppp: 'PPP-justerat (kr/l)',
     basis_time: 'Tidpris (min arbete/l)',
-    basis_year: 'Årsarbetstid (h bensin/år)',
+    basis_year: 'Årsarbetstid (h/år)',
+    basis_yearnom: 'Årskostnad (kr/år)', basis_yearppp: 'Årskostnad PPP-justerad (kr/år)',
+    bgrp_litre: 'Per liter', bgrp_year: 'Per år (körsträcka × förbrukning)',
+    hint_yearnom: 'Årskostnad = körsträcka per bil × 7 l/100 km × literpris, i svenska kronor. LU, SK, BG och CY saknar körsträckedata och utelämnas.',
+    hint_yearppp: 'Årskostnad PPP = årskostnaden omräknad efter landets allmänna prisnivå till svensk prisnivå (hur stor kostnaden är relativt allt annat i landet).',
     year_note: 'Årsarbetstid = körsträcka/bil (Odyssee-Mure 2023 / Eurostat 2024) × antagen förbrukning 7,0 l/100 km × pris i EUR ÷ nettotimlön. Grov, deklarerad modell – LU, SK, BG och CY saknar körsträckedata och utelämnas. Se Om/Metod.',
     hint_year: 'Årsarbetstid = hur många timmar om året en genomsnittlig löntagare arbetar för bilens bensin (körsträcka × 7 l/100 km × pris ÷ nettotimlön).',
     time_note: 'Tidpris: pris i EUR × 60 / nettotimlön (Eurostat 2024, ensamstående 100 % av genomsnittslön, årslön/2080 h). Läs: så många minuter arbetar en genomsnittlig löntagare för en liter. Se Om/Metod.',
@@ -335,7 +347,8 @@ const I18N = {
     loading: 'Laddar …', no_data: 'Ingen data för valet.',
     eu_mean: 'Genomsnitt i EU (befolkningsviktat)', tax_part: 'Skatt', net_part: 'Nettopris',
     quartile_lbl: ['Kvartil 1 (lägst)', 'Kvartil 2', 'Kvartil 3', 'Kvartil 4 (högst)'],
-    fixed_lbl: (b, u) => [`< ${b[0]} ${u}`, `${b[0]}–${b[1]} ${u}`, `${b[1]}–${b[2]} ${u}`, `≥ ${b[2]} ${u}`],
+    fixed_lbl: (b, u) => { const f = x => x.toLocaleString('sv-SE');
+      return [`< ${f(b[0])} ${u}`, `${f(b[0])}–${f(b[1])} ${u}`, `${f(b[1])}–${f(b[2])} ${u}`, `≥ ${f(b[2])} ${u}`]; },
     ctx_lbl: 'Utanför EU-27 (kontext)',
     curve_caption: 'Form F6, fördelningsuppveckling: länder sorterade från lägst till högst pris; stapelbredd ∝ befolkning (1 mm = 2 milj. inv. i utskrift), höjd = pris (1 mm = 1 kr/l). Kurvan är EU:s befolkningsviktade kvantilfunktion: avläs hur många människor som bor på varje prisnivå. Befolkning: Eurostat 1 jan 2025.',
     map_caption: 'Form F1, geospatial extrudering: höjd = pris (1 mm = 1 kr/l), ekvirektangulär projektion skalad med cos 52°. Dra för att rotera, skrolla för zoom, klicka på ett land för att lägga till det i historiken. OBS areafällan (D11): stora länder dominerar synintrycket vid samma höjd – Sverige ser "större" ut än Nederländerna trots lägre pris. Priskurvan är motviktet: där är bredd = människor.',
@@ -367,7 +380,11 @@ const I18N = {
     fuel_petrol: 'Petrol 95', fuel_diesel: 'Diesel',
     basis_nom: 'Nominal (SEK/l)', basis_ppp: 'PPP-adjusted (SEK/l)',
     basis_time: 'Time price (min of work/l)',
-    basis_year: 'Annual work time (h petrol/yr)',
+    basis_year: 'Annual work time (h/yr)',
+    basis_yearnom: 'Annual cost (SEK/yr)', basis_yearppp: 'Annual cost PPP-adjusted (SEK/yr)',
+    bgrp_litre: 'Per litre', bgrp_year: 'Per year (distance × consumption)',
+    hint_yearnom: 'Annual cost = distance per car × 7 l/100 km × litre price, in SEK. LU, SK, BG and CY lack distance data and are omitted.',
+    hint_yearppp: 'Annual cost PPP = the annual cost restated via the country’s general price level at Swedish price levels (how large the cost is relative to everything else there).',
     year_note: 'Annual work time = distance/car (Odyssee-Mure 2023 / Eurostat 2024) × assumed consumption 7.0 l/100 km × price in EUR ÷ net hourly pay. A rough, declared model – LU, SK, BG and CY lack distance data and are omitted. See About/Method.',
     hint_year: 'Annual work time = how many hours per year an average earner works for the car’s petrol (distance × 7 l/100 km × price ÷ net hourly pay).',
     time_note: 'Time price: price in EUR × 60 / net hourly earnings (Eurostat 2024, single person at 100% of average wage, annual pay/2080 h). Read: this many minutes an average earner works for one litre. See About/Method.',
@@ -382,7 +399,8 @@ const I18N = {
     loading: 'Loading …', no_data: 'No data for this selection.',
     eu_mean: 'EU mean (population-weighted)', tax_part: 'Tax', net_part: 'Net price',
     quartile_lbl: ['Quartile 1 (lowest)', 'Quartile 2', 'Quartile 3', 'Quartile 4 (highest)'],
-    fixed_lbl: (b, u) => [`< ${b[0]} ${u}`, `${b[0]}–${b[1]} ${u}`, `${b[1]}–${b[2]} ${u}`, `≥ ${b[2]} ${u}`],
+    fixed_lbl: (b, u) => { const f = x => x.toLocaleString('en-GB');
+      return [`< ${f(b[0])} ${u}`, `${f(b[0])}–${f(b[1])} ${u}`, `${f(b[1])}–${f(b[2])} ${u}`, `≥ ${f(b[2])} ${u}`]; },
     ctx_lbl: 'Outside EU-27 (context)',
     curve_caption: 'Form F6, distribution unfolding: countries sorted from lowest to highest price; bar width ∝ population (1 mm = 2 million people in print), height = price (1 mm = 1 SEK/l). The curve is the EU population-weighted quantile function: read off how many people live at each price level. Population: Eurostat 1 Jan 2025.',
     map_caption: 'Form F1, geospatial extrusion: height = price (1 mm = 1 SEK/l), equirectangular projection scaled by cos 52°. Drag to rotate, scroll to zoom, click a country to add it to the history view. Note the area trap (D11): large countries dominate the visual impression at equal height – Sweden looks "bigger" than the Netherlands despite a lower price. The price curve is the counterweight: there, width = people.',
@@ -428,7 +446,7 @@ function readURL() {
   if (['curve','map','hist','about','print3d','grammar','teach'].includes(p.get('view'))) S.view = p.get('view');
   if (/^\d{4}-\d{2}-\d{2}$/.test(p.get('date') || '')) S.date = p.get('date');
   if (['petrol','diesel'].includes(p.get('fuel'))) S.fuel = p.get('fuel');
-  if (['nom','ppp','time','year'].includes(p.get('basis'))) S.basis = p.get('basis');
+  if (['nom','ppp','time','year','yearnom','yearppp'].includes(p.get('basis'))) S.basis = p.get('basis');
   if (['quartile','fixed','tax','taxonly'].includes(p.get('color'))) S.color = p.get('color');
   if (['0.5','1','2'].includes(p.get('zs'))) S.zscale = parseFloat(p.get('zs'));
   if (['full','quad','nine'].includes(p.get('ly'))) S.layout = p.get('ly');
@@ -492,14 +510,18 @@ function pliAdj(cc) { return S.basis === 'ppp' ? META.SE.pli / META[cc].pli : 1;
 function unit() {
   if (S.basis === 'time') return 'min/l';
   if (S.basis === 'year') return S.lang === 'sv' ? 'h/år' : 'h/yr';
+  if (S.basis === 'yearnom' || S.basis === 'yearppp') return S.lang === 'sv' ? 'kr/år' : 'SEK/yr';
   return 'kr/l';
 }
 /** Justerat värde: nominellt (kr/l), PPP (kr/l) eller tidpris (min arbete/l). */
 function adjVal(cc, eur, sek) {
-  if (S.basis === 'year') {
+  if (S.basis === 'year' || S.basis === 'yearnom' || S.basis === 'yearppp') {
     const m = META[cc];
-    if (eur == null || !m.km) return null;   // LU/SK/BG/CY: körsträcka saknas
-    return m.km * (SCALE.FUEL_L100 / 100) * eur / m.wage;
+    if (eur == null || sek == null || !m.km) return null;   // LU/SK/BG/CY: körsträcka saknas
+    const litres = m.km * (SCALE.FUEL_L100 / 100);
+    if (S.basis === 'year') return litres * eur / m.wage;
+    const kr = litres * sek;
+    return S.basis === 'yearppp' ? kr * META.SE.pli / m.pli : kr;
   }
   if (S.basis === 'time') return eur == null ? null : eur * 60 / META[cc].wage;
   if (S.basis === 'ppp')  return sek == null ? null : sek * META.SE.pli / META[cc].pli;
@@ -523,6 +545,8 @@ function taxToMeanLine(payload, rows, r) {
   if (S.basis === 'ppp') f = META[r.cc].pli / META.SE.pli;
   else if (S.basis === 'time') f = META[r.cc].wage / 60 * payload.sek_per_eur;
   else if (S.basis === 'year') f = META[r.cc].wage / (META[r.cc].km * SCALE.FUEL_L100 / 100) * payload.sek_per_eur;
+  else if (S.basis === 'yearnom') f = 1 / (META[r.cc].km * SCALE.FUEL_L100 / 100);
+  else if (S.basis === 'yearppp') f = META[r.cc].pli / META.SE.pli / (META[r.cc].km * SCALE.FUEL_L100 / 100);
   const dKr = dDisp * f;
   const taxNow = e.sek - e.sek_net;
   if (taxNow <= 0.05) return '';
@@ -566,6 +590,7 @@ function activeBreaks(rows) {
   if (S.color !== 'fixed') return quartileBreaks(rows);
   if (S.basis === 'time') return SCALE.TIME_BREAKS;
   if (S.basis === 'year') return SCALE.YEAR_BREAKS;
+  if (S.basis === 'yearnom' || S.basis === 'yearppp') return SCALE.YEARKR_BREAKS;
   return SCALE.FIXED_BREAKS;
 }
 function classOf(tot, breaks) {
@@ -573,6 +598,8 @@ function classOf(tot, breaks) {
 }
 const fmt = (x, d = 2) => x == null ? '–' : x.toLocaleString(S.lang === 'sv' ? 'sv-SE' : 'en-GB',
   { minimumFractionDigits: d, maximumFractionDigits: d });
+/** Visningsvärde i aktivt prisläge (kr/år utan decimaler). */
+const vfmt = x => fmt(x, S.basis === 'yearnom' || S.basis === 'yearppp' ? 0 : 2);
 
 /*STL-CORE-BEGIN*/
 /* =====================================================================
@@ -1381,7 +1408,8 @@ function segmentsForRow(row, breaks) {
 function dispOf(row) { return S.color === 'taxonly' ? (row.tax ?? 0) : row.tot; }
 /** Höjdskala: geometri-mm per värdeenhet (Z-skalan gäller karta + STL). */
 function scaleSegs(segs) {
-  const mmPerUnit = (S.basis === 'year' ? SCALE.YEAR_MM : 1) * S.zscale;
+  const mmPerUnit = (S.basis === 'year' ? SCALE.YEAR_MM
+    : (S.basis === 'yearnom' || S.basis === 'yearppp') ? SCALE.YEARKR_MM : 1) * S.zscale;
   return segs.map(sg => ({ ...sg, z0: sg.z0 * mmPerUnit, z1: sg.z1 * mmPerUnit }));
 }
 function groupColor(g) {
@@ -1397,8 +1425,7 @@ function groupLabels(breaks) {
   if (S.color === 'taxonly') return { tax: T('tax_part') };
   if (S.color === 'tax') return { net: T('net_part'), tax: T('tax_part') };
   const lbl = S.color === 'fixed'
-    ? I18N[S.lang].fixed_lbl(S.basis === 'time' ? SCALE.TIME_BREAKS
-        : S.basis === 'year' ? SCALE.YEAR_BREAKS : SCALE.FIXED_BREAKS, unit())
+    ? I18N[S.lang].fixed_lbl(activeBreaks([]), unit())
     : T('quartile_lbl').map((l, i) => `${l} ${i === 0 ? '< ' + fmt(breaks[0]) : i === 3 ? '≥ ' + fmt(breaks[2]) : fmt(breaks[i - 1]) + '–' + fmt(breaks[i])}`);
   return { q0: lbl[0], q1: lbl[1], q2: lbl[2], q3: lbl[3] };
 }
@@ -1430,9 +1457,14 @@ function renderCurve(payload) {
   const yPix = v => MT + ph - v / maxY * ph;
 
   let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">`;
-  for (let v = 0; v <= maxY; v += maxY > 120 ? 25 : maxY > 30 ? 5 : 2) {
+  const yStep = (() => {
+    const raw = maxY / 8, pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    for (const m of [1, 2, 2.5, 5, 10]) if (raw <= m * pow) return m * pow;
+    return 10 * pow;
+  })();
+  for (let v = 0; v <= maxY; v += yStep) {
     s += `<line x1="${ML}" y1="${yPix(v)}" x2="${W - MR}" y2="${yPix(v)}" stroke="#E5DCC8" stroke-width="1"/>`;
-    s += `<text x="${ML - 8}" y="${yPix(v) + 4}" text-anchor="end" font-size="12" fill="#6E6558">${v}</text>`;
+    s += `<text x="${ML - 8}" y="${yPix(v) + 4}" text-anchor="end" font-size="12" fill="#6E6558">${v.toLocaleString(S.lang === 'sv' ? 'sv-SE' : 'en-GB')}</text>`;
   }
   s += `<text x="14" y="${MT + 10}" font-size="12" fill="#6E6558" transform="rotate(-90 14 ${MT + 10})" text-anchor="end">${unit()}</text>`;
 
@@ -1465,7 +1497,7 @@ function renderCurve(payload) {
   });
   s += leaders.join('');
   s += `<line x1="${ML}" y1="${yPix(mean)}" x2="${W - MR}" y2="${yPix(mean)}" stroke="#2F5A8F" stroke-width="2" stroke-dasharray="8 5"/>`;
-  s += `<text x="${W - MR - 4}" y="${yPix(mean) - 6}" text-anchor="end" font-size="12.5" fill="#2F5A8F" font-weight="600">${T('eu_mean')}: ${fmt(mean)} ${unit()}</text>`;
+  s += `<text x="${W - MR - 4}" y="${yPix(mean) - 6}" text-anchor="end" font-size="12.5" fill="#2F5A8F" font-weight="600">${T('eu_mean')}: ${vfmt(mean)} ${unit()}</text>`;
   s += `<line x1="${ML}" y1="${MT + ph}" x2="${W - MR}" y2="${MT + ph}" stroke="#2B2620" stroke-width="1.5"/>`;
   s += `<text x="${ML}" y="${H - 14}" font-size="12" fill="#6E6558">0</text>`;
   s += `<text x="${W - MR}" y="${H - 14}" text-anchor="end" font-size="12" fill="#6E6558">${Math.round(totalPop / 1e6)} ${T('milj')} (${Math.round(totalPop / SCALE.POP_PER_MM)} mm)</text>`;
@@ -1481,10 +1513,10 @@ function renderCurve(payload) {
     const eNom = (payload.fuels[S.fuel] || {})[r.cc] || {};
     showTip(
       `<b>${META[r.cc][S.lang]}</b><br>` +
-      `${T('tt_price')}: ${fmt(r.tot)} ${unit()} ` +
-      (S.basis === 'time' || S.basis === 'year' ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
-      (S.basis === 'year' ? `<br>${fmt(META[r.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km` : '') +
-      (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} ${unit()}` : '') +
+      `${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
+      (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
+      (['year','yearnom','yearppp'].includes(S.basis) ? `<br>${fmt(META[r.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km` : '') +
+      (r.net != null ? `<br>${T('tt_net')}: ${vfmt(r.net)} · ${T('tt_tax')}: ${vfmt(r.tax)} ${unit()}` : '') +
       taxToMeanLine(payload, rows, r) +
       `<br>${T('tt_pop')}: ${fmt(r.pop / 1e6, 1)} ${T('milj')}`, ev);
   });
@@ -1494,7 +1526,7 @@ function renderCurve(payload) {
   document.getElementById('curveCaption').innerHTML =
     T('curve_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note')
                         : S.basis === 'time' ? '<br>' + T('time_note')
-                        : S.basis === 'year' ? '<br>' + T('year_note') : '');
+                        : ['year','yearnom','yearppp'].includes(S.basis) ? '<br>' + T('year_note') : '');
 }
 
 function renderLegend(id, breaks, withCtx) {
@@ -1526,9 +1558,12 @@ function qrStateURL(view) {
 function labelTexts(view) {
   const basis = S.basis === 'ppp' ? 'PPP'
               : S.basis === 'time' ? (S.lang === 'sv' ? 'TID' : 'TIME')
-              : S.basis === 'year' ? (S.lang === 'sv' ? 'H/AR' : 'H/YR') : 'NOM';
+              : S.basis === 'year' ? (S.lang === 'sv' ? 'H/AR' : 'H/YR')
+              : S.basis === 'yearnom' ? (S.lang === 'sv' ? 'KR/AR' : 'SEK/YR')
+              : S.basis === 'yearppp' ? (S.lang === 'sv' ? 'PPP/AR' : 'PPP/YR') : 'NOM';
   const scaleTok = S.basis === 'time' ? '1MM=1MIN'
-                 : S.basis === 'year' ? '1MM=2H/AR' : '1MM=1KR/L';
+                 : S.basis === 'year' ? '1MM=2H/AR'
+                 : (S.basis === 'yearnom' || S.basis === 'yearppp') ? '1MM=500KR' : '1MM=1KR/L';
   return {
     title: [`${T('fuel_' + S.fuel)} EU`, `${S.date} ${basis}`],
     under: ['EC WEEKLY OIL BULLETIN', `CC BY-NC-ND ${scaleTok}`,
@@ -1741,7 +1776,7 @@ function renderMap(payload) {
   document.getElementById('mapCaption').innerHTML =
     T('map_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note')
                       : S.basis === 'time' ? '<br>' + T('time_note')
-                      : S.basis === 'year' ? '<br>' + T('year_note') : '');
+                      : ['year','yearnom','yearppp'].includes(S.basis) ? '<br>' + T('year_note') : '');
 }
 function drawMap() {
   if (MAP.renderer) MAP.renderer.render(MAP.scene, MAP.camera);
@@ -1773,10 +1808,10 @@ function hoverMap(ev) {
     const r = rows.find(x => x.cc === hit.cc);
     if (r) {
       const eNom = (payload.fuels[S.fuel] || {})[hit.cc] || {};
-      showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_price')}: ${fmt(r.tot)} ${unit()} ` +
-        (S.basis === 'time' || S.basis === 'year' ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
-        (S.basis === 'year' ? `<br>${fmt(META[hit.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km` : '') +
-        (r.net != null ? `<br>${T('tt_net')}: ${fmt(r.net)} · ${T('tt_tax')}: ${fmt(r.tax)} ${unit()}` : '') +
+      showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_price')}: ${vfmt(r.tot)} ${unit()} ` +
+        (S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis) ? `(${fmt(eNom.sek)} kr/l)` : `(${fmt(eNom.eur, 3)} €/l)`) +
+        (['year','yearnom','yearppp'].includes(S.basis) ? `<br>${fmt(META[hit.cc].km, 0)} km/år × ${SCALE.FUEL_L100} l/100 km` : '') +
+        (r.net != null ? `<br>${T('tt_net')}: ${vfmt(r.net)} · ${T('tt_tax')}: ${vfmt(r.tax)} ${unit()}` : '') +
         taxToMeanLine(payload, rows, r), ev);
     } else {
       showTip(`<b>${META[hit.cc][S.lang]}</b><br>${T('tt_no_data')}`, ev);
@@ -1810,7 +1845,7 @@ async function renderHist() {
   const chips = document.getElementById('histChips');
   const el = document.getElementById('histChart');
   // Tidpris kräver lönehistorik – historiken faller tillbaka på nominella kr/l.
-  const noTime = S.basis === 'time' || S.basis === 'year';
+  const noTime = S.basis === 'time' || ['year','yearnom','yearppp'].includes(S.basis);
   document.getElementById('histCaption').innerHTML =
     T('hist_caption') + (S.basis === 'ppp' ? '<br>' + T('ppp_note') : '') +
     (noTime ? '<br><strong>' + T('hist_no_time') + '</strong>' : '');
@@ -1951,18 +1986,22 @@ vilseledande "tidprisserie"; en riktig sådan kräver lönehistorik (framtida ut
 (b) Genomsnittslönen är inte medianlönen; i länder med skev lönefördelning underskattar
 genomsnittet den typiska löntagarens tidpris. (c) I tidprisläget är höjdskalan
 <code>1 mm = 1 minut arbete per liter</code> och de fasta klasserna ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
-<h2>Årsarbetstid för bensin (fördjupningsmått)</h2>
-<p>Fjärde prisläget kombinerar allt: <code>årsarbetstid (h/år) = körsträcka per bil ×
-${SCALE.FUEL_L100} l/100 km × pris (EUR/l) ÷ nettotimlön (EUR/h)</code>. Körsträckor:
+<h2>Årsmåtten (fördjupning): kostnad och arbetstid per år</h2>
+<p>Utöver litermåtten finns tre årsmått som kombinerar pris med hur mycket bilen faktiskt
+körs: <strong>Årskostnad</strong> <code>(kr/år) = körsträcka per bil × ${SCALE.FUEL_L100} l/100 km ×
+literpris</code>, <strong>Årskostnad PPP</strong> (samma, omräknad efter landets allmänna
+prisnivå till svensk prisnivå) och <strong>Årsarbetstid</strong> <code>(h/år) = årskostnaden i
+EUR ÷ nettotimlön (EUR/h)</code>. Körsträckor:
 Odyssee-Mure "Change in distance travelled by car" (2023) där den finns, annars härlett ur
 Eurostats trafikarbete ÷ bilpark (road_tf_vehmov / road_eqs_carpda, 2024; Belgien 2015).
 <strong>Luxemburg, Slovakien, Bulgarien och Cypern saknar användbar källa och utelämnas.</strong>
 Förbrukningen är ett <em>deklarerat antagande</em>: ${SCALE.FUEL_L100} l/100 km för hela flottan i
 alla länder (nybilar ligger på 5–6 enligt Odyssee; äldre flottor högre). Modellen är medvetet
 grov: den prissätter all körning till bensinpris trots diesel- och elbilar, och den säger inget
-om vem som faktiskt kör långt. Läs den som en storleksordning – exempel (2026-08-03): Sverige
-≈ 86 h/år, Tyskland ≈ 131, Rumänien ≈ 130 (kortare körsträcka men mycket lägre lön),
-Grekland ≈ 230. I utskrift: 0,5 mm = 1 h.</p>
+om vem som faktiskt kör långt. Läs den som en storleksordning – exempel (2026-08-03):
+årskostnad Sverige ≈ 15 000 kr, Tyskland ≈ 20 900, Rumänien ≈ 8 450; i årsarbetstid blir det
+≈ 86, 131 respektive 130 timmar (rumänen kör hälften så långt men har mycket lägre lön),
+Grekland ≈ 230 h. I utskrift: 1 mm = 500 kr/år respektive 0,5 mm = 1 h.</p>
 <h2>Färgläsningar (D1, O3)</h2>
 <ul>
 <li><strong>Kvartiler per valt datum</strong> (relativ läsning, standard): gränserna räknas om
@@ -2015,9 +2054,12 @@ year would yield a misleading "time price series"; a real one needs wage history
 extension). (b) The mean wage is not the median; in countries with skewed wage distributions the
 mean understates the typical earner's time price. (c) In time-price mode the height scale is
 <code>1 mm = 1 minute of work per litre</code> and the fixed classes are ${SCALE.TIME_BREAKS.join('/')} min/l.</p>
-<h2>Annual work time for petrol (extension measure)</h2>
-<p>The fourth price basis combines everything: <code>annual work time (h/yr) = distance per car ×
-${SCALE.FUEL_L100} l/100 km × price (EUR/l) ÷ net hourly pay (EUR/h)</code>. Distances:
+<h2>The annual measures (extension): cost and work time per year</h2>
+<p>Beyond the per-litre measures there are three annual measures combining price with how much
+the car is actually driven: <strong>Annual cost</strong> <code>(SEK/yr) = distance per car ×
+${SCALE.FUEL_L100} l/100 km × litre price</code>, <strong>Annual cost PPP</strong> (the same,
+restated via the country's general price level at Swedish price levels) and <strong>Annual work
+time</strong> <code>(h/yr) = the annual cost in EUR ÷ net hourly pay (EUR/h)</code>. Distances:
 Odyssee-Mure "Change in distance travelled by car" (2023) where available, otherwise derived
 from Eurostat traffic performance ÷ car stock (road_tf_vehmov / road_eqs_carpda, 2024;
 Belgium 2015). <strong>Luxembourg, Slovakia, Bulgaria and Cyprus lack a usable source and are
@@ -2025,8 +2067,9 @@ omitted.</strong> Consumption is a <em>declared assumption</em>: ${SCALE.FUEL_L1
 the whole fleet in every country (new cars run 5–6 per Odyssee; older fleets higher). The model
 is deliberately rough: it prices all driving at petrol prices despite diesel and electric cars,
 and says nothing about who actually drives far. Read it as an order of magnitude – examples
-(2026-08-03): Sweden ≈ 86 h/yr, Germany ≈ 131, Romania ≈ 130 (shorter distance but much lower
-pay), Greece ≈ 230. In print: 0.5 mm = 1 h.</p>
+(2026-08-03): annual cost Sweden ≈ 15,000 SEK, Germany ≈ 20,900, Romania ≈ 8,450; in annual
+work time that is ≈ 86, 131 and 130 hours respectively (the Romanian drives half as far but
+earns much less), Greece ≈ 230 h. In print: 1 mm = 500 SEK/yr and 0.5 mm = 1 h.</p>
 <h2>Colour readings (D1, O3)</h2>
 <ul>
 <li><strong>Quartiles per selected date</strong> (relative reading, default): the breaks are
@@ -2277,10 +2320,13 @@ arbetar för en liter. Sverige: ≈ 5,5 minuter — tredje lägst, efter Luxembu
 och Irland (höga genomsnittslöner, delvis draget av multinationell sektor; notera att måttet
 bygger på faktiska nettolöner, inte BNP). Genomsnittet i EU ≈ 10,5 min; Rumänien &amp; Bulgarien
 ≈ 17–18 min. <a href="?${q}&view=curve&fuel=petrol&basis=time&color=quartile">Öppna →</a></li>
-<li><strong>Årsarbetstid (h/år)</strong> — fördjupningsmåttet: körsträcka per bil ×
-7 l/100 km × pris ÷ nettotimlön. Sverige ≈ 86 h/år, Tyskland ≈ 131, Rumänien ≈ 130,
-Grekland ≈ 230. <a href="?${q}&view=curve&basis=year">Öppna →</a>
-(datakällor och antaganden i Om/Metod; räkneövning på arbetsblad 6)</li>
+<li><strong>Årsmåtten</strong> — fördjupning som kombinerar pris med körsträcka per bil
+(× 7 l/100 km): <a href="?${q}&view=curve&basis=yearnom">Årskostnad kr/år →</a> (Sverige
+≈ 15 000, Tyskland ≈ 20 900, Rumänien ≈ 8 450) ·
+<a href="?${q}&view=curve&basis=yearppp">PPP-justerad →</a> ·
+<a href="?${q}&view=curve&basis=year">Årsarbetstid h/år →</a> (Sverige ≈ 86, Tyskland ≈ 131,
+Rumänien ≈ 130, Grekland ≈ 230 — rumänen kör hälften så långt som tysken men betalar lika
+många timmar). Datakällor och antaganden i Om/Metod; räkneövning på arbetsblad 6.</li>
 </ul>
 <h2>Lektionsförslag (45–60 min, gymnasiet/högstadiet)</h2>
 <ol>
@@ -2377,10 +2423,13 @@ one litre. Sweden: ≈ 5.5 minutes — third lowest, after Luxembourg (very high
 (high average wages, partly driven by the multinational sector; note the measure uses actual net
 earnings, not GDP). EU average ≈ 10.5 min; Romania &amp; Bulgaria ≈ 17–18 min.
 <a href="?${q}&view=curve&fuel=petrol&basis=time&color=quartile">Open →</a></li>
-<li><strong>Annual work time (h/yr)</strong> — the extension measure: distance per car ×
-7 l/100 km × price ÷ net hourly pay. Sweden ≈ 86 h/yr, Germany ≈ 131, Romania ≈ 130,
-Greece ≈ 230. <a href="?${q}&view=curve&basis=year">Open →</a>
-(data sources and assumptions under About/Method; calculation exercise on worksheet 6)</li>
+<li><strong>The annual measures</strong> — extension combining price with distance per car
+(× 7 l/100 km): <a href="?${q}&view=curve&basis=yearnom">Annual cost SEK/yr →</a> (Sweden
+≈ 15,000, Germany ≈ 20,900, Romania ≈ 8,450) ·
+<a href="?${q}&view=curve&basis=yearppp">PPP-adjusted →</a> ·
+<a href="?${q}&view=curve&basis=year">Annual work time h/yr →</a> (Sweden ≈ 86, Germany ≈ 131,
+Romania ≈ 130, Greece ≈ 230 — the Romanian drives half as far as the German yet pays as many
+hours). Data sources and assumptions under About/Method; calculation exercise on worksheet 6.</li>
 </ul>
 <h2>Lesson outline (45–60 min)</h2>
 <ol>
@@ -2490,6 +2539,9 @@ function buildFollowsedel(info) {
   if (S.basis === 'year') {
     L.push(sv ? `Höjd: ${0.5 * zs} mm = 1 timme arbete per år för bensin (körsträcka/bil × ${SCALE.FUEL_L100} l/100 km × pris ÷ nettotimlön; Odyssee-Mure 2023/Eurostat 2024; LU SK BG CY utelämnade)`
               : `Height: ${0.5 * zs} mm = 1 hour of work per year for petrol (distance/car × ${SCALE.FUEL_L100} l/100 km × price ÷ net hourly pay; Odyssee-Mure 2023/Eurostat 2024; LU SK BG CY omitted)`);
+  } else if (S.basis === 'yearnom' || S.basis === 'yearppp') {
+    L.push(sv ? `Höjd: 1 mm = ${Math.round(500 / zs)} kr bensinkostnad per år (körsträcka/bil × ${SCALE.FUEL_L100} l/100 km × literpris${S.basis === 'yearppp' ? '; PPP-justerad efter landets prisnivå' : ''}; Odyssee-Mure 2023/Eurostat 2024; LU SK BG CY utelämnade)`
+              : `Height: 1 mm = ${Math.round(500 / zs)} SEK petrol cost per year (distance/car × ${SCALE.FUEL_L100} l/100 km × litre price${S.basis === 'yearppp' ? '; PPP-adjusted by the country’s price level' : ''}; Odyssee-Mure 2023/Eurostat 2024; LU SK BG CY omitted)`);
   } else if (S.basis === 'time') {
     L.push(sv ? `Höjd: ${zs} mm = 1 minut arbete per liter (tidpris: EUR-pris × 60 / nettotimlön; Eurostat earn_nt_net 2024, ensamstående 100 % AW, årslön/2080 h)`
               : `Height: ${zs} mm = 1 minute of work per litre (time price: EUR price × 60 / net hourly earnings; Eurostat earn_nt_net 2024, single 100% AW, annual pay/2080 h)`);
@@ -2709,7 +2761,11 @@ function applyStaticTexts() {
   basisSel.options[0].textContent = T('basis_nom');
   basisSel.options[1].textContent = T('basis_ppp');
   basisSel.options[2].textContent = T('basis_time');
-  basisSel.options[3].textContent = T('basis_year');
+  basisSel.options[3].textContent = T('basis_yearnom');
+  basisSel.options[4].textContent = T('basis_yearppp');
+  basisSel.options[5].textContent = T('basis_year');
+  document.getElementById('bgrpLitre').label = T('bgrp_litre');
+  document.getElementById('bgrpYear').label = T('bgrp_year');
   const colorSel = document.getElementById('colorSel');
   colorSel.options[0].textContent = T('color_quartile');
   colorSel.options[1].textContent = T('color_fixed');
@@ -2731,9 +2787,10 @@ function applyStaticTexts() {
 function syncControls() {
   document.getElementById('fuelSel').value = S.fuel;
   document.getElementById('basisSel').value = S.basis;
-  // Tidpris/årsarbetstid kräver lönehistorik och visas inte i historiken
-  document.getElementById('basisSel').options[2].disabled = S.view === 'hist';
-  document.getElementById('basisSel').options[3].disabled = S.view === 'hist';
+  // Tidpris/årslägena kräver lönehistorik m.m. och visas inte i historiken
+  for (let oi = 2; oi <= 5; oi++) {
+    document.getElementById('basisSel').options[oi].disabled = S.view === 'hist';
+  }
   document.getElementById('colorSel').value = S.color;
   document.getElementById('zscaleSel').value = String(S.zscale);
   document.getElementById('layoutSel').value = S.layout;
@@ -2769,6 +2826,8 @@ function syncControls() {
   if (dataView && S.basis === 'ppp') { hint.textContent = T('hint_ppp'); hint.style.display = ''; }
   else if (dataView && S.basis === 'time' && S.view !== 'hist') { hint.textContent = T('hint_time'); hint.style.display = ''; }
   else if (dataView && S.basis === 'year' && S.view !== 'hist') { hint.textContent = T('hint_year'); hint.style.display = ''; }
+  else if (dataView && S.basis === 'yearnom' && S.view !== 'hist') { hint.textContent = T('hint_yearnom'); hint.style.display = ''; }
+  else if (dataView && S.basis === 'yearppp' && S.view !== 'hist') { hint.textContent = T('hint_yearppp'); hint.style.display = ''; }
   else hint.style.display = 'none';
 }
 async function rerender() {
