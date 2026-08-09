@@ -333,25 +333,25 @@ function studentSV() {
   <div class="badges"><span class="badge">Nu får ni facit på uppgift 3</span></div>
   <p>De flesta grupper föreslår att man ska räkna in <em>lönerna</em> eller <em>vad annat
   kostar i landet</em>. Grattis i så fall – ni har just uppfunnit kärnan i ekonomernas två
-  standardmått. De svarar på olika frågor: <strong>PPP</strong> frågar "är bensinen ovanligt
-  dyr <em>jämfört med allt annat</em> i landet?", <strong>tidpriset</strong> frågar "har folk
-  <em>råd</em>?". Ett tankeexperiment visar skillnaden: i ett fattigt land där bensinen vore
-  procentuellt lika billig som potatisen blir tidpriset ändå högt (låga löner) – men
-  PPP-värdet normalt (bensinen sticker inte ut). Så här ser måtten ut på riktigt:</p>
+  standardmått. De svarar på olika frågor: <strong>relativpriset</strong> frågar "är bensinen
+  ovanligt dyr <em>jämfört med allt annat</em> i landet?", <strong>tidpriset</strong> frågar
+  "har folk <em>råd</em>?". Ett tankeexperiment visar skillnaden: i ett fattigt land där
+  bensinen vore procentuellt lika billig som potatisen blir tidpriset ändå högt (låga löner)
+  – men relativpriset normalt (bensinen sticker inte ut). Så här ser måtten ut på riktigt:</p>
 
   <div class="fact">
-    <h3>Mått 2 · Köpkraftsjusterat pris (PPP-kr)</h3>
+    <h3>Mått 2 · Relativpris (× Sverige)</h3>
     <p>Eurostat mäter varje lands <strong>allmänna prisnivå</strong> – vad en hel varukorg
-    (mat, hyra, tjänster …) kostar – och sätter EU-snittet till 100. Bulgarien ligger på
-    <strong>57</strong>, Sverige på <strong>123</strong>: en bulgarisk hundralapp räcker till
-    ungefär dubbelt så mycket mat, hyra och frisör som en svensk. <em>Men den räcker bara till
-    lika lite bensin</em> – litern kostar ju nästan detsamma. PPP-måttet uttrycker exakt det:</p>
-    <p style="text-align:center"><code>PPP-kr = pris × (prisnivå Sverige ÷ prisnivå landet)</code></p>
-    <p>Bulgarien: 16,84 kr × (123 ÷ 57) ≈ <strong>36 PPP-kr</strong>. Läs det så här:
-    <strong>en liter tar lika stor tugga ur en bulgars plånbok som 36 kr skulle ta ur en
-    svensk.</strong> Ingen betalar 36 kr vid någon pump (pumppriset är 16,84) – siffran
-    översätter bulgarens börda till svensk måttstock. Sveriges eget värde är därför alltid
-    oförändrat: det ÄR måttstocken.</p>
+    (mat, hyra, tjänster …) kostar – med metoden köpkraftsparitet (PPP); EU-snittet sätts
+    till 100. Bulgarien ligger på <strong>57</strong>, Sverige på <strong>123</strong>: en
+    bulgarisk hundralapp räcker till ungefär dubbelt så mycket mat, hyra och frisör som en
+    svensk. <em>Men den räcker bara till lika lite bensin</em> – litern kostar ju nästan
+    detsamma. Relativpriset mäter exakt det:</p>
+    <p style="text-align:center"><code>relativpris = (pris ÷ prisnivå) jämfört med Sverige</code></p>
+    <p>Bulgarien: (16,84 ÷ 57) jämfört med Sveriges (15,96 ÷ 123) ≈ <strong>2,3 × Sverige</strong>.
+    Läs det så här: <strong>bensinen tar 2,3 gånger så stor plats i Bulgariens prisbild som i
+    Sveriges.</strong> Måttet är en ren kvot utan enhet – Sverige är måttstocken och alltid
+    1,0. (I verktyget kan ni byta ankarland och göra vilket land som helst till måttstock!)</p>
   </div>
   <div class="fact">
     <h3>Mått 3 · Tidpris</h3>
@@ -368,7 +368,7 @@ function studentSV() {
     <div class="qrtask">
       ${med
         ? `<p>Ta fram de två <strong>kurvremsorna</strong> (rakt pris och tidpris). Håll en i
-           varje hand – känn skillnaden i form! Öppna sedan PPP-kurvan digitalt (koden).</p>`
+           varje hand – känn skillnaden i form! Öppna sedan relativpriskurvan digitalt (koden).</p>`
         : `<p>Öppna kurvorna (koderna här intill). Länderna är sorterade billigast → dyrast;
            stapelbredden är landets befolkning.</p>`}
       <ol>
@@ -378,7 +378,7 @@ function studentSV() {
         Är ert bättre på något?</li>
       </ol>
     </div>
-    ${qrblock(link('&v=curve&b=ppp'), 'Kurvan – PPP-justerat')}
+    ${qrblock(link('&v=curve&b=ppp'), 'Kurvan – relativpris')}
     ${qrblock(link('&v=curve&b=time'), 'Kurvan – tidpris')}
   </div>
   <div class="talk">Titta på Rumänien i tidprisläget: 18 minuters arbete per liter, mot våra
@@ -548,7 +548,7 @@ function teacherSV() {
   <p>Efter passet ska eleverna kunna:</p>
   <ol>
     <li><strong>Redogöra</strong> för tre sätt att jämföra priser mellan länder – nominellt,
-    köpkraftsjusterat (PPP) och tidpris – och <strong>förklara</strong> varför ländernas
+    relativpris (PPP-baserat) och tidpris – och <strong>förklara</strong> varför ländernas
     rangordning ändras när måttet byts.</li>
     <li><strong>Skilja</strong> nettopris från skatt och <strong>beskriva</strong> att
     EU:s bensinprisskillnader nästan helt är skattepolitik, inte marknadspriser.</li>
@@ -567,7 +567,7 @@ function teacherSV() {
     (välj samma variant/datumläge som detta blad – väljs i verktygsraden innan utskrift) och
     <strong>dela ut ETT blad i taget</strong>: nästa blad först när gruppen visat sina svar.
     Bladen är spoilerfria bakåt – gissningarna ligger på Blad 1, prisavslöjandet på Blad 2,
-    PPP/tidpris förklaras först på Blad 3 (EFTER att gruppen uppfunnit ett eget mått på
+    relativpris/tidpris förklaras först på Blad 3 (EFTER att gruppen uppfunnit ett eget mått på
     Blad 2), och skatteavslöjandet kommer på Blad 4–5. Ge inte ut hela bunten på en gång!</li>
     <li>Minst en mobil per grupp (från Blad 2) och miniräknare till Blad 6.</li>
     ${med ? `<li><strong>Modeller:</strong> skriv ut per grupp (eller en klassuppsättning):
@@ -591,9 +591,9 @@ function teacherSV() {
     synliggör förförståelsen). Mobiler undan tills Blad 2.</td></tr>
     <tr><td><strong>Blad 2</strong> (karta + "uppfinn ett mått")</td><td>15 min</td><td>Dela ut
     när gruppen visat gissningarna. Bladets kärna är uppgift 3: låt grupperna kämpa med att
-    uppfinna ett eget rättvisemått INNAN de får facit – ge inte PPP/tidpris i förväg, hur
+    uppfinna ett eget rättvisemått INNAN de får facit – ge inte relativpris/tidpris i förväg, hur
     frestande det än är. Räcker att måttet är en riktning ("räkna med lönen").</td></tr>
-    <tr><td><strong>Blad 3</strong> (PPP + tidpris)</td><td>10–15 min</td><td>Knyt an till
+    <tr><td><strong>Blad 3</strong> (relativpris + tidpris)</td><td>10–15 min</td><td>Knyt an till
     gruppernas egna mått: "ni uppfann X – ekonomerna kallar det Y". Faktarutorna bär
     förklaringen; er roll är kopplingen. Formuleringsstöd nedan.</td></tr>
     <tr><td><strong>Blad 4</strong> (skatten)</td><td>10 min</td><td>Skattegissningen från
@@ -614,8 +614,8 @@ function teacherSV() {
     <tr><th>Mått</th><th>Sverige</th><th>EU-snitt</th><th>Ytterligheter</th></tr>
     <tr><td>Rakt pris</td><td>${N.seNom} kr/l · <strong>plats 2</strong> av 27</td>
         <td>${N.euNom} kr/l</td><td>Malta lägst ${N.mtNom}; Nederländerna högst ≈ 27</td></tr>
-    <tr><td>PPP-justerat</td><td>${N.sePpp} kr/l · plats 2</td><td>${N.euPpp} kr/l</td>
-        <td>Luxemburg lägst ${N.luPpp}; Rumänien högst ${N.roPpp}</td></tr>
+    <tr><td>Relativpris</td><td>1,0 × SE (måttstock) · plats 2</td><td>1,74 × SE</td>
+        <td>Luxemburg lägst 0,96; Rumänien högst 2,7</td></tr>
     <tr><td>Tidpris</td><td>${N.seTid} min/l · plats 3</td><td>${N.euTid} min/l</td>
         <td>Luxemburg ${N.luTid}, Irland ${N.ieTid} lägre; Rumänien/Grekland ≈ ${N.roTid}</td></tr>
     <tr><td>Skatt</td><td>${N.seSkatt} kr/l · <strong>LÄGST i EU</strong></td>
@@ -638,7 +638,7 @@ function teacherSV() {
   koncentrat: "harmonisera med EU-snittet" är inte ett politiskt förslag utan flera, beroende
   på vilket rättvisemått som avses. Låt gärna grupperna formulera det själva innan ni säger det.</p>
   <p><strong>Vanliga elevmått i Blad 2 uppgift 3</strong> (alla är "rätt"): jämför med lönen
-  (→ tidpris), jämför med vad annat kostar (→ PPP), andel av månadslön (→ Blad 6/årsarbetstid),
+  (→ tidpris), jämför med vad annat kostar (→ relativpris), andel av månadslön (→ Blad 6/årsarbetstid),
   jämför med minimilön eller medianlön (bättre än vårt medelmått – lyft det!). Grupper som
   föreslår median förtjänar extra beröm: verktyget använder medellön och deklarerar det som
   en svaghet.</p>
@@ -646,19 +646,20 @@ function teacherSV() {
   de flesta gissar plats 15–25. (2) Sverige har EU:s lägsta bensinskatt. (3) Tidpriset vänder
   kartan: billigast i öst blir dyrast.</p>
 
-  <h2>Formuleringsstöd: PPP utan att gå vilse</h2>
-  <p>PPP-priset är <em>inte</em> vad en svensk turist betalar i Rumänien. Det är bensinpriset
-  satt i relation till landets <em>allmänna prisnivå</em>, omräknat till svensk prisnivå:
-  "om bensinen i Sverige vore lika dyr <em>i förhållande till allt annat</em> som den är i
-  Rumänien, skulle den kosta ${N.roPpp} kr". Bra elevformulering att sikta mot: "bensinen är
-  dyr <em>för rumäner</em>, för allt annat de köper är billigt men bensinen är det inte."
-  Tidpriset säger samma sak ännu enklare: ${N.roTid} minuters arbete per liter mot våra ${N.seTid}.</p>
+  <h2>Formuleringsstöd: relativpriset utan att gå vilse</h2>
+  <p>Relativpriset är <em>inte</em> vad en svensk turist betalar i Rumänien, och det är inga
+  kronor alls – det är en ren kvot. "Rumänien 2,7 × SE" utläses: bensinen tar 2,7 gånger så
+  stor plats i Rumäniens prisbild som i Sveriges. Bra elevformulering att sikta mot: "bensinen
+  är dyr <em>för rumäner</em>, för allt annat de köper är billigt men bensinen är det inte."
+  Mekanismen: bensin köps på världsmarknaden och blir inte billigare för att landet är
+  billigt. Låt gärna eleverna byta ankarland i verktyget – med Rumänien som ankare blir
+  Sverige 0,37 × RO, och man ser att måttstocken är ett val, inte ett facit.</p>
 
   <h2>Vanliga missuppfattningar</h2>
   <ul>
     <li><em>"Sverige har Europas dyraste bensin."</em> Stämmer inte i något av måtten
     (${FIX}). Låt påståendet möta datan – och visa hur man verifierar själv.</li>
-    <li><em>"PPP = vad det kostar för mig som turist."</em> Nej – se formuleringsstödet.</li>
+    <li><em>"Relativpriset är ett pris i kronor."</em> Nej – det är en enhetslös kvot; pumppriset visas separat. Se formuleringsstödet.</li>
     <li><em>"Genomsnittslön = vanlig lön."</em> Genomsnittet överskattar den typiska
     löntagaren i länder med skev fördelning; tidpriserna för låglöneländer är i så fall
     <em>underskattade</em>. (Verktyget deklarerar detta under Om/Metod.)</li>
@@ -791,18 +792,19 @@ function studentEN() {
   standard measures. Here they are for real:</p>
 
   <div class="fact">
-    <h3>Measure 2 · Purchasing-power-adjusted price (PPP-SEK)</h3>
+    <h3>Measure 2 · Relative price (× Sweden)</h3>
     <p>Eurostat measures each country's <strong>general price level</strong> – what a whole
-    basket of goods (food, rent, services …) costs – with the EU average set to 100. Bulgaria
-    sits at <strong>57</strong>, Sweden at <strong>123</strong>: a Bulgarian banknote buys
-    about twice as much food, rent and haircuts as a Swedish one. <em>But it buys just as
-    little petrol</em> – the litre costs nearly the same. The PPP measure expresses exactly that:</p>
-    <p style="text-align:center"><code>PPP-SEK = price × (price level Sweden ÷ price level country)</code></p>
-    <p>Bulgaria: 16.84 SEK × (123 ÷ 57) ≈ <strong>36 PPP-SEK</strong>. Read it like this:
-    <strong>a litre takes as big a bite out of a Bulgarian's wallet as 36 kronor would out of
-    a Swedish one.</strong> Nobody pays 36 SEK at any pump (the pump price is 16.84) – the
-    figure translates the Bulgarian's burden into a Swedish yardstick. Sweden's own value is
-    therefore always unchanged: it IS the yardstick.</p>
+    basket of goods (food, rent, services …) costs – using purchasing power parity (PPP);
+    the EU average is set to 100. Bulgaria sits at <strong>57</strong>, Sweden at
+    <strong>123</strong>: a Bulgarian banknote buys about twice as much food, rent and
+    haircuts as a Swedish one. <em>But it buys just as little petrol</em> – the litre costs
+    nearly the same. The relative price measures exactly that:</p>
+    <p style="text-align:center"><code>relative price = (price ÷ price level) compared with Sweden</code></p>
+    <p>Bulgaria: (16.84 ÷ 57) compared with Sweden's (15.96 ÷ 123) ≈ <strong>2.3 × Sweden</strong>.
+    Read it like this: <strong>petrol takes 2.3 times as much room in Bulgaria's price picture
+    as in Sweden's.</strong> The measure is a pure ratio without a unit – Sweden is the
+    yardstick and always 1.0. (In the tool you can switch anchor country and make any country
+    the yardstick!)</p>
   </div>
   <div class="fact">
     <h3>Measure 3 · Time price</h3>
@@ -818,8 +820,8 @@ function studentEN() {
     <div class="qrtask">
       ${med
         ? `<p>Take the two <strong>curve strips</strong> (straight price and time price). Hold
-           one in each hand – feel the difference in shape! Then open the PPP curve digitally
-           (the code).</p>`
+           one in each hand – feel the difference in shape! Then open the relative-price
+           curve digitally (the code).</p>`
         : `<p>Open the curves (codes to the right). Countries are sorted cheapest → dearest;
            bar width is population.</p>`}
       <ol>
@@ -829,7 +831,7 @@ function studentEN() {
         same thing? Is yours better at anything?</li>
       </ol>
     </div>
-    ${qrblock(link('&v=curve&b=ppp'), 'Curve – PPP-adjusted')}
+    ${qrblock(link('&v=curve&b=ppp'), 'Curve – relative price')}
     ${qrblock(link('&v=curve&b=time'), 'Curve – time price')}
   </div>
   <div class="talk">Look at Romania in time-price mode: 18 minutes of work per litre, against
@@ -996,7 +998,7 @@ function teacherEN() {
   <p>After the session, students should be able to:</p>
   <ol>
     <li><strong>Describe</strong> three ways of comparing prices across countries – nominal,
-    purchasing-power-adjusted (PPP) and time price – and <strong>explain</strong> why country
+    relative price (PPP-based) and time price – and <strong>explain</strong> why country
     rankings change with the measure.</li>
     <li><strong>Distinguish</strong> net price from tax and <strong>describe</strong> that
     EU petrol price differences are almost entirely tax policy, not market prices.</li>
@@ -1015,7 +1017,7 @@ function teacherEN() {
     group</strong> (choose the same variant/date mode as this guide – selectable in the toolbar
     before printing) and <strong>hand out ONE sheet at a time</strong>: the next sheet only when
     the group has shown its answers. The sheets are spoiler-free backwards – the guesses sit on
-    Sheet 1, the price reveal on Sheet 2, PPP/time price are explained only on Sheet 3 (AFTER
+    Sheet 1, the price reveal on Sheet 2, relative/time price are explained only on Sheet 3 (AFTER
     the group has invented its own measure on Sheet 2), and the tax reveal comes on Sheets 4–5.
     Don't hand out the whole stack!</li>
     <li>At least one phone per group (from Sheet 2) and a calculator for Sheet 6.</li>
@@ -1039,9 +1041,9 @@ function teacherEN() {
     engagement and surfaces preconceptions). Phones away until Sheet 2.</td></tr>
     <tr><td><strong>Sheet 2</strong> (map + "invent a measure")</td><td>15 min</td><td>Hand out
     once the group has shown its guesses. The heart of the sheet is task 3: let groups struggle
-    to invent their own fairness measure BEFORE they get the answer – don't give away PPP/time
-    price early, however tempting. A direction ("bring in wages") is enough.</td></tr>
-    <tr><td><strong>Sheet 3</strong> (PPP + time price)</td><td>10–15 min</td><td>Connect to
+    to invent their own fairness measure BEFORE they get the answer – don't give away the
+    relative/time price early, however tempting. A direction ("bring in wages") is enough.</td></tr>
+    <tr><td><strong>Sheet 3</strong> (relative + time price)</td><td>10–15 min</td><td>Connect to
     the groups' own measures: "you invented X – economists call it Y". The fact boxes carry the
     explanation; your role is the connection. Phrasing support below.</td></tr>
     <tr><td><strong>Sheet 4</strong> (the tax)</td><td>10 min</td><td>The tax guess from
@@ -1062,8 +1064,8 @@ function teacherEN() {
     <tr><th>Measure</th><th>Sweden</th><th>EU average</th><th>Extremes</th></tr>
     <tr><td>Straight price</td><td>${NE.seNom} SEK/l · <strong>rank 2</strong> of 27</td>
         <td>${NE.euNom}</td><td>Malta lowest ${NE.mtNom}; Netherlands highest ≈ 27</td></tr>
-    <tr><td>PPP-adjusted</td><td>${NE.sePpp} SEK/l · rank 2</td><td>${NE.euPpp}</td>
-        <td>Luxembourg lowest ${NE.luPpp}; Romania highest ${NE.roPpp}</td></tr>
+    <tr><td>Relative price</td><td>1.0 × SE (yardstick) · rank 2</td><td>1.74 × SE</td>
+        <td>Luxembourg lowest 0.96; Romania highest 2.7</td></tr>
     <tr><td>Time price</td><td>${NE.seTid} min/l · rank 3</td><td>${NE.euTid} min/l</td>
         <td>Luxembourg ${NE.luTid}, Ireland ${NE.ieTid} lower; Romania/Greece ≈ ${NE.roTid}</td></tr>
     <tr><td>Tax</td><td>${NE.seSkatt} SEK/l · <strong>LOWEST in the EU</strong></td>
@@ -1087,7 +1089,7 @@ function teacherEN() {
   proposal but several, depending on which fairness measure is meant. Ideally let the groups
   articulate this themselves before you say it.</p>
   <p><strong>Common student measures in Sheet 2 task 3</strong> (all are "right"): compare with
-  wages (→ time price), compare with what other things cost (→ PPP), share of monthly pay
+  wages (→ time price), compare with what other things cost (→ relative price), share of monthly pay
   (→ Sheet 6/annual work time), compare with minimum or median wage (better than our mean
   measure – praise it!). Groups proposing the median deserve extra credit: the tool uses mean
   wages and declares that as a weakness.</p>
@@ -1095,20 +1097,20 @@ function teacherEN() {
   guess rank 15–25. (2) Sweden has the EU's lowest petrol tax. (3) The time price flips the
   map: cheapest in the east becomes dearest.</p>
 
-  <h2>Phrasing support: PPP without getting lost</h2>
-  <p>The PPP price is <em>not</em> what a Swedish tourist pays in Romania. It is the petrol
-  price relative to the country's <em>general price level</em>, restated at Swedish price
-  levels: "if petrol in Sweden were as expensive <em>relative to everything else</em> as it
-  is in Romania, it would cost ${NE.roPpp} SEK". A good student phrasing to aim for: "petrol
-  is expensive <em>for Romanians</em>, because everything else they buy is cheap but petrol
-  is not." The time price says the same thing even more simply: ${NE.roTid} minutes of work
-  per litre against our ${NE.seTid}.</p>
+  <h2>Phrasing support: the relative price without getting lost</h2>
+  <p>The relative price is <em>not</em> what a Swedish tourist pays in Romania, and it is not
+  kronor at all – it is a pure ratio. "Romania 2.7 × SE" reads: petrol takes 2.7 times as much
+  room in Romania's price picture as in Sweden's. A good student phrasing to aim for: "petrol
+  is expensive <em>for Romanians</em>, because everything else they buy is cheap but petrol is
+  not." The mechanism: petrol is bought on the world market and does not get cheaper because
+  the country is cheap. Let students switch the anchor country in the tool – with Romania as
+  anchor, Sweden becomes 0.37 × RO, and the yardstick is revealed as a choice, not a verdict.</p>
 
   <h2>Common misconceptions</h2>
   <ul>
     <li><em>"Sweden has Europe's most expensive petrol."</em> Not true in any of the measures
     (${FIX}). Let the claim meet the data – and show how to verify it.</li>
-    <li><em>"PPP = what it costs me as a tourist."</em> No – see the phrasing support.</li>
+    <li><em>"The relative price is a price in kronor."</em> No – it is a unitless ratio; the pump price is shown separately. See the phrasing support.</li>
     <li><em>"Average pay = typical pay."</em> The mean overstates the typical earner in
     countries with skewed distributions; low-wage countries' time prices are then
     <em>understated</em>. (Declared under About/Method in the tool.)</li>

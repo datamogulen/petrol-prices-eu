@@ -87,9 +87,11 @@ Alla svar är JSON (UTF-8). `fuel` är `petrol` (default) eller `diesel`.
 ### Fyra prislägen (D4)
 
 1. **Nominellt** (kr/l) – huvudläsningen, svenskt plånboksperspektiv.
-2. **PPP-justerat** (kr/l): `pris × (PLI_SE / PLI_land)` (Eurostat
-   prc_ppp_ind, PLI_EU27_2020, kategori A01, 2024, EU27=100). Sverige är
-   oförändrat ankare.
+2. **Relativpris** (× ankarland, enhetslöst): `(pris ÷ PLI_land) ÷
+   (ankarlandets pris ÷ PLI_ankare)` — svarar på "är bensinen ovanligt
+   dyr relativt allt annat i landet?". PLI = Eurostat prc_ppp_ind
+   (PPP-underlag, A01, 2024). Ankarland valbart i UI (default SE, alltid
+   1,0); utskriftsskala 10 mm = 1,0×.
 3. **Tidpris** (min arbete/l): `pris_EUR × 60 / nettotimlön_EUR` där
    timlönen = Eurostat earn_nt_net 2024 (ensamstående utan barn, 100 % av
    genomsnittslön) / 2080 h. Begreppet (Tupy & Pooley, *Superabundance*)
