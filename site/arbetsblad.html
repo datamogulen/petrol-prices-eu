@@ -57,6 +57,7 @@
 </head>
 <body>
 <div class="toolbar">
+  <a id="backLink" href="./" style="color:#fff;text-decoration:none;font-weight:600">←&nbsp;Till verktyget</a>
   <b id="tb_title">Arbetsblad</b>
   <label>Dokument
     <select id="docSel">
@@ -1161,6 +1162,8 @@ function render() {
   document.getElementById('datSel').options[0].text = (sv ? 'Fast (' : 'Fixed (') + FIX + ')';
   document.getElementById('datSel').options[1].text = sv ? 'Dagens data' : "Today's data";
   document.getElementById('printBtn').textContent = sv ? 'Skriv ut / spara som PDF' : 'Print / save as PDF';
+  document.getElementById('backLink').textContent = sv ? '← Till verktyget' : '← Back to the tool';
+  document.getElementById('backLink').href = './?lang=' + ST.lang;
   const body = ST.doc === 'larare'
     ? (sv ? teacherSV() : teacherEN())
     : (sv ? studentSV() : studentEN());
