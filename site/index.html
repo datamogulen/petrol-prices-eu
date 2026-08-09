@@ -1519,8 +1519,12 @@ function renderCurve(payload) {
 
   const W = 1000, H = 560, ML = 62, MR = 14, MT = 18, MB = 46;
   const pw = W - ML - MR, ph = H - MT - MB;
-  const maxY = Math.max(S.color === 'taxonly' ? 4 : 10,
-    Math.ceil(Math.max(...rows.map(r => dispOf(r))) * 1.08));
+  const rawMax = Math.max(...rows.map(r => dispOf(r))) * 1.08;
+  // Relativpriset är en kvot kring 1 – skala tätt efter datat (halvsteg);
+  // kr/min-lägena behåller sina golv så att olika datum blir jämförbara.
+  const maxY = S.basis === 'ppp'
+    ? Math.max(1.5, Math.ceil(rawMax * 2) / 2)
+    : Math.max(S.color === 'taxonly' ? 4 : 10, Math.ceil(rawMax));
   const yPix = v => MT + ph - v / maxY * ph;
 
   let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">`;
@@ -2109,9 +2113,13 @@ genomsnittet den typiska löntagarens tidpris. (c) I tidprisläget är höjdskal
 procentuellt lika billig som potatisen och allt annat. Tidpriset blir ändå högt — men det
 beror då på låga löner, inte på att bensinen är dyr <em>relativt sett</em>. Relativpriset
 skiljer de två åt. I EU finns inget sådant potatis-land: bensin köps på världsmarknaden och
-blir inte billigare för att landet är billigt — det är precis det relativpriset synliggör
-(Rumänien ≈ 2,7 × SE). Måtten kompletterar varandra: <em>tidpris = har folk råd;
-relativpris = är bensinen relativt dyr där.</em></p>
+blir inte billigare för att landet är billigt. Konkret, Rumänien mot Sverige (Eurostats
+kategoriprisnivåer 2024; pumppriser v. 2026-08-03): <strong>potatis, frukt och grönt kostar
+ca 60 % av svenska priset, en restaurangnota 59 %, kläder 72 % — men bensinen 124 %</strong>
+(19,80 kr mot 15,96; bensinen är alltså till och med dyrare i kronor). Allt annat är mycket
+billigare, bensinen är det inte — det är exakt vad relativpriset 2,7 × SE fångar. Måtten
+kompletterar varandra: <em>tidpris = har folk råd; relativpris = är bensinen relativt dyr
+där.</em></p>
 <table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
 <tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Fråga</th>
 <th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Rätt mått</th></tr>
@@ -2211,10 +2219,13 @@ mean understates the typical earner's time price. (c) In time-price mode the hei
 petrol is proportionally as cheap as potatoes and everything else. The time price would still
 be high — but from low wages, not because petrol is expensive <em>in relative terms</em>. The
 relative price separates the two. No such potato-country exists in the EU: petrol is bought
-on the world market and does not get cheaper because the country is cheap — which is exactly
-what the relative price reveals (Romania ≈ 2.7 × SE). The measures complement each other:
-<em>time price = can people afford it; relative price = is petrol relatively expensive
-there.</em></p>
+on the world market and does not get cheaper because the country is cheap. Concretely,
+Romania vs Sweden (Eurostat category price levels 2024; pump prices week 2026-08-03):
+<strong>potatoes, fruit and vegetables cost about 60% of the Swedish price, a restaurant bill
+59%, clothing 72% — but petrol 124%</strong> (19.80 SEK vs 15.96; petrol is actually dearer
+in kronor). Everything else is far cheaper, petrol is not — which is exactly what the
+relative price of 2.7 × SE captures. The measures complement each other: <em>time price =
+can people afford it; relative price = is petrol relatively expensive there.</em></p>
 <table style="font-size:13.5px;border-collapse:collapse;margin:8px 0">
 <tr><th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Question</th>
 <th style="border:1px solid #C9BFA8;padding:3px 10px;background:#F4EFE3;text-align:left">Right measure</th></tr>
